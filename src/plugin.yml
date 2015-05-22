@@ -1,0 +1,11 @@
+name: Regionerator
+main: com.github.jikoo.regionerator.Regionerator
+version: 1.0
+author: Jikoo
+softdepend: [GriefPrevention, WorldGuard]
+
+commands:
+ regionerator:
+  description: Check Regionerator's progress.
+  permission: regionerator.command
+  aliases: [regeninfo]

@@ -1,0 +1,11 @@
+chunk-flag-radius: 4
+seconds-per-flag: 10
+days-till-flag-expires: 7
+ticks-per-deletion: 20
+regions-per-deletion: 1
+worlds:
+- MySurvivalWorld1
+- MySurvivalWorld1_nether
+hooks:
+  GriefPrevention: true
+  WorldGuard: true
