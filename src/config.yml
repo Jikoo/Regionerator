@@ -1,5 +1,6 @@
 chunk-flag-radius: 4
 seconds-per-flag: 10
+minutes-per-flag-autosave: 5
 days-till-flag-expires: 7
 ticks-per-deletion: 20
 regions-per-deletion: 1

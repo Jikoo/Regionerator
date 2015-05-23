@@ -53,13 +53,14 @@ public class DeletionRunnable extends BukkitRunnable {
 					}
 					// TODO check chunk for flag
 					for (Hook hook : Regionerator.getInstance().getProtectionHooks()) {
-						if (hook.isChunkProtected(chunkX, chunkZ)) {
+						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 							continue region;
 						}
 					}
-					// TODO delete region file
+					// FUTURE potentially allow chunk deletion
 				}
 			}
+			// TODO delete region file
 		}
 	}
 

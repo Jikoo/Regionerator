@@ -1,11 +1,17 @@
 package com.github.jikoo.regionerator;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -18,8 +24,10 @@ public class Regionerator extends JavaPlugin {
 
 	private long flagDuration;
 	private long ticksPerFlag;
-	private ArrayList<String> worlds;
-	private ArrayList<Hook> protectionHooks;
+	private long ticksPerFlagAutosave;
+	private List<String> worlds;
+	private List<Hook> protectionHooks;
+	private ChunkFlagger chunkFlagger;
 
 	@Override
 	public void onEnable() {
@@ -55,6 +63,8 @@ public class Regionerator extends JavaPlugin {
 				}
 			}
 		}
+		// Immutable list, this should not be changed during run by myself or another plugin
+		worlds = ImmutableList.copyOf(worlds);
 		if (dirtyConfig) {
 			getConfig().set("worlds", worlds);
 		}
@@ -67,9 +77,10 @@ public class Regionerator extends JavaPlugin {
 		// 86,400,000 = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
 		flagDuration = 86400000L * getConfig().getInt("days-till-flag-expires");
 
-		if (getConfig().getLong("do-not-touch", 0) == 0) {
+		if (getConfig().getLong("delete-this-to-reset-plugin", 0) == 0) {
+			// TODO: option per-world?
 			// Set time to start actually deleting chunks to ensure that all existing areas are given a chance
-			getConfig().set("do-not-touch", System.currentTimeMillis() + flagDuration);
+			getConfig().set("delete-this-to-reset-plugin", System.currentTimeMillis() + flagDuration);
 			dirtyConfig = true;
 		}
 
@@ -84,6 +95,12 @@ public class Regionerator extends JavaPlugin {
 		}
 		ticksPerFlag = getConfig().getInt("seconds-per-flag") * 20L;
 
+		if (getConfig().getInt("minutes-per-flag-autosave") < 1) {
+			getConfig().set("minutes-per-flag-autosave", 5);
+			dirtyConfig = true;
+		}
+		ticksPerFlagAutosave = getConfig().getInt("seconds-per-flag") * 120L;
+
 		if (getConfig().getLong("ticks-per-deletion") < 1) {
 			getConfig().set("ticks-per-deletion", 20L);
 			dirtyConfig = true;
@@ -94,13 +111,45 @@ public class Regionerator extends JavaPlugin {
 			dirtyConfig = true;
 		}
 
+		protectionHooks = new ArrayList<>();
+		for (String pluginName : getConfig().getConfigurationSection("hooks").getKeys(false)) {
+			try {
+				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "Hook");
+				if (!clazz.isAssignableFrom(Hook.class)) {
+					// What.
+					continue;
+				}
+				Hook hook = (Hook) clazz.newInstance();
+				if (hook.isHookUsable()) {
+					protectionHooks.add(hook);
+				}
+			} catch (ClassNotFoundException e) {
+				getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
+			} catch (InstantiationException | IllegalAccessException e) {
+				getLogger().severe("Unable to enable hook for " + pluginName + "!");
+				e.printStackTrace();
+			}
+		}
+
 		if (dirtyConfig) {
 			saveConfig();
 		}
 	}
 
 	@Override
+	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		long activeAt = getConfig().getLong("delete-this-to-reset-plugin");
+		if (System.currentTimeMillis() < activeAt) {
+			sender.sendMessage("Gathering data. Regeneration will begin at " + new SimpleDateFormat("HH:mm 'on' dd/MM").format(new Date(activeAt)));
+			return true;
+		}
+		// TODO
+		return false;
+	}
+
+	@Override
 	public void onDisable() {
+		chunkFlagger.save();
 		instance = null;
 	}
 
@@ -116,6 +165,10 @@ public class Regionerator extends JavaPlugin {
 		return ticksPerFlag;
 	}
 
+	public long getTicksPerFlagAutosave() {
+		return ticksPerFlagAutosave;
+	}
+
 	public int getRegionsPerCheck() {
 		return getConfig().getInt("regions-per-deletion");
 	}
@@ -125,11 +178,19 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public boolean activateRegen() {
-		return getConfig().getLong("do-not-touch") <= System.currentTimeMillis(); // && regenTask == null
+		return getConfig().getLong("delete-this-to-reset-plugin") <= System.currentTimeMillis(); // && regenTask == null
+	}
+
+	public List<String> getActiveWorlds() {
+		return worlds;
 	}
 
 	public List<Hook> getProtectionHooks() {
-		return this.protectionHooks;
+		return protectionHooks;
+	}
+
+	public ChunkFlagger getFlagger() {
+		return chunkFlagger;
 	}
 
 	public static Regionerator getInstance() {

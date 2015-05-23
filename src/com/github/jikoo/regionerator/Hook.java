@@ -1,6 +1,7 @@
 package com.github.jikoo.regionerator;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 
 /**
  * Framework for managing plugin hooks.
@@ -19,5 +20,5 @@ public abstract class Hook {
 		return Bukkit.getPluginManager().isPluginEnabled(pluginName);
 	}
 
-	public abstract boolean isChunkProtected(int chunkX, int chunkZ);
+	public abstract boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ);
 }
