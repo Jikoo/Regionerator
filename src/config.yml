@@ -1,12 +1,21 @@
+# Square around each player's current chunk to mark.
 chunk-flag-radius: 4
+# Every x seconds, chunks around each player online are marked.
 seconds-per-flag: 10
+# Flags are saved every x minutes.
 minutes-per-flag-autosave: 5
+# Flags older than x days can be ignored and the region deleted.
 days-till-flag-expires: 7
+# Time in between deleting regions in ticks (20 ticks = 1 second)
 ticks-per-deletion: 20
+# Regions checked for deletion per interval
 regions-per-deletion: 1
+# Worlds the plugin is able to delete regions in
+# If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
 worlds:
 - MySurvivalWorld1
 - MySurvivalWorld1_nether
+# Plugins to attempt to check for protections from.
 hooks:
   GriefPrevention: true
   WorldGuard: true

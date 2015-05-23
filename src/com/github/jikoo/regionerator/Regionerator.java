@@ -32,10 +32,7 @@ public class Regionerator extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		// TODO ensure soft-reload friendly - no final variables representing config values
-		// TODO flagging implementation
 		// TODO deletion implementation
-		// TODO hook implementation - this is per-plugin, prioritizing GP and WG as they're what I use.
-		// TODO finalize config
 		instance = this;
 
 		saveDefaultConfig();
