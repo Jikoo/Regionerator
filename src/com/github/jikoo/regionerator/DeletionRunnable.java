@@ -37,21 +37,22 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	@Override
 	public void run() {
-		if (count > regions.length) {
+		if (count >= regions.length) {
 			// TODO report finalized stats
 			// TODO schedule next run (config option)
 			this.cancel();
 			return;
 		}
-		region: for (int i = 0; i < Regionerator.getInstance().getRegionsPerCheck(); i++) {
+		region: for (int i = 0; i < Regionerator.getInstance().getRegionsPerCheck() && count < regions.length; i++, count++) {
 			Pair<Integer, Integer> regionCoordinates = parseRegion(regions[count]);
-			count++;
 			for (int chunkX = regionCoordinates.getLeft(); chunkX < regionCoordinates.getLeft() + 32; chunkX++) {
 				for (int chunkZ = regionCoordinates.getRight(); chunkZ < regionCoordinates.getRight() + 32; chunkZ++) {
 					if (world.isChunkLoaded(chunkX, chunkZ)) {
 						continue region;
 					}
-					// TODO check chunk for flag
+					if (Regionerator.getInstance().getFlagger().isChunkFlagged(world.getName(), chunkX, chunkZ)) {
+						continue region;
+					}
 					for (Hook hook : Regionerator.getInstance().getProtectionHooks()) {
 						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 							continue region;
