@@ -3,6 +3,7 @@ package com.github.jikoo.regionerator;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -28,11 +29,14 @@ public class Regionerator extends JavaPlugin {
 	private List<String> worlds;
 	private List<Hook> protectionHooks;
 	private ChunkFlagger chunkFlagger;
+	private HashMap<String, DeletionRunnable> deletionRunnables;
 
 	@Override
 	public void onEnable() {
 		// TODO ensure soft-reload friendly - no final variables representing config values
-		// TODO deletion implementation
+		// TODO finish scheduling deletion
+		// TODO pause via command
+		// TODO reports via command
 		instance = this;
 
 		saveDefaultConfig();
@@ -74,11 +78,12 @@ public class Regionerator extends JavaPlugin {
 		// 86,400,000 = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
 		flagDuration = 86400000L * getConfig().getInt("days-till-flag-expires");
 
-		if (getConfig().getLong("delete-this-to-reset-plugin", 0) == 0) {
-			// TODO: option per-world?
-			// Set time to start actually deleting chunks to ensure that all existing areas are given a chance
-			getConfig().set("delete-this-to-reset-plugin", System.currentTimeMillis() + flagDuration);
-			dirtyConfig = true;
+		for (String worldName : worlds) {
+			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName, 0) == 0) {
+				// Set time to start actually deleting chunks to ensure that all existing areas are given a chance
+				getConfig().set("delete-this-to-reset-plugin." + worldName, System.currentTimeMillis() + flagDuration);
+				dirtyConfig = true;
+			}
 		}
 
 		if (getConfig().getInt("chunk-flag-radius") < 0) {
@@ -131,6 +136,9 @@ public class Regionerator extends JavaPlugin {
 		if (dirtyConfig) {
 			saveConfig();
 		}
+
+		deletionRunnables = new HashMap<>();
+		attemptDeletionActivation();
 	}
 
 	@Override
@@ -174,8 +182,18 @@ public class Regionerator extends JavaPlugin {
 		return getConfig().getLong("ticks-per-deletion");
 	}
 
-	public boolean activateRegen() {
-		return getConfig().getLong("delete-this-to-reset-plugin") <= System.currentTimeMillis(); // && regenTask == null
+	public void attemptDeletionActivation() {
+		for (String worldName : worlds) {
+			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName) > System.currentTimeMillis()) {
+				// Not time yet.
+				continue;
+			}
+			if (deletionRunnables.containsKey(worldName)) {
+				// Already running.
+				continue;
+			}
+			// TODO
+		}
 	}
 
 	public List<String> getActiveWorlds() {

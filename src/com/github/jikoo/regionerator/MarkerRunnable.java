@@ -26,8 +26,6 @@ public class MarkerRunnable extends BukkitRunnable {
 				plugin.getFlagger().flagChunk(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
 			}
 		}
-		if (plugin.activateRegen()) {
-			// TODO
-		}
+		plugin.attemptDeletionActivation();
 	}
 }
