@@ -2,7 +2,7 @@ name: Regionerator
 main: com.github.jikoo.regionerator.Regionerator
 version: 1.0
 author: Jikoo
-softdepend: [GriefPrevention, WorldGuard]
+softdepend: [GriefPrevention, WorldGuard, Multiverse-Core]
 
 commands:
  regionerator:
