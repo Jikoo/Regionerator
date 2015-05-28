@@ -2,7 +2,6 @@ package com.github.jikoo.regionerator;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -20,8 +19,8 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final World world;
 	private final File regionFileFolder;
 	private final String[] regions;
-	private final AtomicInteger count = new AtomicInteger(0);
-	private final AtomicInteger regionsDeleted = new AtomicInteger(0);
+	private int count = 0;
+	private int regionsDeleted = 0;
 
 	public DeletionRunnable(World world) {
 		this.world = world;
@@ -40,14 +39,14 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	@Override
 	public void run() {
-		if (count.get() >= regions.length) {
+		if (count >= regions.length) {
 			// TODO report finalized stats
 			// TODO schedule next run (config option)
 			this.cancel();
 			return;
 		}
-		region: for (int i = 0; i < Regionerator.getInstance().getRegionsPerCheck() && count.get() < regions.length; i++, count.incrementAndGet()) {
-			String regionFileName = regions[count.get()];
+		region: for (int i = 0; i < Regionerator.getInstance().getRegionsPerCheck() && count < regions.length; i++, count++) {
+			String regionFileName = regions[count];
 			Pair<Integer, Integer> regionCoordinates = parseRegion(regionFileName);
 			for (int chunkX = regionCoordinates.getLeft(); chunkX < regionCoordinates.getLeft() + 32; chunkX++) {
 				for (int chunkZ = regionCoordinates.getRight(); chunkZ < regionCoordinates.getRight() + 32; chunkZ++) {
@@ -67,13 +66,13 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 			File regionFile = new File(regionFileFolder, regionFileName);
 			if (regionFile.exists() && regionFile.delete()) {
-				regionsDeleted.incrementAndGet();
+				regionsDeleted++;
 			}
 		}
 	}
 
 	public String getRunStats() {
-		return new StringBuilder(world.getName()).append(" - Checked: ").append(count.get()).append("; Deleted: ").append(regionsDeleted.get()).toString();
+		return new StringBuilder(world.getName()).append(" - Checked: ").append(count).append("; Deleted: ").append(regionsDeleted).toString();
 	}
 
 	private Pair<Integer, Integer> parseRegion(String regionFile) {
