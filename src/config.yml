@@ -10,6 +10,8 @@ days-till-flag-expires: 7
 ticks-per-deletion: 20
 # Regions checked for deletion per interval
 regions-per-deletion: 1
+# Hours between deletion cycles (cycles all reset on plugin reload/server restart)
+hours-between-cycles: 12
 # Worlds the plugin is able to delete regions in
 # If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
 worlds:

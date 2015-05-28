@@ -16,13 +16,16 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class DeletionRunnable extends BukkitRunnable {
 
+	private final Regionerator plugin;
 	private final World world;
 	private final File regionFileFolder;
 	private final String[] regions;
 	private int count = 0;
 	private int regionsDeleted = 0;
+	private long nextRun = Long.MAX_VALUE;
 
-	public DeletionRunnable(World world) {
+	public DeletionRunnable(Regionerator plugin, World world) {
+		this.plugin = plugin;
 		this.world = world;
 		regionFileFolder = new File(world.getWorldFolder(), "region");
 		if (!regionFileFolder.exists()) {
@@ -40,12 +43,12 @@ public class DeletionRunnable extends BukkitRunnable {
 	@Override
 	public void run() {
 		if (count >= regions.length) {
-			// TODO report finalized stats
-			// TODO schedule next run (config option)
+			plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
+			nextRun = System.currentTimeMillis() + plugin.getMillisecondsBetweenDeletionCycles();
 			this.cancel();
 			return;
 		}
-		region: for (int i = 0; i < Regionerator.getInstance().getRegionsPerCheck() && count < regions.length; i++, count++) {
+		region: for (int i = 0; i < plugin.getRegionsPerCheck() && count < regions.length; i++, count++) {
 			String regionFileName = regions[count];
 			Pair<Integer, Integer> regionCoordinates = parseRegion(regionFileName);
 			for (int chunkX = regionCoordinates.getLeft(); chunkX < regionCoordinates.getLeft() + 32; chunkX++) {
@@ -53,10 +56,10 @@ public class DeletionRunnable extends BukkitRunnable {
 					if (world.isChunkLoaded(chunkX, chunkZ)) {
 						continue region;
 					}
-					if (Regionerator.getInstance().getFlagger().isChunkFlagged(world.getName(), chunkX, chunkZ)) {
+					if (plugin.getFlagger().isChunkFlagged(world.getName(), chunkX, chunkZ)) {
 						continue region;
 					}
-					for (Hook hook : Regionerator.getInstance().getProtectionHooks()) {
+					for (Hook hook : plugin.getProtectionHooks()) {
 						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 							continue region;
 						}
@@ -75,9 +78,12 @@ public class DeletionRunnable extends BukkitRunnable {
 		return new StringBuilder(world.getName()).append(" - Checked: ").append(count).append("; Deleted: ").append(regionsDeleted).toString();
 	}
 
+	public long getNextRun() {
+		return nextRun;
+	}
+
 	private Pair<Integer, Integer> parseRegion(String regionFile) {
 		String[] split = regionFile.split("\\.");
-		// TODO check if it's possible for a region file to be numbered high enough to warrant a long (probably not)
 		return new ImmutablePair<Integer, Integer>(Integer.parseInt(split[1]), Integer.parseInt(split[2]));
 	}
 }

@@ -21,8 +21,6 @@ import com.google.common.collect.ImmutableList;
  */
 public class Regionerator extends JavaPlugin {
 
-	private static Regionerator instance;
-
 	private long flagDuration;
 	private long ticksPerFlag;
 	private long ticksPerFlagAutosave;
@@ -30,6 +28,7 @@ public class Regionerator extends JavaPlugin {
 	private List<Hook> protectionHooks;
 	private ChunkFlagger chunkFlagger;
 	private HashMap<String, DeletionRunnable> deletionRunnables;
+	private long millisBetweenCycles;
 
 	@Override
 	public void onEnable() {
@@ -37,7 +36,6 @@ public class Regionerator extends JavaPlugin {
 		// TODO finish scheduling deletion
 		// TODO pause via command
 		// TODO reports via command
-		instance = this;
 
 		saveDefaultConfig();
 
@@ -95,12 +93,14 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("seconds-per-flag", 10);
 			dirtyConfig = true;
 		}
+		// 20 ticks per second
 		ticksPerFlag = getConfig().getInt("seconds-per-flag") * 20L;
 
 		if (getConfig().getInt("minutes-per-flag-autosave") < 1) {
 			getConfig().set("minutes-per-flag-autosave", 5);
 			dirtyConfig = true;
 		}
+		// 60 seconds per minute, 20 ticks per second
 		ticksPerFlagAutosave = getConfig().getInt("seconds-per-flag") * 120L;
 
 		if (getConfig().getLong("ticks-per-deletion") < 1) {
@@ -112,6 +112,12 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("regions-per-deletion", 1);
 			dirtyConfig = true;
 		}
+
+		if (getConfig().getInt("hours-between-cycles") < 0) {
+			getConfig().set("hours-between-cycles", 0);
+		}
+		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
+		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 360000L;
 
 		protectionHooks = new ArrayList<>();
 		for (String pluginName : getConfig().getConfigurationSection("hooks").getKeys(false)) {
@@ -137,6 +143,8 @@ public class Regionerator extends JavaPlugin {
 			saveConfig();
 		}
 
+		chunkFlagger = new ChunkFlagger(this);
+
 		deletionRunnables = new HashMap<>();
 		attemptDeletionActivation();
 	}
@@ -155,7 +163,6 @@ public class Regionerator extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		chunkFlagger.save();
-		instance = null;
 	}
 
 	public long getFlagDuration() {
@@ -178,21 +185,35 @@ public class Regionerator extends JavaPlugin {
 		return getConfig().getInt("regions-per-deletion");
 	}
 
-	public long getDeletionCheckInterval() {
+	public long getTicksPerDeletionCheck() {
 		return getConfig().getLong("ticks-per-deletion");
 	}
 
+	public long getMillisecondsBetweenDeletionCycles() {
+		return millisBetweenCycles;
+	}
+
 	public void attemptDeletionActivation() {
+		// TODO support Java 7?
+		deletionRunnables.entrySet().removeIf(entry -> entry.getValue().getNextRun() < System.currentTimeMillis());
+
 		for (String worldName : worlds) {
 			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName) > System.currentTimeMillis()) {
 				// Not time yet.
 				continue;
 			}
 			if (deletionRunnables.containsKey(worldName)) {
-				// Already running.
+				// Already running/ran
 				continue;
 			}
-			// TODO
+			World world = Bukkit.getWorld(worldName);
+			if (world == null) {
+				// World is not loaded.
+				continue;
+			}
+			DeletionRunnable runnable = new DeletionRunnable(this, world);
+			runnable.runTaskTimer(this, 0, getTicksPerDeletionCheck());
+			deletionRunnables.put(worldName, runnable);
 		}
 	}
 
@@ -206,9 +227,5 @@ public class Regionerator extends JavaPlugin {
 
 	public ChunkFlagger getFlagger() {
 		return chunkFlagger;
-	}
-
-	public static Regionerator getInstance() {
-		return instance;
 	}
 }

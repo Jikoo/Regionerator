@@ -17,13 +17,15 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class ChunkFlagger {
 
+	private final Regionerator plugin;
 	private final File flagsFile;
 	private final YamlConfiguration flags;
 	private final AtomicBoolean dirty, saving;
 	private final Set<String> pendingFlag, pendingUnflag;
 
-	public ChunkFlagger() {
-		flagsFile = new File(Regionerator.getInstance().getDataFolder(), "flags.yml");
+	public ChunkFlagger(Regionerator plugin) {
+		this.plugin = plugin;
+		flagsFile = new File(plugin.getDataFolder(), "flags.yml");
 		if (flagsFile.exists()) {
 			flags = YamlConfiguration.loadConfiguration(flagsFile);
 		} else {
@@ -36,7 +38,7 @@ public class ChunkFlagger {
 	}
 
 	public void flagChunk(String world, int chunkX, int chunkZ) {
-		final int radius = Regionerator.getInstance().getChunkFlagRadius();
+		final int radius = plugin.getChunkFlagRadius();
 		for (int dX = -radius; dX <= radius; dX++) {
 			for (int dZ = -radius; dZ <= radius; dZ++) {
 				flag(getChunkString(world, chunkX + dX, chunkZ + dZ), false);
@@ -46,7 +48,7 @@ public class ChunkFlagger {
 
 	private void flag(String chunkPath, boolean force) {
 		if (force || !saving.get()) {
-			flags.set(chunkPath, System.currentTimeMillis() + Regionerator.getInstance().getFlagDuration());
+			flags.set(chunkPath, System.currentTimeMillis() + plugin.getFlagDuration());
 			dirty.set(true);
 		} else {
 			pendingFlag.add(chunkPath);
@@ -71,7 +73,6 @@ public class ChunkFlagger {
 	}
 
 	public void scheduleSaving() {
-		Regionerator plugin = Regionerator.getInstance();
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -90,7 +91,7 @@ public class ChunkFlagger {
 						}
 						pendingUnflag.clear();
 					}
-				}.runTask(Regionerator.getInstance());
+				}.runTask(plugin);
 			}
 		}.runTaskTimerAsynchronously(plugin, plugin.getTicksPerFlagAutosave(), plugin.getTicksPerFlagAutosave());
 	}
@@ -113,7 +114,7 @@ public class ChunkFlagger {
 		try {
 			flags.save(flagsFile);
 		} catch (IOException e) {
-			Regionerator.getInstance().getLogger().severe("Could not save flags.yml!");
+			plugin.getLogger().severe("Could not save flags.yml!");
 			e.printStackTrace();
 		}
 	}

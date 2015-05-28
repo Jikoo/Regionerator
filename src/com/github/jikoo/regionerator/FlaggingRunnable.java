@@ -11,11 +11,16 @@ import org.bukkit.scheduler.BukkitRunnable;
  * 
  * @author Jikoo
  */
-public class MarkerRunnable extends BukkitRunnable {
+public class FlaggingRunnable extends BukkitRunnable {
+
+	private final Regionerator plugin;
+
+	public FlaggingRunnable(Regionerator plugin) {
+		this.plugin = plugin;
+	}
 
 	@Override
 	public void run() {
-		Regionerator plugin = Regionerator.getInstance();
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			if (player.getGameMode() == GameMode.SPECTATOR) {
 				// Skip spectators - if you can't touch it, you can't really visit it.
