@@ -50,17 +50,29 @@ public class DeletionRunnable extends BukkitRunnable {
 		}
 		region: for (int i = 0; i < plugin.getRegionsPerCheck() && count < regions.length; i++, count++) {
 			String regionFileName = regions[count];
+			if (plugin.debug(DebugLevel.HIGH)) {
+				plugin.debug("Checking region file #" + count + ": " + regionFileName);
+			}
 			Pair<Integer, Integer> regionCoordinates = parseRegion(regionFileName);
 			for (int chunkX = regionCoordinates.getLeft(); chunkX < regionCoordinates.getLeft() + 32; chunkX++) {
 				for (int chunkZ = regionCoordinates.getRight(); chunkZ < regionCoordinates.getRight() + 32; chunkZ++) {
 					if (world.isChunkLoaded(chunkX, chunkZ)) {
+						if (plugin.debug(DebugLevel.HIGH)) {
+							plugin.debug("Chunk at " + chunkX + "," + chunkZ + " is loaded.");
+						}
 						continue region;
 					}
 					if (plugin.getFlagger().isChunkFlagged(world.getName(), chunkX, chunkZ)) {
+						if (plugin.debug(DebugLevel.HIGH)) {
+							plugin.debug("Chunk at " + chunkX + "," + chunkZ + " is flagged.");
+						}
 						continue region;
 					}
 					for (Hook hook : plugin.getProtectionHooks()) {
 						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
+							if (plugin.debug(DebugLevel.HIGH)) {
+								plugin.debug("Chunk at " + chunkX + "," + chunkZ + " contains protections.");
+							}
 							continue region;
 						}
 					}
@@ -70,6 +82,14 @@ public class DeletionRunnable extends BukkitRunnable {
 			File regionFile = new File(regionFileFolder, regionFileName);
 			if (regionFile.exists() && regionFile.delete()) {
 				regionsDeleted++;
+				if (plugin.debug(DebugLevel.MEDIUM) || plugin.debug(DebugLevel.LOW) && count % 20 == 0) {
+					plugin.debug(regionFileName + " deleted from " + world.getName());
+				}
+				plugin.getFlagger().unflagRegion(world.getName(), regionCoordinates.getLeft(), regionCoordinates.getRight());
+			}
+
+			if (plugin.debug(DebugLevel.LOW) && count % 20 == 0) {
+				plugin.debug(world.getName() + "- Checked: " + (count + 1) + "; Deleted: " + regionsDeleted);
 			}
 		}
 	}

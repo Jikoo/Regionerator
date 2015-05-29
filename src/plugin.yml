@@ -9,3 +9,4 @@ commands:
   description: Check Regionerator's progress.
   permission: regionerator.command
   aliases: [regeninfo]
+  usage: /regionerator [pause|resume] (no arguments for a report)

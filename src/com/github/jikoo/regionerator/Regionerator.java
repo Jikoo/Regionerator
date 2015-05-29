@@ -29,15 +29,15 @@ public class Regionerator extends JavaPlugin {
 	private ChunkFlagger chunkFlagger;
 	private HashMap<String, DeletionRunnable> deletionRunnables;
 	private long millisBetweenCycles;
+	private DebugLevel debugLevel;
+	private boolean paused;
 
 	@Override
 	public void onEnable() {
-		// TODO ensure soft-reload friendly - no final variables representing config values
-		// TODO finish scheduling deletion
-		// TODO pause via command
-		// TODO reports via command
 
 		saveDefaultConfig();
+
+		paused = false;
 
 		List<String> worldList = getConfig().getStringList("worlds");
 		if (worldList.isEmpty()) {
@@ -139,25 +139,66 @@ public class Regionerator extends JavaPlugin {
 			}
 		}
 
+		try {
+			debugLevel = DebugLevel.valueOf(getConfig().getString("debug-level", "OFF").toUpperCase());
+		} catch (IllegalArgumentException e) {
+			debugLevel = DebugLevel.OFF;
+			getConfig().set("debug-level", "OFF");
+		}
+
 		if (dirtyConfig) {
 			saveConfig();
 		}
 
 		chunkFlagger = new ChunkFlagger(this);
+		chunkFlagger.scheduleSaving();
 
 		deletionRunnables = new HashMap<>();
-		attemptDeletionActivation();
+
+		new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
 	}
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		long activeAt = getConfig().getLong("delete-this-to-reset-plugin");
-		if (System.currentTimeMillis() < activeAt) {
-			sender.sendMessage("Gathering data. Regeneration will begin at " + new SimpleDateFormat("HH:mm 'on' dd/MM").format(new Date(activeAt)));
-			return true;
+
+		attemptDeletionActivation();
+
+		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' dd/MM");
+
+		if (args.length > 0) {
+			args[0] = args[0].toLowerCase();
+			if (args[0].equals("pause") || args[0].equals("stop") ) {
+				paused = true;
+				sender.sendMessage("Paused Regionerator. Use /regionerator resume to resume.");
+				return true;
+			} else if (args[0].equals("resume") || args[0].equals("unpause") || args[0].equals("start")) {
+				paused = false;
+				sender.sendMessage("Resumed Regionerator. Use /regionerator pause to pause.");
+				return true;
+			}
+			return false;
 		}
-		// TODO
-		return false;
+		for (String worldName : worlds) {
+			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
+			if (activeAt > System.currentTimeMillis()) {
+				// Not time yet.
+				sender.sendMessage(worldName + " - Gathering data, regeneration starts " + format.format(new Date(activeAt)));
+				continue;
+			}
+
+			if (deletionRunnables.containsKey(worldName)) {
+				DeletionRunnable runnable = deletionRunnables.get(worldName);
+				sender.sendMessage(runnable.getRunStats());
+				if (runnable.getNextRun() < Long.MAX_VALUE) {
+					sender.sendMessage("Cycle is finished. Next run scheduled for " + format.format(runnable.getNextRun()));
+				}
+				continue;
+			}
+
+			// Wat.
+			getLogger().severe("Deletion cycle failed to start for " + worldName + "! Please report this issue if you see any errors!");
+		}
+		return true;
 	}
 
 	@Override
@@ -197,6 +238,10 @@ public class Regionerator extends JavaPlugin {
 		// TODO support Java 7?
 		deletionRunnables.entrySet().removeIf(entry -> entry.getValue().getNextRun() < System.currentTimeMillis());
 
+		if (isPaused()) {
+			return;
+		}
+
 		for (String worldName : worlds) {
 			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName) > System.currentTimeMillis()) {
 				// Not time yet.
@@ -214,6 +259,9 @@ public class Regionerator extends JavaPlugin {
 			DeletionRunnable runnable = new DeletionRunnable(this, world);
 			runnable.runTaskTimer(this, 0, getTicksPerDeletionCheck());
 			deletionRunnables.put(worldName, runnable);
+			if (debug(DebugLevel.LOW)) {
+				debug("Deletion run scheduled for " + world.getName());
+			}
 		}
 	}
 
@@ -227,5 +275,17 @@ public class Regionerator extends JavaPlugin {
 
 	public ChunkFlagger getFlagger() {
 		return chunkFlagger;
+	}
+
+	public boolean isPaused() {
+		return paused;
+	}
+
+	public boolean debug(DebugLevel level) {
+		return debugLevel.ordinal() >= level.ordinal();
+	}
+
+	public void debug(String message) {
+		getLogger().info(message);
 	}
 }

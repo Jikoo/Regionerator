@@ -31,6 +31,7 @@ public class FlaggingRunnable extends BukkitRunnable {
 				plugin.getFlagger().flagChunk(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
 			}
 		}
+
 		plugin.attemptDeletionActivation();
 	}
 }

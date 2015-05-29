@@ -22,3 +22,9 @@ worlds:
 hooks:
   GriefPrevention: true
   WorldGuard: true
+# Debug-level enables more and more verbose logging of actions as increased.
+# OFF - no debug messages
+# LOW - Minimal debug messages, periodic deletion reports
+# MEDIUM - More debug messages. Spammy, not recommended.
+# HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
+debug-level: OFF
