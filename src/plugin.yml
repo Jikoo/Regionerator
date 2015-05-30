@@ -6,7 +6,8 @@ softdepend: [GriefPrevention, WorldGuard, Multiverse-Core]
 
 commands:
  regionerator:
-  description: Check Regionerator's progress.
-  permission: regionerator.command
   aliases: [regeninfo]
-  usage: /regionerator [pause|resume] (no arguments for a report)
+  default: op
+  description: Check Regionerator's progress, stop/start, or reload configuration.
+  permission: regionerator.command
+  usage: /regionerator [pause|resume|reload] (no arguments for a report)

@@ -48,6 +48,17 @@ public class Regionerator extends JavaPlugin {
 
 		boolean dirtyConfig = false;
 
+		try {
+			debugLevel = DebugLevel.valueOf(getConfig().getString("debug-level", "OFF").toUpperCase());
+		} catch (IllegalArgumentException e) {
+			debugLevel = DebugLevel.OFF;
+			getConfig().set("debug-level", "OFF");
+			dirtyConfig = true;
+		}
+		if (debug(DebugLevel.LOW)) {
+			debug("Debug level: " + debugLevel.name());
+		}
+
 		worlds = new ArrayList<>();
 		for (World world : Bukkit.getWorlds()) {
 			if (worldList.contains(world.getName())) {
@@ -130,6 +141,9 @@ public class Regionerator extends JavaPlugin {
 				Hook hook = (Hook) clazz.newInstance();
 				if (hook.isHookUsable()) {
 					protectionHooks.add(hook);
+					if (debug(DebugLevel.LOW)) {
+						debug("Enabled protection hook for " + pluginName);
+					}
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
@@ -137,13 +151,6 @@ public class Regionerator extends JavaPlugin {
 				getLogger().severe("Unable to enable hook for " + pluginName + "!");
 				e.printStackTrace();
 			}
-		}
-
-		try {
-			debugLevel = DebugLevel.valueOf(getConfig().getString("debug-level", "OFF").toUpperCase());
-		} catch (IllegalArgumentException e) {
-			debugLevel = DebugLevel.OFF;
-			getConfig().set("debug-level", "OFF");
 		}
 
 		if (dirtyConfig) {
@@ -156,6 +163,10 @@ public class Regionerator extends JavaPlugin {
 		deletionRunnables = new HashMap<>();
 
 		new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
+
+		if (debug(DebugLevel.LOW)) {
+			onCommand(Bukkit.getConsoleSender(), null, null, new String[0]);
+		}
 	}
 
 	@Override
@@ -165,11 +176,18 @@ public class Regionerator extends JavaPlugin {
 
 		if (args.length > 0) {
 			args[0] = args[0].toLowerCase();
+			if (args[0].equals("reload")) {
+				reloadConfig();
+				onDisable();
+				onEnable();
+				sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
+			}
 			if (args[0].equals("pause") || args[0].equals("stop") ) {
 				paused = true;
 				sender.sendMessage("Paused Regionerator. Use /regionerator resume to resume.");
 				return true;
-			} else if (args[0].equals("resume") || args[0].equals("unpause") || args[0].equals("start")) {
+			}
+			if (args[0].equals("resume") || args[0].equals("unpause") || args[0].equals("start")) {
 				paused = false;
 				sender.sendMessage("Resumed Regionerator. Use /regionerator pause to pause.");
 				return true;
@@ -203,6 +221,7 @@ public class Regionerator extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
+		getServer().getScheduler().cancelTasks(this);
 		chunkFlagger.save();
 	}
 
