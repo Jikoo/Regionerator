@@ -1,10 +1,10 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.Location;
 import org.bukkit.World;
 
 import com.github.jikoo.regionerator.Hook;
 
+import me.ryanhamshire.GriefPrevention.CreateClaimResult;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 /**
@@ -21,7 +21,13 @@ public class GriefPreventionHook extends Hook {
 	@Override
 	public boolean isChunkProtected(World world, int chunkX, int chunkZ) {
 		// TODO wait for BigScary to close http://dev.bukkit.org/bukkit-plugins/grief-prevention/tickets/910-
-		// Till then, check corner as a placeholder implementation.
-		return GriefPrevention.instance.dataStore.getClaimAt(new Location(world, chunkX << 4, 64, chunkZ << 4), true, null) != null;
+		// Till then, create an admin claim over the entire chunk
+		int x = chunkX << 4;
+		int z = chunkZ << 4;
+		CreateClaimResult result = GriefPrevention.instance.dataStore.createClaim(world, x, x + 15, 0, 255, z, z + 15, null, null, null, null);
+		if (result.succeeded) {
+			GriefPrevention.instance.dataStore.deleteClaim(result.claim);
+		}
+		return result.succeeded;
 	}
 }

@@ -163,8 +163,6 @@ public class Regionerator extends JavaPlugin {
 
 		attemptDeletionActivation();
 
-		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' dd/MM");
-
 		if (args.length > 0) {
 			args[0] = args[0].toLowerCase();
 			if (args[0].equals("pause") || args[0].equals("stop") ) {
@@ -178,6 +176,8 @@ public class Regionerator extends JavaPlugin {
 			}
 			return false;
 		}
+
+		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' dd/MM");
 		for (String worldName : worlds) {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
