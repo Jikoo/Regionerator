@@ -112,7 +112,7 @@ public class Regionerator extends JavaPlugin {
 			dirtyConfig = true;
 		}
 		// 60 seconds per minute, 20 ticks per second
-		ticksPerFlagAutosave = getConfig().getInt("seconds-per-flag") * 120L;
+		ticksPerFlagAutosave = getConfig().getInt("minutes-per-flag-autosave") * 1200L;
 
 		if (getConfig().getLong("ticks-per-deletion") < 1) {
 			getConfig().set("ticks-per-deletion", 20L);
@@ -128,7 +128,7 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("hours-between-cycles", 0);
 		}
 		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
-		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 360000L;
+		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		protectionHooks = new ArrayList<>();
 		for (String pluginName : getConfig().getConfigurationSection("hooks").getKeys(false)) {
