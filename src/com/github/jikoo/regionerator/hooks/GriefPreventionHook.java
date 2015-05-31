@@ -28,6 +28,6 @@ public class GriefPreventionHook extends Hook {
 		if (result.succeeded) {
 			GriefPrevention.instance.dataStore.deleteClaim(result.claim);
 		}
-		return result.succeeded;
+		return !result.succeeded;
 	}
 }
