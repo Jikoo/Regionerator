@@ -184,6 +184,7 @@ public class Regionerator extends JavaPlugin {
 				onDisable();
 				onEnable();
 				sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
+				return true;
 			}
 			if (args[0].equals("pause") || args[0].equals("stop") ) {
 				paused = true;
