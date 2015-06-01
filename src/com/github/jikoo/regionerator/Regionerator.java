@@ -131,10 +131,13 @@ public class Regionerator extends JavaPlugin {
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		protectionHooks = new ArrayList<>();
-		for (String pluginName : getConfig().getConfigurationSection("hooks").getKeys(false)) {
+		for (String pluginName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
+			if (!getConfig().getBoolean("hooks." + pluginName)) {
+				continue;
+			}
 			try {
 				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "Hook");
-				if (!clazz.isAssignableFrom(Hook.class)) {
+				if (!Hook.class.isAssignableFrom(clazz)) {
 					// What.
 					continue;
 				}

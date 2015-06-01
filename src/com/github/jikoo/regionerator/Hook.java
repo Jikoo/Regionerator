@@ -16,6 +16,10 @@ public abstract class Hook {
 		this.pluginName = pluginName;
 	}
 
+	public String getPluginName() {
+		return pluginName;
+	}
+
 	public boolean isHookUsable() {
 		return Bukkit.getPluginManager().isPluginEnabled(pluginName);
 	}

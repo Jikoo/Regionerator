@@ -49,13 +49,17 @@ public class DeletionRunnable extends BukkitRunnable {
 			return;
 		}
 		region: for (int i = 0; i < plugin.getRegionsPerCheck() && count < regions.length; i++, count++) {
+			if (plugin.debug(DebugLevel.LOW) && count % 20 == 0 && count > 0) {
+				plugin.debug(world.getName() + " - Checked " + count + ", deleted " + regionsDeleted);
+			}
+
 			String regionFileName = regions[count];
 			if (plugin.debug(DebugLevel.HIGH)) {
 				plugin.debug("Checking region file #" + count + ": " + regionFileName);
 			}
-			Pair<Integer, Integer> regionCoordinates = parseRegion(regionFileName);
-			for (int chunkX = regionCoordinates.getLeft(); chunkX < regionCoordinates.getLeft() + 32; chunkX++) {
-				for (int chunkZ = regionCoordinates.getRight(); chunkZ < regionCoordinates.getRight() + 32; chunkZ++) {
+			Pair<Integer, Integer> chunkCoordinates = parseRegion(regionFileName);
+			for (int chunkX = chunkCoordinates.getLeft(); chunkX < chunkCoordinates.getLeft() + 32; chunkX++) {
+				for (int chunkZ = chunkCoordinates.getRight(); chunkZ < chunkCoordinates.getRight() + 32; chunkZ++) {
 					if (world.isChunkLoaded(chunkX, chunkZ)) {
 						if (plugin.debug(DebugLevel.HIGH)) {
 							plugin.debug("Chunk at " + chunkX + "," + chunkZ + " is loaded.");
@@ -71,7 +75,7 @@ public class DeletionRunnable extends BukkitRunnable {
 					for (Hook hook : plugin.getProtectionHooks()) {
 						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 							if (plugin.debug(DebugLevel.HIGH)) {
-								plugin.debug("Chunk at " + chunkX + "," + chunkZ + " contains protections.");
+								plugin.debug("Chunk at " + chunkX + "," + chunkZ + " contains protections by " + hook.getPluginName());
 							}
 							continue region;
 						}
@@ -85,17 +89,13 @@ public class DeletionRunnable extends BukkitRunnable {
 				if (plugin.debug(DebugLevel.MEDIUM) || plugin.debug(DebugLevel.LOW) && count % 20 == 0) {
 					plugin.debug(regionFileName + " deleted from " + world.getName());
 				}
-				plugin.getFlagger().unflagRegion(world.getName(), regionCoordinates.getLeft(), regionCoordinates.getRight());
-			}
-
-			if (plugin.debug(DebugLevel.LOW) && count % 20 == 0) {
-				plugin.debug(world.getName() + "- Checked: " + (count + 1) + "; Deleted: " + regionsDeleted);
+				plugin.getFlagger().unflagRegion(world.getName(), chunkCoordinates.getLeft(), chunkCoordinates.getRight());
 			}
 		}
 	}
 
 	public String getRunStats() {
-		return new StringBuilder(world.getName()).append(" - Checked: ").append(count).append("; Deleted: ").append(regionsDeleted).toString();
+		return new StringBuilder(world.getName()).append(" - Checked ").append(count).append(", deleted ").append(regionsDeleted).toString();
 	}
 
 	public long getNextRun() {
@@ -104,6 +104,6 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	private Pair<Integer, Integer> parseRegion(String regionFile) {
 		String[] split = regionFile.split("\\.");
-		return new ImmutablePair<Integer, Integer>(Integer.parseInt(split[1]), Integer.parseInt(split[2]));
+		return new ImmutablePair<Integer, Integer>(Integer.parseInt(split[1]) << 5, Integer.parseInt(split[2]) << 5);
 	}
 }

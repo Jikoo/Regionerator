@@ -20,8 +20,8 @@ public class GriefPreventionHook extends Hook {
 
 	@Override
 	public boolean isChunkProtected(World world, int chunkX, int chunkZ) {
-		// TODO wait for BigScary to close http://dev.bukkit.org/bukkit-plugins/grief-prevention/tickets/910-
-		// Till then, create an admin claim over the entire chunk
+		// FUTURE http://dev.bukkit.org/bukkit-plugins/grief-prevention/tickets/910-
+		// Creating an admin claim over the entire chunk is nearly as effective as just checking the chunk claims.
 		int x = chunkX << 4;
 		int z = chunkZ << 4;
 		CreateClaimResult result = GriefPrevention.instance.dataStore.createClaim(world, x, x + 15, 0, 255, z, z + 15, null, null, null, null);
