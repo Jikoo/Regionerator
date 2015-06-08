@@ -27,10 +27,18 @@ public class DeletionRunnable extends BukkitRunnable {
 	public DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
 		this.world = world;
-		regionFileFolder = new File(world.getWorldFolder(), "region");
-		if (!regionFileFolder.exists()) {
-			throw new RuntimeException("World " + world.getName() + " has no generated terrain!");
+		File folder = new File(world.getWorldFolder(), "region");
+		// TODO perhaps a less rigid scan?
+		if (!folder.exists()) {
+			folder = new File(world.getWorldFolder(), "DIM-1/region");
+			if (!folder.exists()) {
+				folder = new File(world.getWorldFolder(), "DIM1/region");
+				if (!folder.exists()) {
+					throw new RuntimeException("World " + world.getName() + " has no generated terrain!");
+				}
+			}
 		}
+		regionFileFolder = folder;
 		regions = regionFileFolder.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {

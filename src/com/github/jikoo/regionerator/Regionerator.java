@@ -279,7 +279,15 @@ public class Regionerator extends JavaPlugin {
 				// World is not loaded.
 				continue;
 			}
-			DeletionRunnable runnable = new DeletionRunnable(this, world);
+			DeletionRunnable runnable;
+			try {
+				runnable = new DeletionRunnable(this, world);
+			} catch (RuntimeException e) {
+				if (debug(DebugLevel.HIGH)) {
+					debug(e.getMessage());
+				}
+				continue;
+			}
 			runnable.runTaskTimer(this, 0, getTicksPerDeletionCheck());
 			deletionRunnables.put(worldName, runnable);
 			if (debug(DebugLevel.LOW)) {
