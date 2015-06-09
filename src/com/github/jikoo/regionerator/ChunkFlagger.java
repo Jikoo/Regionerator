@@ -56,6 +56,8 @@ public class ChunkFlagger {
 	}
 
 	public void unflagRegion(String world, int regionX, int regionZ) {
+		regionX = regionX << 5;
+		regionZ = regionZ << 5;
 		for (int chunkX = regionX; chunkX < regionX + 32; chunkX++) {
 			for (int chunkZ = regionZ; chunkZ < regionZ + 32; chunkZ++) {
 				unflagChunk(world, chunkX, chunkZ);
