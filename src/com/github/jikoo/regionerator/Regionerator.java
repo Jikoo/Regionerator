@@ -167,6 +167,8 @@ public class Regionerator extends JavaPlugin {
 
 		new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
 
+		getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
+
 		if (debug(DebugLevel.LOW)) {
 			onCommand(Bukkit.getConsoleSender(), null, null, new String[0]);
 		}

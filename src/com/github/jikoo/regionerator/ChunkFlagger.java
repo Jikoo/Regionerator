@@ -38,7 +38,10 @@ public class ChunkFlagger {
 	}
 
 	public void flagChunk(String world, int chunkX, int chunkZ) {
-		final int radius = plugin.getChunkFlagRadius();
+		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius());
+	}
+
+	public void flagChunk(String world, int chunkX, int chunkZ, int radius) {
 		for (int dX = -radius; dX <= radius; dX++) {
 			for (int dZ = -radius; dZ <= radius; dZ++) {
 				flag(getChunkString(world, chunkX + dX, chunkZ + dZ), false);
