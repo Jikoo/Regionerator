@@ -79,7 +79,7 @@ public class DeletionRunnable extends BukkitRunnable {
 					// FUTURE potentially allow chunk deletion
 				}
 			}
-			if (visitStatus == VisitStatus.GENERATED && plugin.getChunkGenerationFlag() == Long.MAX_VALUE) {
+			if (visitStatus == VisitStatus.GENERATED && plugin.getGenerateFlag() == Long.MAX_VALUE) {
 				continue;
 			}
 			File regionFile = new File(regionFileFolder, regionFileName);

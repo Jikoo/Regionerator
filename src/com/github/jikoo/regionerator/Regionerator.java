@@ -231,13 +231,12 @@ public class Regionerator extends JavaPlugin {
 		chunkFlagger.save();
 	}
 
-	public long getFlagDuration() {
-		return flagDuration;
+	public long getVisitFlag() {
+		return flagDuration + System.currentTimeMillis();
 	}
 
-	public long getChunkGenerationFlag() {
-		return getConfig().getBoolean("delete-new-unvisited-chunks")
-				? getFlagDuration() + System.currentTimeMillis() : Long.MAX_VALUE;
+	public long getGenerateFlag() {
+		return getConfig().getBoolean("delete-new-unvisited-chunks") ? getVisitFlag() : Long.MAX_VALUE;
 	}
 
 	public int getChunkFlagRadius() {

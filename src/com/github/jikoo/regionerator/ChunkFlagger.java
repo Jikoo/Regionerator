@@ -39,8 +39,7 @@ public class ChunkFlagger {
 	}
 
 	public void flagChunk(String world, int chunkX, int chunkZ) {
-		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius(),
-				System.currentTimeMillis() + plugin.getFlagDuration());
+		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius(), plugin.getVisitFlag());
 	}
 
 	public void flagChunk(String world, int chunkX, int chunkZ, int radius, long flagTil) {
@@ -52,7 +51,7 @@ public class ChunkFlagger {
 	}
 
 	private void flag(String chunkPath, boolean force) {
-		flag(chunkPath, System.currentTimeMillis() + plugin.getFlagDuration(), force);
+		flag(chunkPath, plugin.getVisitFlag(), force);
 	}
 
 	private void flag(String chunkPath, long flagTil, boolean force) {
