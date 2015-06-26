@@ -6,6 +6,9 @@ seconds-per-flag: 10
 minutes-per-flag-autosave: 5
 # Flags older than x days can be ignored and the region deleted.
 days-till-flag-expires: 7
+# Chunks generated after the plugin is installed are automatically flagged.
+# If true, these chunks will be permanently flagged until visited.
+delete-new-unvisited-chunks: false
 # Time in between deleting regions in ticks (20 ticks = 1 second)
 ticks-per-deletion: 20
 # Regions checked for deletion per interval

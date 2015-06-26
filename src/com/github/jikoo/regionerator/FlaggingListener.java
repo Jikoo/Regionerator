@@ -30,7 +30,7 @@ public class FlaggingListener implements Listener {
 	 */
 	@EventHandler
 	public void onChunkPopulate(ChunkPopulateEvent event) {
-		// Flag only this chunk
-		plugin.getFlagger().flagChunk(event.getWorld().getName(), event.getChunk().getX(), event.getChunk().getZ(), 0);
+		plugin.getFlagger().flagChunk(event.getWorld().getName(), event.getChunk().getX(),
+				event.getChunk().getZ(), 0, plugin.getChunkGenerationFlagDuration());
 	}
 }

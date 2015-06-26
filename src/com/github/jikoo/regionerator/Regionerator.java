@@ -235,6 +235,10 @@ public class Regionerator extends JavaPlugin {
 		return flagDuration;
 	}
 
+	public long getChunkGenerationFlagDuration() {
+		return getConfig().getBoolean("delete-new-unvisited-chunks") ? getFlagDuration() : Long.MAX_VALUE;
+	}
+
 	public int getChunkFlagRadius() {
 		return getConfig().getInt("chunk-flag-radius");
 	}

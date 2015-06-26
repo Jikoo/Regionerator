@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -38,20 +39,25 @@ public class ChunkFlagger {
 	}
 
 	public void flagChunk(String world, int chunkX, int chunkZ) {
-		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius());
+		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius(),
+				System.currentTimeMillis() + plugin.getFlagDuration());
 	}
 
-	public void flagChunk(String world, int chunkX, int chunkZ, int radius) {
+	public void flagChunk(String world, int chunkX, int chunkZ, int radius, long flagTil) {
 		for (int dX = -radius; dX <= radius; dX++) {
 			for (int dZ = -radius; dZ <= radius; dZ++) {
-				flag(getChunkString(world, chunkX + dX, chunkZ + dZ), false);
+				flag(getChunkString(world, chunkX + dX, chunkZ + dZ), flagTil, false);
 			}
 		}
 	}
 
 	private void flag(String chunkPath, boolean force) {
+		flag(chunkPath, System.currentTimeMillis() + plugin.getFlagDuration(), force);
+	}
+
+	private void flag(String chunkPath, long flagTil, boolean force) {
 		if (force || !saving.get()) {
-			flags.set(chunkPath, System.currentTimeMillis() + plugin.getFlagDuration());
+			flags.set(chunkPath, flagTil);
 			dirty.set(true);
 		} else {
 			pendingFlag.add(chunkPath);
@@ -128,8 +134,36 @@ public class ChunkFlagger {
 		}
 	}
 
-	public boolean isChunkFlagged(String world, int chunkX, int chunkZ) {
-		return flags.getLong(getChunkString(world, chunkX, chunkZ)) > System.currentTimeMillis();
+	public VisitStatus getChunkVisitStatus(World world, int chunkX, int chunkZ) {
+		String chunkString = getChunkString(world.getName(), chunkX, chunkZ);
+		if (world.isChunkLoaded(chunkX, chunkZ)) {
+			if (plugin.debug(DebugLevel.HIGH)) {
+				plugin.debug("Chunk " + chunkString + " is loaded.");
+			}
+			return VisitStatus.LOADED;
+		}
+		long visit = flags.getLong(chunkString, -1);
+		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
+			if (plugin.debug(DebugLevel.HIGH)) {
+				plugin.debug("Chunk " + chunkString + " is flagged.");
+			}
+			return VisitStatus.VISITED;
+		}
+		for (Hook hook : plugin.getProtectionHooks()) {
+			if (hook.isChunkProtected(world, chunkX, chunkZ)) {
+				if (plugin.debug(DebugLevel.HIGH)) {
+					plugin.debug("Chunk " + chunkString + " contains protections by " + hook.getPluginName());
+				}
+				return VisitStatus.PROTECTED;
+			}
+		}
+		if (visit == Long.MAX_VALUE) {
+			if (plugin.debug(DebugLevel.HIGH)) {
+				plugin.debug("Chunk " + chunkString + " has not been visited since it was generated.");
+			}
+			return VisitStatus.GENERATED;
+		}
+		return VisitStatus.UNKNOWN;
 	}
 
 	private String getChunkString(String world, int chunkX, int chunkZ) {

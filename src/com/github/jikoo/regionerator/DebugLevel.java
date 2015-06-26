@@ -6,5 +6,10 @@ package com.github.jikoo.regionerator;
  * @author Jikoo
  */
 public enum DebugLevel {
-	OFF, LOW, MEDIUM, HIGH;
+
+	OFF,
+	LOW,
+	MEDIUM,
+	HIGH;
+
 }

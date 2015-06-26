@@ -68,25 +68,9 @@ public class DeletionRunnable extends BukkitRunnable {
 			Pair<Integer, Integer> chunkCoordinates = parseRegion(regionFileName);
 			for (int chunkX = chunkCoordinates.getLeft(); chunkX < chunkCoordinates.getLeft() + 32; chunkX++) {
 				for (int chunkZ = chunkCoordinates.getRight(); chunkZ < chunkCoordinates.getRight() + 32; chunkZ++) {
-					if (world.isChunkLoaded(chunkX, chunkZ)) {
-						if (plugin.debug(DebugLevel.HIGH)) {
-							plugin.debug("Chunk at " + chunkX + "," + chunkZ + " is loaded.");
-						}
+					VisitStatus status = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ);
+					if (status.ordinal() > VisitStatus.GENERATED.ordinal()) {
 						continue region;
-					}
-					if (plugin.getFlagger().isChunkFlagged(world.getName(), chunkX, chunkZ)) {
-						if (plugin.debug(DebugLevel.HIGH)) {
-							plugin.debug("Chunk at " + chunkX + "," + chunkZ + " is flagged.");
-						}
-						continue region;
-					}
-					for (Hook hook : plugin.getProtectionHooks()) {
-						if (hook.isChunkProtected(world, chunkX, chunkZ)) {
-							if (plugin.debug(DebugLevel.HIGH)) {
-								plugin.debug("Chunk at " + chunkX + "," + chunkZ + " contains protections by " + hook.getPluginName());
-							}
-							continue region;
-						}
 					}
 					// FUTURE potentially allow chunk deletion
 				}
