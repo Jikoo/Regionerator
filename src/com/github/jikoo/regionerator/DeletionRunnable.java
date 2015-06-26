@@ -66,14 +66,21 @@ public class DeletionRunnable extends BukkitRunnable {
 				plugin.debug("Checking region file #" + count + ": " + regionFileName);
 			}
 			Pair<Integer, Integer> chunkCoordinates = parseRegion(regionFileName);
+			VisitStatus visitStatus = VisitStatus.PROTECTED;
 			for (int chunkX = chunkCoordinates.getLeft(); chunkX < chunkCoordinates.getLeft() + 32; chunkX++) {
 				for (int chunkZ = chunkCoordinates.getRight(); chunkZ < chunkCoordinates.getRight() + 32; chunkZ++) {
 					VisitStatus status = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ);
 					if (status.ordinal() > VisitStatus.GENERATED.ordinal()) {
 						continue region;
 					}
+					if (status.ordinal() < visitStatus.ordinal()) {
+						visitStatus = status;
+					}
 					// FUTURE potentially allow chunk deletion
 				}
+			}
+			if (visitStatus == VisitStatus.GENERATED && plugin.getChunkGenerationFlag() == Long.MAX_VALUE) {
+				continue;
 			}
 			File regionFile = new File(regionFileFolder, regionFileName);
 			if (regionFile.exists() && regionFile.delete()) {
