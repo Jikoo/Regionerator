@@ -85,7 +85,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			File regionFile = new File(regionFileFolder, regionFileName);
 			if (regionFile.exists() && regionFile.delete()) {
 				regionsDeleted++;
-				if (plugin.debug(DebugLevel.MEDIUM) || plugin.debug(DebugLevel.LOW) && count % 20 == 0) {
+				if (plugin.debug(DebugLevel.MEDIUM)) {
 					plugin.debug(regionFileName + " deleted from " + world.getName());
 				}
 				plugin.getFlagger().unflagRegion(world.getName(), chunkCoordinates.getLeft(), chunkCoordinates.getRight());
