@@ -135,12 +135,6 @@ public class ChunkFlagger {
 
 	public VisitStatus getChunkVisitStatus(World world, int chunkX, int chunkZ) {
 		String chunkString = getChunkString(world.getName(), chunkX, chunkZ);
-		if (world.isChunkLoaded(chunkX, chunkZ)) {
-			if (plugin.debug(DebugLevel.HIGH)) {
-				plugin.debug("Chunk " + chunkString + " is loaded.");
-			}
-			return VisitStatus.LOADED;
-		}
 		long visit = flags.getLong(chunkString, -1);
 		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
 			if (plugin.debug(DebugLevel.HIGH)) {

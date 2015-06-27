@@ -119,8 +119,8 @@ public class Regionerator extends JavaPlugin {
 			dirtyConfig = true;
 		}
 
-		if (getConfig().getInt("regions-per-deletion") < 1) {
-			getConfig().set("regions-per-deletion", 1);
+		if (getConfig().getInt("chunks-per-deletion") < 1) {
+			getConfig().set("chunks-per-deletion", 20);
 			dirtyConfig = true;
 		}
 
@@ -251,8 +251,8 @@ public class Regionerator extends JavaPlugin {
 		return ticksPerFlagAutosave;
 	}
 
-	public int getRegionsPerCheck() {
-		return getConfig().getInt("regions-per-deletion");
+	public int getChunksPerCheck() {
+		return getConfig().getInt("chunks-per-deletion");
 	}
 
 	public long getTicksPerDeletionCheck() {

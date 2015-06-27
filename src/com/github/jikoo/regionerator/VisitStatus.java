@@ -10,7 +10,6 @@ public enum VisitStatus {
 	UNKNOWN,
 	UNVISITED,
 	GENERATED,
-	LOADED,
 	VISITED,
 	PROTECTED;
 
