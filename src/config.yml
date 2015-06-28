@@ -7,12 +7,14 @@ minutes-per-flag-autosave: 5
 # Flags older than x days can be ignored and the region deleted.
 days-till-flag-expires: 7
 # Chunks generated after the plugin is installed are automatically flagged.
-# If true, these chunks will be permanently flagged until visited.
+# If false, these chunks will be permanently flagged until visited.
+# Setting this value to false will allow you to pre-generate your maps for reduced load from exploration.
+# It will also reduce the amount of time wasted deleting untouched areas.
 delete-new-unvisited-chunks: false
 # Time in between deleting regions in ticks (20 ticks = 1 second)
-ticks-per-deletion: 20
-# Regions checked for deletion per interval
-regions-per-deletion: 1
+ticks-per-deletion: 10
+# Chunks checked for deletion per interval. Default (128) handles an entire region every 8 intervals.
+chunks-per-deletion: 128
 # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 hours-between-cycles: 12
 # Worlds the plugin is able to delete regions in
