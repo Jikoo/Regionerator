@@ -140,6 +140,9 @@ public class DeletionRunnable extends BukkitRunnable {
 				try (RandomAccessFile regionRandomAccess = new RandomAccessFile(regionFile, "rwd")) {
 					int chunkCount = 0;
 					for (Pair<Integer, Integer> chunkCoords : regionChunks) {
+						// Chunk is delete-eligible even if deletion fails, no need to wait to remove data
+						plugin.getFlagger().unflagChunk(world.getName(), chunkCoords.getLeft(), chunkCoords.getRight());
+
 						// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
 						long chunkPointer = 4 * (chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32);
 
