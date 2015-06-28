@@ -70,13 +70,18 @@ public class DeletionRunnable extends BukkitRunnable {
 			this.cancel();
 			return;
 		}
+		if (plugin.isPaused() && dX == 0 && dZ == 0) {
+			return;
+		}
 		for (int i = 0; i < plugin.getChunksPerCheck() && count < regions.length; i++) {
-
 			checkNextChunk();
 		}
 	}
 
 	private void checkNextChunk() {
+		if (plugin.isPaused() && dX == 0 && dZ == 0) {
+			return;
+		}
 		if (count >= regions.length) {
 			return;
 		}
@@ -86,6 +91,9 @@ public class DeletionRunnable extends BukkitRunnable {
 		}
 		if (dZ >= 32) {
 			handleRegionCompletion();
+			if (plugin.isPaused()) {
+				return;
+			}
 		}
 		int chunkX = regionChunkX + dX;
 		int chunkZ = regionChunkZ + dZ;
@@ -135,6 +143,12 @@ public class DeletionRunnable extends BukkitRunnable {
 						// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
 						long chunkPointer = 4 * (chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32);
 
+						if (plugin.debug(DebugLevel.HIGH)) {
+							plugin.debug(String.format("Wiping chunk %s, %s from %s in %s",
+									chunkCoords.getLeft(), chunkCoords.getRight(), chunkPointer,
+									regionFileName));
+						}
+
 						regionRandomAccess.seek(chunkPointer);
 
 						/*
@@ -182,8 +196,8 @@ public class DeletionRunnable extends BukkitRunnable {
 			regionChunkZ = regionChunkCoordinates.getRight();
 
 			if (plugin.debug(DebugLevel.HIGH)) {
-				plugin.debug("Checking region " + count + " of " + regions.length + ": " + regions[count]);
-				// TODO count/total
+				plugin.debug(String.format("Checking %s:%s (%s/%s)", world.getName(),
+						regions[count], count, regions.length));
 			}
 		} else {
 			return;
