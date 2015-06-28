@@ -4,7 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -228,7 +230,9 @@ public class Regionerator extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
-		chunkFlagger.save();
+		if (chunkFlagger != null) {
+			chunkFlagger.save();
+		}
 	}
 
 	public long getVisitFlag() {
@@ -264,8 +268,12 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public void attemptDeletionActivation() {
-		// TODO support Java 7?
-		deletionRunnables.entrySet().removeIf(entry -> entry.getValue().getNextRun() < System.currentTimeMillis());
+		Iterator<Entry<String, DeletionRunnable>> iterator = deletionRunnables.entrySet().iterator();
+		while (iterator.hasNext()) {
+			if (iterator.next().getValue().getNextRun() < System.currentTimeMillis()) {
+				iterator.remove();
+			}
+		}
 
 		if (isPaused()) {
 			return;

@@ -98,9 +98,8 @@ public class DeletionRunnable extends BukkitRunnable {
 		int chunkX = regionChunkX + dX;
 		int chunkZ = regionChunkZ + dZ;
 		VisitStatus status = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ);
-		if (status.ordinal() <= VisitStatus.UNVISITED.ordinal()
-				|| plugin.getGenerateFlag() == Long.MAX_VALUE
-				&& status.ordinal() <= VisitStatus.UNVISITED.ordinal()) {
+		if (status.ordinal() < VisitStatus.GENERATED.ordinal()
+				|| (plugin.getGenerateFlag() != Long.MAX_VALUE && status == VisitStatus.GENERATED)) {
 			// Add generated flagged chunks
 			// Deleting an entire region is much faster (and more space-efficient) than deleting chunks
 			regionChunks.add(new ImmutablePair<Integer, Integer>(chunkX, chunkZ));
@@ -146,12 +145,6 @@ public class DeletionRunnable extends BukkitRunnable {
 						// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
 						long chunkPointer = 4 * (chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32);
 
-						if (plugin.debug(DebugLevel.HIGH)) {
-							plugin.debug(String.format("Wiping chunk %s, %s from %s in %s",
-									chunkCoords.getLeft(), chunkCoords.getRight(), chunkPointer,
-									regionFileName));
-						}
-
 						regionRandomAccess.seek(chunkPointer);
 
 						/*
@@ -167,6 +160,12 @@ public class DeletionRunnable extends BukkitRunnable {
 						// Seek back to the right position - reading the int moved us forward 4 bytes
 						regionRandomAccess.seek(chunkPointer);
 
+						if (plugin.debug(DebugLevel.HIGH)) {
+							plugin.debug(String.format("Wiping chunk %s, %s from %s in %s of %s",
+									chunkCoords.getLeft(), chunkCoords.getRight(), chunkPointer,
+									regionFileName, world.getName()));
+						}
+
 						/*
 						 * Note from @Brettflan: This method isn't perfect since the actual chunk
 						 * data is left orphaned, but Minecraft will overwrite the orphaned data
@@ -179,6 +178,10 @@ public class DeletionRunnable extends BukkitRunnable {
 					regionRandomAccess.close();
 					chunksDeleted += chunkCount;
 
+					if (plugin.debug(DebugLevel.MEDIUM)) {
+						plugin.debug(String.format("%s chunks deleted from %s of %s", chunkCount, regionFileName, world.getName()));
+					}
+
 				} catch (IOException ex) {}
 			}
 		}
@@ -188,13 +191,12 @@ public class DeletionRunnable extends BukkitRunnable {
 		count++;
 		if (plugin.debug(DebugLevel.LOW) && count % 20 == 0 && count > 0) {
 			plugin.debug(getRunStats());
-			// TODO count/total
 		}
 		if (count < regions.length) {
 			dX = 0;
 			dZ = 0;
 			regionChunks.clear();
-			Pair<Integer, Integer> regionChunkCoordinates = parseRegion(regions[0]);
+			Pair<Integer, Integer> regionChunkCoordinates = parseRegion(regions[count]);
 			regionChunkX = regionChunkCoordinates.getLeft();
 			regionChunkZ = regionChunkCoordinates.getRight();
 
