@@ -178,7 +178,7 @@ public class DeletionRunnable extends BukkitRunnable {
 					regionRandomAccess.close();
 					chunksDeleted += chunkCount;
 
-					if (plugin.debug(DebugLevel.MEDIUM)) {
+					if (plugin.debug(DebugLevel.MEDIUM) && chunksDeleted > 0) {
 						plugin.debug(String.format("%s chunks deleted from %s of %s", chunkCount, regionFileName, world.getName()));
 					}
 
