@@ -13,8 +13,8 @@ days-till-flag-expires: 7
 delete-new-unvisited-chunks: false
 # Time in between deleting regions in ticks (20 ticks = 1 second)
 ticks-per-deletion: 10
-# Chunks checked for deletion per interval. Default (128) handles an entire region every 8 intervals.
-chunks-per-deletion: 128
+# Chunks checked for deletion per interval. Default (64) handles an entire region every 16 intervals.
+chunks-per-deletion: 64
 # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 hours-between-cycles: 12
 # Worlds the plugin is able to delete regions in
