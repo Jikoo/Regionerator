@@ -41,7 +41,6 @@ public class DeletionRunnable extends BukkitRunnable {
 		this.plugin = plugin;
 		this.world = world;
 		File folder = new File(world.getWorldFolder(), "region");
-		// TODO perhaps a less rigid scan?
 		if (!folder.exists()) {
 			folder = new File(world.getWorldFolder(), "DIM-1/region");
 			if (!folder.exists()) {

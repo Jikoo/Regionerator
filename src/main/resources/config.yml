@@ -29,6 +29,9 @@
 # # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 # hours-between-cycles: 12
 # 
+# # Allow deletion cycles for separate worlds to run simultaneously
+# allow-concurrent-cycles: false
+# 
 # # Worlds the plugin is able to delete regions in
 # # If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
 # worlds:
@@ -77,11 +80,12 @@ chunks-per-deletion: 128
 # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 hours-between-cycles: 12
 
+# Allow deletion cycles for separate worlds to run simultaneously
+allow-concurrent-cycles: false
+
 # Worlds the plugin is able to delete regions in
 # If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
-worlds:
-- MySurvivalWorld1
-- MySurvivalWorld1_nether
+worlds: []
 
 # Plugins to attempt to check for protections from.
 # If your protection plugin of choice isn't here, ask!

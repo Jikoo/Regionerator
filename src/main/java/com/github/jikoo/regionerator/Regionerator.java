@@ -286,6 +286,11 @@ public class Regionerator extends JavaPlugin {
 			}
 			if (deletionRunnables.containsKey(worldName)) {
 				// Already running/ran
+				if (!getConfig().getBoolean("allow-concurrent-cycles")
+						&& deletionRunnables.get(worldName).getNextRun() == Long.MAX_VALUE) {
+					// Concurrent runs aren't allowed, we've got one going. Quit out.
+					return;
+				}
 				continue;
 			}
 			World world = Bukkit.getWorld(worldName);
@@ -306,6 +311,9 @@ public class Regionerator extends JavaPlugin {
 			deletionRunnables.put(worldName, runnable);
 			if (debug(DebugLevel.LOW)) {
 				debug("Deletion run scheduled for " + world.getName());
+			}
+			if (!getConfig().getBoolean("allow-concurrent-cycles")) {
+				return;
 			}
 		}
 	}
