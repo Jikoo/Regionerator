@@ -26,6 +26,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final World world;
 	private final File regionFileFolder;
 	private final String[] regions;
+	private final int chunksPerCheck;
 	private int count = -1;
 	private int regionChunkX;
 	private int regionChunkZ;
@@ -59,6 +60,8 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 		});
 
+		chunksPerCheck = plugin.getChunksPerCheck();
+
 		handleRegionCompletion();
 	}
 
@@ -73,8 +76,22 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (plugin.isPaused() && dX == 0 && dZ == 0) {
 			return;
 		}
-		for (int i = 0; i < plugin.getChunksPerCheck() && count < regions.length; i++) {
+		for (int i = 0; i < chunksPerCheck && count < regions.length; i++) {
+			/*
+			 * Deletion is, by far, the worst offender for lag. It has to be done on the main thread
+			 * or we may risk corruption, so to combat any issues we'll dedicate an entire run cycle
+			 * to deletion unless the user has configured the plugin to check more than an entire
+			 * region per run.
+			 */
+			if (chunksPerCheck <= 1024 && i > 0 && dZ >= 32) {
+				// Deletion next check
+				return;
+			}
 			checkNextChunk();
+			if (chunksPerCheck <= 1024 && dX == 0 && dZ == 0) {
+				// Deletion this check
+				return;
+			}
 		}
 	}
 
@@ -91,7 +108,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		}
 		if (dZ >= 32) {
 			handleRegionCompletion();
-			if (plugin.isPaused()) {
+			if (plugin.isPaused() || chunksPerCheck <= 1024) {
 				return;
 			}
 		}
