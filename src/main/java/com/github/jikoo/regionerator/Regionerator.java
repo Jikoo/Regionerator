@@ -204,6 +204,8 @@ public class Regionerator extends JavaPlugin {
 		}
 
 		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' dd/MM");
+
+		boolean running = false;
 		for (String worldName : worlds) {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
@@ -217,12 +219,20 @@ public class Regionerator extends JavaPlugin {
 				sender.sendMessage(runnable.getRunStats());
 				if (runnable.getNextRun() < Long.MAX_VALUE) {
 					sender.sendMessage("Cycle is finished. Next run scheduled for " + format.format(runnable.getNextRun()));
+				} else if (!getConfig().getBoolean("allow-concurrent-cycles")) {
+					running = true;
 				}
 				continue;
 			}
 
-			// Wat.
-			getLogger().severe("Deletion cycle failed to start for " + worldName + "! Please report this issue if you see any errors!");
+			if (running && !getConfig().getBoolean("allow-concurrent-cycles")) {
+				sender.sendMessage("Cycle for " + worldName + " is ready to start.");
+				continue;
+			}
+
+			if (!running) {
+				getLogger().severe("Deletion cycle failed to start for " + worldName + "! Please report this issue if you see any errors!");
+			}
 		}
 		return true;
 	}
