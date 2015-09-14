@@ -43,6 +43,7 @@
 # hooks:
 #   Factions: true
 #   GriefPrevention: true
+#   Towny: true
 #   WorldGuard: true
 # 
 # # Debug-level enables more and more verbose logging of actions as increased.
@@ -93,6 +94,7 @@ worlds: []
 hooks:
   Factions: true
   GriefPrevention: true
+  Towny: true
   WorldGuard: true
 
 # Debug-level enables more and more verbose logging of actions as increased.

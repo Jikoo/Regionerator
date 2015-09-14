@@ -50,6 +50,13 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/MassiveCore.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>com.palmergames</groupId>
+      <artifactId>Towny</artifactId>
+      <version>0.89.2.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/Towny.jar</systemPath>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
