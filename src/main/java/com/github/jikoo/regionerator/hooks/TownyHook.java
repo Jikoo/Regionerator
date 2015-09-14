@@ -4,7 +4,6 @@ import org.bukkit.World;
 
 import com.github.jikoo.regionerator.Hook;
 
-import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
@@ -23,7 +22,7 @@ public class TownyHook extends Hook {
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		try {
 			return new WorldCoord(chunkWorld.getName(), Coord.parseCoord(chunkX << 4, chunkZ << 4)).getTownBlock().hasTown();
-		} catch (NotRegisteredException e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
