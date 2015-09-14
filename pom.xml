@@ -36,6 +36,20 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/GriefPrevention.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>com.massivecraft</groupId>
+      <artifactId>Factions</artifactId>
+      <version>2.8.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/Factions.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.massivecraft</groupId>
+      <artifactId>MassiveCore</artifactId>
+      <version>2.8.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/MassiveCore.jar</systemPath>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
