@@ -26,10 +26,15 @@
 # # If this value is 1024 or lower (1 or fewer regions per cycle) an entire run cycle is dedicated to deletion to prevent lag.
 # chunks-per-deletion: 128
 # 
+# # Chunks deleted per chunk wipe cycle. This is the main source of lag caused by the plugin.
+# # Reduce this and chunks-per-deletion if you are experiencing spikes.
+# chunks-per-wipe-cycle: 129
+# 
 # # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 # hours-between-cycles: 12
 # 
 # # Allow deletion cycles for separate worlds to run simultaneously
+# # Only enable this option if your server hardware is quite good.
 # allow-concurrent-cycles: false
 # 
 # # Worlds the plugin is able to delete regions in
@@ -79,10 +84,15 @@ ticks-per-deletion: 5
 # If this value is 1024 or lower (1 or fewer regions per cycle) an entire run cycle is dedicated to deletion to prevent lag.
 chunks-per-deletion: 128
 
+# Chunks deleted per chunk wipe cycle. This is the main source of lag caused by the plugin.
+# Reduce this and chunks-per-deletion if you are experiencing spikes.
+chunks-per-wipe-cycle: 129
+
 # Hours between deletion cycles (cycles all reset on plugin reload/server restart)
 hours-between-cycles: 12
 
-# Allow deletion cycles for separate worlds to run simultaneously
+# Allow deletion cycles for separate worlds to run simultaneously.
+# Only enable this option if your server hardware is quite good.
 allow-concurrent-cycles: false
 
 # Worlds the plugin is able to delete regions in

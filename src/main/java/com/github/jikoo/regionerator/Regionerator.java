@@ -126,8 +126,15 @@ public class Regionerator extends JavaPlugin {
 			dirtyConfig = true;
 		}
 
+		if (getConfig().getInt("chunks-per-wipe-cycle") * 5L < getChunksPerDeletionCheck() * getTicksPerDeletionCheck()) {
+			// Don't allow chunk deletion runnables to build up - delete as many chunks as required to keep up with checks
+			getConfig().set("chunks-per-wipe-cycle", getChunksPerDeletionCheck() * getTicksPerDeletionCheck() / 5 + 1);
+			dirtyConfig = true;
+		}
+
 		if (getConfig().getInt("hours-between-cycles") < 0) {
 			getConfig().set("hours-between-cycles", 0);
+			dirtyConfig = true;
 		}
 		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
@@ -159,6 +166,7 @@ public class Regionerator extends JavaPlugin {
 		}
 
 		if (dirtyConfig) {
+			getConfig().options().copyHeader(true);
 			saveConfig();
 		}
 
@@ -265,12 +273,16 @@ public class Regionerator extends JavaPlugin {
 		return ticksPerFlagAutosave;
 	}
 
-	public int getChunksPerCheck() {
+	public int getChunksPerDeletionCheck() {
 		return getConfig().getInt("chunks-per-deletion");
 	}
 
 	public long getTicksPerDeletionCheck() {
 		return getConfig().getLong("ticks-per-deletion");
+	}
+
+	public int getChunksPerWipeCycle() {
+		return getConfig().getInt("chunks-per-wipe-cycle");
 	}
 
 	public long getMillisecondsBetweenDeletionCycles() {
