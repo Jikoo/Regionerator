@@ -48,6 +48,7 @@
 # hooks:
 #   Factions: true
 #   GriefPrevention: true
+#   Landlord: true
 #   Towny: true
 #   WorldGuard: true
 # 
@@ -104,6 +105,7 @@ worlds: []
 hooks:
   Factions: true
   GriefPrevention: true
+  Landlord: true
   Towny: true
   WorldGuard: true
 
