@@ -2,14 +2,18 @@ package com.github.jikoo.regionerator;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
 
 /**
  * BukkitRunnable for looping through all region files of a given World and deleting them if they are inactive.
@@ -123,10 +127,10 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	private void handleRegionCompletion() {
-		Iterator<Pair<Integer, Integer>> iterator = regionChunks.iterator();
+		ListIterator<Pair<Integer, Integer>> iterator = regionChunks.listIterator();
 		while (iterator.hasNext()) {
-			Pair<Integer, Integer> chunk = iterator.next();
-			if (world.isChunkLoaded(chunk.getLeft(), chunk.getRight())) {
+			Pair<Integer, Integer> chunkCoords = iterator.next();
+			if (world.isChunkLoaded(chunkCoords.getLeft(), chunkCoords.getRight())) {
 				iterator.remove();
 			}
 		}
@@ -144,6 +148,11 @@ public class DeletionRunnable extends BukkitRunnable {
 				plugin.debug(String.format("Unable to delete %s from %s",
 						regionFileName, world.getName()));
 			}
+			while (iterator.hasPrevious()) {
+				Pair<Integer, Integer> chunkCoords = iterator.previous();
+				plugin.getServer().getPluginManager().callEvent(
+						new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
+			}
 		} else if (regionChunks.size() > 0) {
 			/*
 			 * For dealing with manually wiping individual chunks, heavily rewrite and adapt
@@ -157,11 +166,63 @@ public class DeletionRunnable extends BukkitRunnable {
 				if (plugin.debug(DebugLevel.MEDIUM)) {
 					plugin.debug(String.format("Unable to set %s in %s writable to delete %s chunks",
 							regionFileName, world.getName(), regionChunks.size()));
-				};
-			} else {
-				new ChunkDeletionRunnable(plugin, this, world, regionFileName,
-						regionChunkX, regionChunkZ, new ArrayList<>(regionChunks))
-						.runTaskTimer(plugin, 0L, 5L);
+				}
+				return;
+			}
+
+			try (RandomAccessFile regionRandomAccess = new RandomAccessFile(regionFile, "rwd")) {
+				int[] pointers = new int[1024];
+				for (int i = 0; i < pointers.length; i++) {
+					// Read all chunk pointers into an int array
+					pointers[i] = regionRandomAccess.readInt();
+				}
+
+				int chunkCount = 0;
+
+				while (iterator.hasPrevious()) {
+					Pair<Integer, Integer> chunkCoords = iterator.previous();
+
+					// Chunk is delete-eligible even if deletion fails, no need to wait to remove data
+					plugin.getFlagger().unflagChunk(world.getName(), chunkCoords.getLeft(), chunkCoords.getRight());
+
+					// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
+					int pointer = chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32;
+
+					// Chunk is already orphaned, continue on.
+					if (pointers[pointer] == 0) {
+						continue;
+					}
+
+					// Rather than loop through all our chunks again, call deletion event now
+					plugin.getServer().getPluginManager().callEvent(
+							new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
+
+					if (plugin.debug(DebugLevel.HIGH)) {
+						plugin.debug(String.format("Wiping chunk %s, %s from %s in %s of %s",
+								chunkCoords.getLeft(), chunkCoords.getRight(), pointer,
+								regionFileName, world.getName()));
+					}
+
+					++chunkCount;
+					pointers[pointer] = 0;
+				}
+
+				// Overwrite all chunk pointers - this is much faster than seeking.
+				for (int i = 0; i < pointers.length; i++) {
+					regionRandomAccess.writeInt(pointers[i]);
+				}
+
+				regionRandomAccess.close();
+
+				if (plugin.debug(DebugLevel.MEDIUM)) {
+					plugin.debug(String.format("%s chunks deleted from %s of %s", chunkCount, regionFileName, world.getName()));
+				}
+
+			} catch (IOException ex) {
+				if (plugin.debug(DebugLevel.MEDIUM)) {
+					plugin.debug(String.format("Caught an IOException writing %s in %s to delete %s chunks",
+							regionFileName, world.getName(), regionChunks.size()));
+				}
 			}
 		}
 
