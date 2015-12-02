@@ -26,19 +26,14 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	private final Regionerator plugin;
 	private final World world;
+	private final File regionFileFolder;
 	private final String[] regions;
 	private final int chunksPerCheck;
-	private int count = -1;
-	private int regionChunkX;
-	private int regionChunkZ;
-	private int dX = 0;
-	private int dZ = 0;
+	private int count = -1, regionChunkX, regionChunkZ, dX = 0, dZ = 0,
+			regionsDeleted = 0, chunksDeleted = 0;
 	private final ArrayList<Pair<Integer, Integer>> regionChunks = new ArrayList<>();
-	private int regionsDeleted = 0;
 	private long nextRun = Long.MAX_VALUE;
 
-	final File regionFileFolder;
-	int chunksDeleted = 0;
 
 	public DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
@@ -154,11 +149,7 @@ public class DeletionRunnable extends BukkitRunnable {
 						new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
 			}
 		} else if (regionChunks.size() > 0) {
-			/*
-			 * For dealing with manually wiping individual chunks, heavily rewrite and adapt
-			 * @Brettflan's code from WorldBorder - this is relatively complex, and I'd like to
-			 * start off with a working solution.
-			 */
+
 			String regionFileName = regions[count];
 			File regionFile = new File(regionFileFolder, regionFileName);
 
@@ -171,11 +162,9 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 
 			try (RandomAccessFile regionRandomAccess = new RandomAccessFile(regionFile, "rwd")) {
-				int[] pointers = new int[1024];
-				for (int i = 0; i < pointers.length; i++) {
-					// Read all chunk pointers into an int array
-					pointers[i] = regionRandomAccess.readInt();
-				}
+				byte[] pointers = new byte[4096];
+				// Read all chunk pointers into the byte array
+				regionRandomAccess.read(pointers);
 
 				int chunkCount = 0;
 
@@ -186,10 +175,18 @@ public class DeletionRunnable extends BukkitRunnable {
 					plugin.getFlagger().unflagChunk(world.getName(), chunkCoords.getLeft(), chunkCoords.getRight());
 
 					// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
-					int pointer = chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32;
+					int pointer = 4 * (chunkCoords.getLeft() - regionChunkX + (chunkCoords.getRight() - regionChunkZ) * 32);
+
+					boolean orphaned = true;
+					for (int i = pointer; i < pointer + 4; i++) {
+						if (pointers[i] != 0) {
+							pointers[i] = 0;
+							orphaned = false;
+						}
+					}
 
 					// Chunk is already orphaned, continue on.
-					if (pointers[pointer] == 0) {
+					if (orphaned) {
 						continue;
 					}
 
@@ -204,15 +201,14 @@ public class DeletionRunnable extends BukkitRunnable {
 					}
 
 					++chunkCount;
-					pointers[pointer] = 0;
 				}
 
 				// Overwrite all chunk pointers - this is much faster than seeking.
-				for (int i = 0; i < pointers.length; i++) {
-					regionRandomAccess.writeInt(pointers[i]);
-				}
+				regionRandomAccess.write(pointers, 0, 4096);
 
 				regionRandomAccess.close();
+
+				chunksDeleted += chunkCount;
 
 				if (plugin.debug(DebugLevel.MEDIUM)) {
 					plugin.debug(String.format("%s chunks deleted from %s of %s", chunkCount, regionFileName, world.getName()));
@@ -261,4 +257,5 @@ public class DeletionRunnable extends BukkitRunnable {
 		String[] split = regionFile.split("\\.");
 		return new ImmutablePair<Integer, Integer>(Integer.parseInt(split[1]) << 5, Integer.parseInt(split[2]) << 5);
 	}
+
 }
