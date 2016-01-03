@@ -37,6 +37,13 @@
       <systemPath>${project.basedir}/lib/GriefPrevention.jar</systemPath>
     </dependency>
     <dependency>
+      <groupId>com.wasteofplastic</groupId>
+      <artifactId>askyblock</artifactId>
+      <version>2.9.8.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/askyblock.jar</systemPath>
+    </dependency>
+    <dependency>
       <groupId>com.massivecraft</groupId>
       <artifactId>Factions</artifactId>
       <version>2.8.1</version>
