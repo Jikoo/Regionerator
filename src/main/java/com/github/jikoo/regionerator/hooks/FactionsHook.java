@@ -5,6 +5,7 @@ import org.bukkit.World;
 import com.github.jikoo.regionerator.Hook;
 
 import com.massivecraft.factions.entity.BoardColl;
+import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.massivecore.ps.PS;
 
 /**
@@ -20,7 +21,8 @@ public class FactionsHook extends Hook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		return !BoardColl.get().getFactionAt(PS.valueOf(chunkWorld.getName(), chunkX, chunkZ)).isNone();
+		Faction faction = BoardColl.get().getFactionAt(PS.valueOf(chunkWorld.getName(), chunkX, chunkZ));
+		return faction != null && !faction.isNone();
 	}
 
 }
