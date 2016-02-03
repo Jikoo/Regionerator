@@ -29,6 +29,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final File regionFileFolder;
 	private final String[] regions;
 	private final int chunksPerCheck;
+	// Count starts at -1 because it is incremented prior to the first region being selected
 	private int count = -1, regionChunkX, regionChunkZ, dX = 0, dZ = 0,
 			regionsDeleted = 0, chunksDeleted = 0;
 	private final ArrayList<Pair<Integer, Integer>> regionChunks = new ArrayList<>();
@@ -71,6 +72,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			return;
 		}
 		if (plugin.isPaused() && dX == 0 && dZ == 0) {
+			// Only pause when we finish checking a region
 			return;
 		}
 		for (int i = 0; i < chunksPerCheck && count < regions.length; i++) {
@@ -94,18 +96,23 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	private void checkNextChunk() {
 		if (plugin.isPaused() && dX == 0 && dZ == 0) {
+			// Paused and done checking a region, time to stop.
 			return;
 		}
 		if (count >= regions.length) {
+			// Done checking all regions
 			return;
 		}
 		if (dX >= 32) {
+			// 32 chunks checked in the X direction, increment Z and reset X to 0
 			dX = 0;
 			dZ++;
 		}
 		if (dZ >= 32) {
+			// 32x32 chunks checked in X and Z, handle deletion and reset
 			handleRegionCompletion();
 			if (plugin.isPaused() || chunksPerCheck <= 1024) {
+				// If deleting up to 1 entire region per check, devote an entire run cycle to deletion
 				return;
 			}
 		}
@@ -231,7 +238,6 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (count < regions.length) {
 			dX = 0;
 			dZ = 0;
-			regionChunks.clear();
 			Pair<Integer, Integer> regionChunkCoordinates = parseRegion(regions[count]);
 			regionChunkX = regionChunkCoordinates.getLeft();
 			regionChunkZ = regionChunkCoordinates.getRight();

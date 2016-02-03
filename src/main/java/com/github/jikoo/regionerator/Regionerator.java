@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.common.collect.ImmutableList;
@@ -134,6 +135,7 @@ public class Regionerator extends JavaPlugin {
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		protectionHooks = new ArrayList<>();
+		boolean hasHooks = false;
 		for (String pluginName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
 			if (!getConfig().getBoolean("hooks." + pluginName)) {
 				continue;
@@ -147,6 +149,7 @@ public class Regionerator extends JavaPlugin {
 				Hook hook = (Hook) clazz.newInstance();
 				if (hook.isHookUsable()) {
 					protectionHooks.add(hook);
+					hasHooks = true;
 					if (debug(DebugLevel.LOW)) {
 						debug("Enabled protection hook for " + pluginName);
 					}
@@ -157,6 +160,10 @@ public class Regionerator extends JavaPlugin {
 				getLogger().severe("Unable to enable hook for " + pluginName + "!");
 				e.printStackTrace();
 			}
+		}
+		// Only enable hook listener if there are actually any hooks enabled
+		if (hasHooks) {
+			getServer().getPluginManager().registerEvents(new HookListener(this), this);
 		}
 
 		if (dirtyConfig) {
@@ -242,6 +249,7 @@ public class Regionerator extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
+		HandlerList.unregisterAll(this);
 		if (chunkFlagger != null) {
 			chunkFlagger.save();
 		}
