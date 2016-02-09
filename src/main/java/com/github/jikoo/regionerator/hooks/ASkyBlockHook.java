@@ -3,6 +3,7 @@ package com.github.jikoo.regionerator.hooks;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Hook;
 
 import com.wasteofplastic.askyblock.ASkyBlockAPI;
@@ -20,7 +21,9 @@ public class ASkyBlockHook extends Hook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		return ASkyBlockAPI.getInstance().getIslandAt(new Location(chunkWorld, chunkX << 4, 0, chunkZ << 4)) != null;
+		Location chunkLoc = new Location(chunkWorld, CoordinateConversions.chunkToBlock(chunkX), 0,
+				CoordinateConversions.chunkToBlock(chunkZ));
+		return ASkyBlockAPI.getInstance().getIslandAt(chunkLoc) != null;
 	}
 
 }

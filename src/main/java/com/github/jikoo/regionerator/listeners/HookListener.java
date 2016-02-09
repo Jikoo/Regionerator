@@ -1,10 +1,14 @@
-package com.github.jikoo.regionerator;
+package com.github.jikoo.regionerator.listeners;
 
 import java.util.Iterator;
 
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+
+import com.github.jikoo.regionerator.DebugLevel;
+import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.Regionerator;
 
 /**
  * Listener for hooked plugins being enabled or disabled.

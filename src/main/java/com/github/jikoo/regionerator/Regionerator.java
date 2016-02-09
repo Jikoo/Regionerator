@@ -15,6 +15,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.github.jikoo.regionerator.listeners.FlaggingListener;
+import com.github.jikoo.regionerator.listeners.HookListener;
+
 import com.google.common.collect.ImmutableList;
 
 /**

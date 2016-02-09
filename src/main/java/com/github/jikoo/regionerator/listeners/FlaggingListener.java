@@ -1,8 +1,10 @@
-package com.github.jikoo.regionerator;
+package com.github.jikoo.regionerator.listeners;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkPopulateEvent;
+
+import com.github.jikoo.regionerator.Regionerator;
 
 /**
  * Listener used to flag chunks.

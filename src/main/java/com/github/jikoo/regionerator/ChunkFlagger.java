@@ -64,10 +64,13 @@ public class ChunkFlagger {
 	}
 
 	public void unflagRegion(String world, int regionX, int regionZ) {
-		regionX = regionX << 5;
-		regionZ = regionZ << 5;
-		for (int chunkX = regionX; chunkX < regionX + 32; chunkX++) {
-			for (int chunkZ = regionZ; chunkZ < regionZ + 32; chunkZ++) {
+		unflagRegionByLowestChunk(world, CoordinateConversions.regionToChunk(regionX),
+				CoordinateConversions.regionToChunk(regionZ));
+	}
+
+	public void unflagRegionByLowestChunk(String world, int regionLowestChunkX, int regionLowestChunkZ) {
+		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
+			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
 				unflagChunk(world, chunkX, chunkZ);
 			}
 		}

@@ -5,7 +5,13 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 /**
- * Event fired when a Chunk is deleted by Regionerator.
+ * Event fired when a Chunk is deleted by Regionerator. This event is not cancellable, because
+ * plugins should not be preventing deletion here. Instead, they should be registering a Hook. This
+ * event is purely available so data relevant to a chunk can be deleted safely.
+ * <p>
+ * Unfortunately, Regionerator cannot guarantee that the chunk has been completely deleted - it's
+ * possible that the chunk has been unloaded and is queued to be saved, causing Regionerator's
+ * changes to be overwritten.
  * 
  * @author Jikoo
  */
