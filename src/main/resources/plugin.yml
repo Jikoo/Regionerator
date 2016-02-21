@@ -1,12 +1,13 @@
 name: Regionerator
 main: com.github.jikoo.regionerator.Regionerator
-version: 1.3.2
+version: 1.3.3
 author: Jikoo
 softdepend:
-- Multiverse-Core
+- ASkyBlock
 - Factions
 - GriefPrevention
 - Landlord
+- Multiverse-Core
 - Towny
 - WorldGuard
 

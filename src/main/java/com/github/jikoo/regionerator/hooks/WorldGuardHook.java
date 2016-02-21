@@ -27,7 +27,6 @@ public class WorldGuardHook extends Hook {
 		BlockVector bottom = new BlockVector(chunkBlockX, 0, chunkBlockZ);
 		BlockVector top = new BlockVector(chunkBlockX + 15, 255, chunkBlockZ + 15);
 		return WorldGuardPlugin.inst().getRegionManager(chunkWorld)
-				.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top))
-				.getRegions().size() > 0;
+				.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top)).size() > 0;
 	}
 }

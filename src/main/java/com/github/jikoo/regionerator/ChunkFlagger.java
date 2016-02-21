@@ -38,7 +38,7 @@ public class ChunkFlagger {
 		pendingUnflag = new HashSet<>();
 	}
 
-	public void flagChunk(String world, int chunkX, int chunkZ) {
+	public void flagChunksInRadius(String world, int chunkX, int chunkZ) {
 		flagChunk(world, chunkX, chunkZ, plugin.getChunkFlagRadius(), plugin.getVisitFlag());
 	}
 
@@ -159,7 +159,10 @@ public class ChunkFlagger {
 			}
 			return VisitStatus.GENERATED;
 		}
-		return VisitStatus.UNKNOWN;
+		if (visit == -1) {
+			return VisitStatus.UNKNOWN;
+		}
+		return VisitStatus.UNVISITED;
 	}
 
 	private String getChunkString(String world, int chunkX, int chunkZ) {

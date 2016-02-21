@@ -28,7 +28,7 @@ public class FlaggingRunnable extends BukkitRunnable {
 			}
 			if (plugin.getActiveWorlds().contains(player.getWorld().getName())) {
 				Chunk chunk = player.getLocation().getChunk();
-				plugin.getFlagger().flagChunk(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
+				plugin.getFlagger().flagChunksInRadius(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
 			}
 		}
 

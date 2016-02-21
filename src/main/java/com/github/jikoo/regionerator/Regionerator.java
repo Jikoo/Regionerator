@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -210,6 +212,15 @@ public class Regionerator extends JavaPlugin {
 			if (args[0].equals("resume") || args[0].equals("unpause") || args[0].equals("start")) {
 				paused = false;
 				sender.sendMessage("Resumed Regionerator. Use /regionerator pause to pause.");
+				return true;
+			}
+			if (sender instanceof Player && args[0].equals("check")) {
+				Player player = (Player) sender;
+				Chunk chunk = player.getLocation().getChunk();
+				for (Hook hook : protectionHooks) {
+					player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getPluginName());
+				}
+				player.sendMessage("Chunk VisitStatus: " + chunkFlagger.getChunkVisitStatus(chunk.getWorld(), chunk.getX(), chunk.getZ()).name());
 				return true;
 			}
 			return false;
