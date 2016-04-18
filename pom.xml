@@ -71,6 +71,13 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/Towny.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>org.kingdoms</groupId>
+      <artifactId>Kingdoms</artifactId>
+      <version>7.9.5</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/premium/Kingdoms.jar</systemPath>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>

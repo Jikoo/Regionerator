@@ -45,6 +45,7 @@
 #   ASkyBlock: true
 #   Factions: true
 #   GriefPrevention: true
+#   Kingdoms: true
 #   Landlord: true
 #   Towny: true
 #   WorldGuard: true
@@ -99,6 +100,7 @@ hooks:
   ASkyBlock: true
   Factions: true
   GriefPrevention: true
+  Kingdoms: true
   Landlord: true
   Towny: true
   WorldGuard: true
