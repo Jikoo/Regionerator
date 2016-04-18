@@ -8,13 +8,13 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
-import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
 
 /**
  * 
