@@ -32,7 +32,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	// Count starts at -1 because it is incremented prior to the first region being selected
 	private int count = -1, regionChunkX, regionChunkZ, dX = 0, dZ = 0,
 			regionsDeleted = 0, chunksDeleted = 0;
-	private final ArrayList<Pair<Integer, Integer>> regionChunks = new ArrayList<>();
+	private final ArrayList<Pair<Integer, Integer>> regionChunks = new ArrayList<>(1024);
 	private long nextRun = Long.MAX_VALUE;
 
 
@@ -60,7 +60,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		chunksPerCheck = plugin.getChunksPerDeletionCheck();
 
-		handleRegionCompletion();
+		resetToNextRegion();
 	}
 
 	@Override
@@ -146,14 +146,14 @@ public class DeletionRunnable extends BukkitRunnable {
 					plugin.debug(regionFileName + " deleted from " + world.getName());
 				}
 				plugin.getFlagger().unflagRegion(world.getName(), regionChunkX, regionChunkZ);
+				while (iterator.hasPrevious()) {
+					Pair<Integer, Integer> chunkCoords = iterator.previous();
+					plugin.getServer().getPluginManager().callEvent(
+							new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
+				}
 			} else if (plugin.debug(DebugLevel.MEDIUM)) {
 				plugin.debug(String.format("Unable to delete %s from %s",
 						regionFileName, world.getName()));
-			}
-			while (iterator.hasPrevious()) {
-				Pair<Integer, Integer> chunkCoords = iterator.previous();
-				plugin.getServer().getPluginManager().callEvent(
-						new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
 			}
 		} else if (regionChunks.size() > 0) {
 
@@ -165,6 +165,7 @@ public class DeletionRunnable extends BukkitRunnable {
 					plugin.debug(String.format("Unable to set %s in %s writable to delete %s chunks",
 							regionFileName, world.getName(), regionChunks.size()));
 				}
+				resetToNextRegion();
 				return;
 			}
 
@@ -229,6 +230,10 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 		}
 
+		resetToNextRegion();
+	}
+
+	private void resetToNextRegion() {
 		// Reset and increment
 		regionChunks.clear();
 		count++;
@@ -246,8 +251,6 @@ public class DeletionRunnable extends BukkitRunnable {
 				plugin.debug(String.format("Checking %s:%s (%s/%s)", world.getName(),
 						regions[count], count, regions.length));
 			}
-		} else {
-			return;
 		}
 	}
 
