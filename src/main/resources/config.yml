@@ -47,6 +47,7 @@
 #   GriefPrevention: true
 #   Kingdoms: true
 #   Landlord: true
+#   RedProtect: true
 #   Towny: true
 #   WorldGuard: true
 # 
@@ -102,6 +103,7 @@ hooks:
   GriefPrevention: true
   Kingdoms: true
   Landlord: true
+  RedProtect: true
   Towny: true
   WorldGuard: true
 

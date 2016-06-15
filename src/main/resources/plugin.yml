@@ -1,6 +1,6 @@
 name: Regionerator
 main: com.github.jikoo.regionerator.Regionerator
-version: 1.3.3
+version: 1.3.4
 author: Jikoo
 softdepend:
 - ASkyBlock
@@ -9,6 +9,7 @@ softdepend:
 - Kingdoms
 - Landlord
 - Multiverse-Core
+- RedProtect
 - Towny
 - WorldGuard
 
