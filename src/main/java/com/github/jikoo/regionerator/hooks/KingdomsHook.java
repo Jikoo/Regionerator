@@ -9,7 +9,7 @@ import org.kingdoms.manager.game.GameManagement;
 import com.github.jikoo.regionerator.Hook;
 
 /**
- * Hook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms-battle-for-land-might-and-glory-1-8-x-1-9.11833/>Kingdoms</a>.
+ * Hook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.
  * 
  * @author Jikoo
  */
