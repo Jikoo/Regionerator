@@ -96,7 +96,7 @@ public class Regionerator extends JavaPlugin {
 		flagDuration = 86400000L * getConfig().getInt("days-till-flag-expires");
 
 		for (String worldName : worlds) {
-			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName, 0) == 0) {
+			if (!getConfig().isLong("delete-this-to-reset-plugin." + worldName)) {
 				// Set time to start actually deleting chunks to ensure that all existing areas are given a chance
 				getConfig().set("delete-this-to-reset-plugin." + worldName, System.currentTimeMillis() + flagDuration);
 				dirtyConfig = true;
