@@ -8,13 +8,13 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
 
 /**
  * 
@@ -24,13 +24,6 @@ import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
 public class DeletionRunnable extends BukkitRunnable {
 
 	private static final String STATS_FORMAT = "%s - Checked %s/%s, deleted %s regions and %s chunks";
-	private static final byte[] EMPTY_POINTERS = new byte[4096];
-
-	static {
-		for (int i = 0; i < EMPTY_POINTERS.length; ++i) {
-			EMPTY_POINTERS[i] = 0;
-		}
-	}
 
 	private final Regionerator plugin;
 	private final World world;
@@ -290,7 +283,7 @@ public class DeletionRunnable extends BukkitRunnable {
 				for (int i = pointer; i < pointer + 4; ++i) {
 					if (pointers[i] != 0) {
 						orphaned = false;
-						break;
+						pointers[i] = 0;
 					}
 				}
 
@@ -312,7 +305,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 
 			// Overwrite all chunk pointers - this is much faster than seeking.
-			regionRandomAccess.write(EMPTY_POINTERS, 0, 4096);
+			regionRandomAccess.write(pointers, 0, 4096);
 
 			regionRandomAccess.close();
 
