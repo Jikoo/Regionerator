@@ -23,7 +23,7 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class DeletionRunnable extends BukkitRunnable {
 
-	private static final String STATS_FORMAT = "%s - Checked %s/%s, deleted %s regions and %s chunks";
+	private static final String STATS_FORMAT = "%s: %s/%s, deleted %s regions, %s chunks";
 
 	private final Regionerator plugin;
 	private final World world;

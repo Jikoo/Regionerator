@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 
 /**
@@ -23,6 +24,8 @@ public class ChunkFlagger {
 	private final YamlConfiguration flags;
 	private final AtomicBoolean dirty, saving;
 	private final Set<String> pendingFlag, pendingUnflag;
+
+	private BukkitTask saveTask;
 
 	public ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
@@ -90,11 +93,14 @@ public class ChunkFlagger {
 	}
 
 	public void scheduleSaving() {
-		new BukkitRunnable() {
+		if (saveTask != null) {
+			return;
+		}
+		saveTask = new BukkitRunnable() {
 			@Override
 			public void run() {
 				saving.set(true);
-				save();
+				save(false);
 				saving.set(false);
 				new BukkitRunnable() {
 					@Override
@@ -113,12 +119,24 @@ public class ChunkFlagger {
 		}.runTaskTimerAsynchronously(plugin, plugin.getTicksPerFlagAutosave(), plugin.getTicksPerFlagAutosave());
 	}
 
-	public void save() {
+	public void cancelSaving() {
+		if (saveTask != null) {
+			saveTask.cancel();
+			saveTask = null;
+		}
+	}
+
+	/**
+	 * Save flags.yml. When saving on disable, pending flag changes should also be flushed.
+	 * 
+	 * @param flush true if pending flags are to be saved as well
+	 */
+	public void save(boolean flush) {
 		if (!dirty.get()) {
 			return;
 		}
-		// Save is not being called async, plugin is probably disabling. Flush pending changes.
-		if (!saving.get()) {
+		// Flush pending changes if required.
+		if (flush) {
 			for (String path : pendingFlag) {
 				flag(path, true);
 			}

@@ -8,6 +8,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.github.jikoo.regionerator.listeners.FlaggingListener;
+import com.github.jikoo.regionerator.listeners.HookListener;
+
+import com.google.common.collect.ImmutableList;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -16,11 +21,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.github.jikoo.regionerator.listeners.FlaggingListener;
-import com.github.jikoo.regionerator.listeners.HookListener;
-
-import com.google.common.collect.ImmutableList;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -85,11 +86,6 @@ public class Regionerator extends JavaPlugin {
 		worlds = ImmutableList.copyOf(worlds);
 		if (dirtyConfig) {
 			getConfig().set("worlds", worlds);
-		}
-
-		if (getConfig().getInt("days-till-flag-expires") < 1) {
-			getConfig().set("days-till-flag-expires", 1);
-			dirtyConfig = true;
 		}
 
 		// 86,400,000 = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
@@ -176,14 +172,27 @@ public class Regionerator extends JavaPlugin {
 			saveConfig();
 		}
 
-		chunkFlagger = new ChunkFlagger(this);
-		chunkFlagger.scheduleSaving();
-
 		deletionRunnables = new HashMap<>();
 
-		new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
+		chunkFlagger = new ChunkFlagger(this);
 
-		getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
+		chunkFlagger.scheduleSaving();
+
+		if (flagDuration > 0) {
+			// Flag duration is set, start flagging
+
+			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
+	
+			new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
+		} else {
+			// Flagging runnable is not scheduled, schedule a task to start deletion
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					attemptDeletionActivation();
+				}
+			}.runTaskTimer(this, 0L, 1200L);
+		}
 
 		if (debug(DebugLevel.LOW)) {
 			onCommand(Bukkit.getConsoleSender(), null, null, new String[0]);
@@ -226,25 +235,26 @@ public class Regionerator extends JavaPlugin {
 			return false;
 		}
 
-		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' dd/MM");
+		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
 
 		boolean running = false;
 		for (String worldName : worlds) {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
 				// Not time yet.
-				sender.sendMessage(worldName + " - Gathering data, regeneration starts " + format.format(new Date(activeAt)));
+				sender.sendMessage(worldName + ": Gathering data, regeneration starts " + format.format(new Date(activeAt)));
 				continue;
 			}
 
 			if (deletionRunnables.containsKey(worldName)) {
 				DeletionRunnable runnable = deletionRunnables.get(worldName);
-				sender.sendMessage(runnable.getRunStats());
+				String message = runnable.getRunStats();
 				if (runnable.getNextRun() < Long.MAX_VALUE) {
-					sender.sendMessage("Cycle is finished. Next run scheduled for " + format.format(runnable.getNextRun()));
+					message += " - next run: " + format.format(runnable.getNextRun());
 				} else if (!getConfig().getBoolean("allow-concurrent-cycles")) {
 					running = true;
 				}
+				sender.sendMessage(message);
 				continue;
 			}
 
@@ -265,7 +275,8 @@ public class Regionerator extends JavaPlugin {
 		getServer().getScheduler().cancelTasks(this);
 		HandlerList.unregisterAll(this);
 		if (chunkFlagger != null) {
-			chunkFlagger.save();
+			chunkFlagger.cancelSaving();
+			chunkFlagger.save(true);
 		}
 	}
 
