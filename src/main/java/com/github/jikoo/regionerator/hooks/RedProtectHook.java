@@ -1,11 +1,12 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
-
 import br.net.fabiozumbi12.RedProtect.RedProtect;
 import br.net.fabiozumbi12.RedProtect.Region;
 
+import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Hook;
+
+import org.bukkit.World;
 
 /**
  * Hook for the plugin <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
@@ -29,8 +30,10 @@ public class RedProtectHook extends Hook {
 		 * However, that method is new in 6.6.0, and I can perform the needed checks faster avoiding it.
 		 */
 		for (Region region : RedProtect.rm.getRegionsByWorld(chunkWorld)) {
-			if (region.getMinMbrX() >> 4 > chunkX || region.getMaxMbrX() >> 4 < chunkX
-					|| region.getMinMbrZ() >> 4 > chunkZ || region.getMaxMbrZ() >> 4 < chunkZ) {
+			if (CoordinateConversions.blockToChunk(region.getMinMbrX()) > chunkX
+					|| CoordinateConversions.blockToChunk(region.getMaxMbrX()) < chunkX
+					|| CoordinateConversions.blockToChunk(region.getMinMbrZ()) > chunkZ
+					|| CoordinateConversions.blockToChunk(region.getMaxMbrZ()) < chunkZ) {
 				continue;
 			}
 			return true;
