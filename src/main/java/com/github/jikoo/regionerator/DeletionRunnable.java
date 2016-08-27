@@ -8,16 +8,16 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
-
 /**
- * 
+ * Runnable for checking and deleting chunks and regions.
  * 
  * @author Jikoo
  */
@@ -231,15 +231,16 @@ public class DeletionRunnable extends BukkitRunnable {
 
 			// Unflag all chunks in the region, no need to inflate flags.yml
 			plugin.getFlagger().unflagRegionByLowestChunk(world.getName(), regionChunkX, regionChunkZ);
+
+			// Fire a RegioneratorChunkDeleteEvent for each chunk in the region.
+			while (iterator.hasPrevious()) {
+				Pair<Integer, Integer> chunkCoords = iterator.previous();
+				plugin.getServer().getPluginManager().callEvent(
+						new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
+			}
 		} else if (plugin.debug(DebugLevel.MEDIUM)) {
 			plugin.debug(String.format("Unable to delete %s from %s",
 					regionFileName, world.getName()));
-		}
-		// 
-		while (iterator.hasPrevious()) {
-			Pair<Integer, Integer> chunkCoords = iterator.previous();
-			plugin.getServer().getPluginManager().callEvent(
-					new RegioneratorChunkDeleteEvent(world, chunkCoords.getLeft(), chunkCoords.getRight()));
 		}
 	}
 
