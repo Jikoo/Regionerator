@@ -235,6 +235,11 @@ public class Regionerator extends JavaPlugin {
 			return false;
 		}
 
+		if (worlds.isEmpty()) {
+			sender.sendMessage("No worlds are configured. Edit your config and use /regionerator reload.");
+			return true;
+		}
+
 		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
 
 		boolean running = false;
