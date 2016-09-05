@@ -2,7 +2,9 @@ package com.github.jikoo.regionerator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,7 +25,8 @@ public class ChunkFlagger {
 	private final File flagsFile;
 	private final YamlConfiguration flags;
 	private final AtomicBoolean dirty, saving;
-	private final Set<String> pendingFlag, pendingUnflag;
+	private final Map<String, Long> pendingFlag;
+	private final Set<String> pendingUnflag;
 
 	private BukkitTask saveTask;
 
@@ -37,7 +40,7 @@ public class ChunkFlagger {
 		}
 		dirty = new AtomicBoolean(false);
 		saving = new AtomicBoolean(false);
-		pendingFlag = new HashSet<>();
+		pendingFlag = new HashMap<>();
 		pendingUnflag = new HashSet<>();
 	}
 
@@ -53,16 +56,12 @@ public class ChunkFlagger {
 		}
 	}
 
-	private void flag(String chunkPath, boolean force) {
-		flag(chunkPath, plugin.getVisitFlag(), force);
-	}
-
 	private void flag(String chunkPath, long flagTil, boolean force) {
 		if (force || !saving.get()) {
 			flags.set(chunkPath, flagTil);
 			dirty.set(true);
 		} else {
-			pendingFlag.add(chunkPath);
+			pendingFlag.put(chunkPath, flagTil);
 		}
 	}
 
@@ -105,8 +104,8 @@ public class ChunkFlagger {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						for (String path : pendingFlag) {
-							flag(path, true);
+						for (Map.Entry<String, Long> entry : pendingFlag.entrySet()) {
+							flag(entry.getKey(), entry.getValue(), true);
 						}
 						pendingFlag.clear();
 						for (String path : pendingUnflag) {
@@ -137,8 +136,8 @@ public class ChunkFlagger {
 		}
 		// Flush pending changes if required.
 		if (flush) {
-			for (String path : pendingFlag) {
-				flag(path, true);
+			for (Map.Entry<String, Long> entry : pendingFlag.entrySet()) {
+				flag(entry.getKey(), entry.getValue(), true);
 			}
 			pendingFlag.clear();
 			for (String path : pendingUnflag) {
