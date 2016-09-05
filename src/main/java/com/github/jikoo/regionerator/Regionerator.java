@@ -39,21 +39,18 @@ public class Regionerator extends JavaPlugin {
 	private HashMap<String, DeletionRunnable> deletionRunnables;
 	private long millisBetweenCycles;
 	private DebugLevel debugLevel;
-	private boolean paused;
+	private boolean paused = false;
 
 	@Override
 	public void onEnable() {
 
 		saveDefaultConfig();
 
-		paused = false;
+		deletionRunnables = new HashMap<>();
+		chunkFlagger = new ChunkFlagger(this);
+		protectionHooks = new ArrayList<>();
 
 		List<String> worldList = getConfig().getStringList("worlds");
-		if (worldList.isEmpty()) {
-			getLogger().severe("No worlds are enabled. Disabling!");
-			getServer().getPluginManager().disablePlugin(this);
-			return;
-		}
 
 		boolean dirtyConfig = false;
 
@@ -135,7 +132,6 @@ public class Regionerator extends JavaPlugin {
 		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
-		protectionHooks = new ArrayList<>();
 		boolean hasHooks = false;
 		for (String pluginName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
 			if (!getConfig().getBoolean("hooks." + pluginName)) {
@@ -162,6 +158,13 @@ public class Regionerator extends JavaPlugin {
 				e.printStackTrace();
 			}
 		}
+
+		// Don't register listeners if there are no worlds configured
+		if (worlds.isEmpty()) {
+			getLogger().severe("No worlds are enabled. There's nothing to do!");
+			return;
+		}
+
 		// Only enable hook listener if there are actually any hooks enabled
 		if (hasHooks) {
 			getServer().getPluginManager().registerEvents(new HookListener(this), this);
@@ -171,10 +174,6 @@ public class Regionerator extends JavaPlugin {
 			getConfig().options().copyHeader(true);
 			saveConfig();
 		}
-
-		deletionRunnables = new HashMap<>();
-
-		chunkFlagger = new ChunkFlagger(this);
 
 		chunkFlagger.scheduleSaving();
 
