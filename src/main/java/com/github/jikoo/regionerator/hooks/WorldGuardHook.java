@@ -1,13 +1,13 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
-
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Hook;
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
+
+import org.bukkit.World;
 
 /**
  * Hook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/worldguard/>WorldGuard</a>.

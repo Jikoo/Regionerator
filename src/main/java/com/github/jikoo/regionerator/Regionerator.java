@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 
@@ -29,6 +30,9 @@ import org.bukkit.scheduler.BukkitRunnable;
  * @author Jikoo
  */
 public class Regionerator extends JavaPlugin {
+
+	private final long flagEternal = Long.MAX_VALUE - 1;
+	private final CommandFlag commandFlag = new CommandFlag(this);
 
 	private long flagDuration;
 	private long ticksPerFlag;
@@ -212,6 +216,7 @@ public class Regionerator extends JavaPlugin {
 				sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
 				return true;
 			}
+
 			if (args[0].equals("pause") || args[0].equals("stop") ) {
 				paused = true;
 				sender.sendMessage("Paused Regionerator. Use /regionerator resume to resume.");
@@ -222,7 +227,16 @@ public class Regionerator extends JavaPlugin {
 				sender.sendMessage("Resumed Regionerator. Use /regionerator pause to pause.");
 				return true;
 			}
-			if (sender instanceof Player && args[0].equals("check")) {
+
+			if (args[0].equals("flag")) {
+				commandFlag.handleFlags(sender, args, true);
+			}
+			if (args[0].equals("unflag")) {
+				commandFlag.handleFlags(sender, args, false);
+			}
+
+			boolean isPlayer = sender instanceof Player;
+			if (isPlayer && args[0].equals("check")) {
 				Player player = (Player) sender;
 				Chunk chunk = player.getLocation().getChunk();
 				for (Hook hook : protectionHooks) {
@@ -231,6 +245,7 @@ public class Regionerator extends JavaPlugin {
 				player.sendMessage("Chunk VisitStatus: " + chunkFlagger.getChunkVisitStatus(chunk.getWorld(), chunk.getX(), chunk.getZ()).name());
 				return true;
 			}
+
 			return false;
 		}
 
@@ -271,6 +286,9 @@ public class Regionerator extends JavaPlugin {
 				getLogger().severe("Deletion cycle failed to start for " + worldName + "! Please report this issue if you see any errors!");
 			}
 		}
+		if (paused) {
+			sender.sendMessage("Regionerator is paused. Use \"/regionerator resume\" to continue.");
+		}
 		return true;
 	}
 
@@ -290,6 +308,10 @@ public class Regionerator extends JavaPlugin {
 
 	public long getGenerateFlag() {
 		return getConfig().getBoolean("delete-new-unvisited-chunks") ? getVisitFlag() : Long.MAX_VALUE;
+	}
+
+	public long getEternalFlag() {
+		return flagEternal;
 	}
 
 	public int getChunkFlagRadius() {

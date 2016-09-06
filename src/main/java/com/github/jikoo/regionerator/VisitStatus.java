@@ -11,6 +11,7 @@ public enum VisitStatus {
 	UNVISITED,
 	GENERATED,
 	VISITED,
+	PERMANENTLY_FLAGGED,
 	PROTECTED;
 
 }

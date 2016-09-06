@@ -7,7 +7,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.0</version>
+      <version>3.4</version>
       <type>jar</type>
       <scope>compile</scope>
     </dependency>
@@ -97,6 +97,7 @@
       <url>http://maven.sk89q.com/repo/</url>
     </repository>
   </repositories>
+
   <build>
     <resources>
       <resource>
@@ -108,6 +109,24 @@
       </resource>
     </resources>
     <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.3</version>
+        <configuration>
+          <minimizeJar>true</minimizeJar>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

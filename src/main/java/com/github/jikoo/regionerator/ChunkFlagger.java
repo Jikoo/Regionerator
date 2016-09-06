@@ -57,6 +57,10 @@ public class ChunkFlagger {
 	}
 
 	private void flag(String chunkPath, long flagTil, boolean force) {
+		long current = flags.getLong(chunkPath, 0);
+		if (current == plugin.getEternalFlag()) {
+			return;
+		}
 		if (force || !saving.get()) {
 			flags.set(chunkPath, flagTil);
 			dirty.set(true);
@@ -159,6 +163,9 @@ public class ChunkFlagger {
 		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
 			if (plugin.debug(DebugLevel.HIGH)) {
 				plugin.debug("Chunk " + chunkString + " is flagged.");
+			}
+			if (visit == plugin.getEternalFlag()) {
+				return VisitStatus.PERMANENTLY_FLAGGED;
 			}
 			return VisitStatus.VISITED;
 		}
