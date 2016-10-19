@@ -1,15 +1,13 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
-
-import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.Hook;
-
-import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
+import com.github.jikoo.regionerator.Hook;
+
+import org.bukkit.World;
+
 /**
- * Hook for the protection plugin <a href=https://github.com/ElgarL/Towny>Towny</a>.
+ * Hook for the protection plugin <a href=https://github.com/LlmDl/Towny>Towny</a>.
  * 
  * @author Jikoo
  */
@@ -22,9 +20,7 @@ public class TownyHook extends Hook {
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		try {
-			Coord chunkCorner = Coord.parseCoord(CoordinateConversions.chunkToBlock(chunkX),
-					CoordinateConversions.chunkToBlock(chunkX));
-			return new WorldCoord(chunkWorld.getName(), chunkCorner).getTownBlock().hasTown();
+			return new WorldCoord(chunkWorld.getName(), chunkX, chunkZ).getTownBlock().hasTown();
 		} catch (Exception e) {
 			return false;
 		}

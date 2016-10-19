@@ -21,7 +21,17 @@ public abstract class Hook {
 	}
 
 	public boolean isHookUsable() {
-		return Bukkit.getPluginManager().isPluginEnabled(pluginName);
+		if (!Bukkit.getPluginManager().isPluginEnabled(pluginName)) {
+			return false;
+		}
+
+		try {
+			this.isChunkProtected(Bukkit.getWorlds().get(0), 0, 0);
+		} catch (Exception e) {
+			return false;
+		}
+
+		return true;
 	}
 
 	public abstract boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ);

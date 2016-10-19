@@ -1,10 +1,10 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
+import com.jcdesimp.landlord.persistantData.OwnedLand;
 
 import com.github.jikoo.regionerator.Hook;
 
-import com.jcdesimp.landlord.persistantData.OwnedLand;
+import org.bukkit.World;
 
 /**
  * Hook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/landlord/>Landlord</a>.

@@ -1,12 +1,12 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.regionerator.Hook;
+
 import org.bukkit.World;
 
 import org.kingdoms.constants.land.Land;
 import org.kingdoms.constants.land.SimpleChunkLocation;
 import org.kingdoms.manager.game.GameManagement;
-
-import com.github.jikoo.regionerator.Hook;
 
 /**
  * Hook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.

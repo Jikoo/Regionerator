@@ -1,12 +1,12 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.Location;
-import org.bukkit.World;
+import com.wasteofplastic.askyblock.ASkyBlockAPI;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Hook;
 
-import com.wasteofplastic.askyblock.ASkyBlockAPI;
+import org.bukkit.Location;
+import org.bukkit.World;
 
 /**
  * Hook for the plugin <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.

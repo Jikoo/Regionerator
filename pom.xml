@@ -30,11 +30,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>me.ryanhampshire</groupId>
-      <artifactId>griefprevention</artifactId>
-      <version>12.4</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/GriefPrevention.jar</systemPath>
+      <groupId>com.github.TechFortress</groupId>
+      <artifactId>GriefPrevention</artifactId>
+      <version>master-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.wasteofplastic</groupId>
@@ -87,6 +85,7 @@
       <systemPath>${project.basedir}/premium/Kingdoms.jar</systemPath>
     </dependency>
   </dependencies>
+
   <repositories>
     <repository>
         <id>spigot-repo</id>
@@ -95,6 +94,10 @@
     <repository>
       <id>sk89q-repo</id>
       <url>http://maven.sk89q.com/repo/</url>
+    </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
     </repository>
   </repositories>
 

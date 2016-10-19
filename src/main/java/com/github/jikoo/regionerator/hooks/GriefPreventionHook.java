@@ -1,8 +1,8 @@
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
-
 import com.github.jikoo.regionerator.Hook;
+
+import org.bukkit.World;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
