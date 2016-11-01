@@ -19,7 +19,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * 
+ * Class for handling logic related to flag management commands.
  * 
  * @author Jikoo
  */
@@ -107,7 +107,7 @@ public class CommandFlag {
 		Player player = (Player) sender;
 
 		// Flag current chunk
-		if (args.length < 3) {
+		if (args.length < 2) {
 			Location location = player.getLocation();
 			return Arrays.asList((Triple<String, Integer, Integer>) new ImmutableTriple<>(
 					location.getWorld().getName(),
@@ -118,8 +118,8 @@ public class CommandFlag {
 		// 2 args guaranteed, safe
 		args[1] = args[1].toLowerCase();
 		if (!args[1].equals("selection")) {
-			sender.sendMessage("/regionerator (un)flag - unflag current chunk");
-			sender.sendMessage("/regionerator (un)flag <world> <chunk X> <chunk Z>");
+			sender.sendMessage("/regionerator (un)flag - (un)flag current chunk");
+			sender.sendMessage("/regionerator (un)flag [world] <chunk X> <chunk Z>");
 			sender.sendMessage("/regionerator (un)flag selection - unflag WorldEdit selection");
 			return null;
 		}
@@ -169,7 +169,7 @@ public class CommandFlag {
 		try {
 			return (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
 		} catch (ClassCastException e) {
-			// Not present, another plugin claims to be WG
+			// Not present, another plugin claims to be WE
 			return null;
 		}
 	}

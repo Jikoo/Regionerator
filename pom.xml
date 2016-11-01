@@ -3,6 +3,7 @@
   <groupId>Regionerator</groupId>
   <artifactId>Regionerator</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -33,6 +34,7 @@
       <groupId>com.github.TechFortress</groupId>
       <artifactId>GriefPrevention</artifactId>
       <version>master-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.wasteofplastic</groupId>
@@ -83,6 +85,13 @@
       <version>7.9.5</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/premium/Kingdoms.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>us.forseth11</groupId>
+      <artifactId>Feudal</artifactId>
+      <version>Lite-1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/premium/FeudalLite.jar</systemPath>
     </dependency>
   </dependencies>
 
