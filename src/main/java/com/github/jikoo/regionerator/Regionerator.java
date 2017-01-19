@@ -2,6 +2,7 @@ package com.github.jikoo.regionerator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -396,7 +397,36 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public List<Hook> getProtectionHooks() {
-		return protectionHooks;
+		return Collections.unmodifiableList(this.protectionHooks);
+	}
+
+	public void addHook(Hook hook) {
+		if (hook == null) {
+			throw new IllegalArgumentException("Hook cannot be null");
+		}
+
+		for (Hook enabledHook : this.protectionHooks) {
+			if (enabledHook.getClass().equals(hook.getClass())) {
+				throw new IllegalStateException(String.format("Hook %s is already enabled", hook.getProtectionName()));
+			}
+		}
+
+		this.protectionHooks.add(hook);
+	}
+
+	public boolean removeHook(Class<? extends Hook> hook) {
+		Iterator<Hook> hookIterator = this.protectionHooks.iterator();
+		while (hookIterator.hasNext()) {
+			if (hookIterator.next().getClass().equals(hook)) {
+				hookIterator.remove();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean removeHook(Hook hook) {
+		return this.protectionHooks.remove(hook);
 	}
 
 	public ChunkFlagger getFlagger() {

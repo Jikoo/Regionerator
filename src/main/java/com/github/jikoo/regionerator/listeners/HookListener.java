@@ -30,17 +30,19 @@ public class HookListener implements Listener {
 			return;
 		}
 		try {
-			Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "PluginHook");
+			Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "Hook");
 			if (!PluginHook.class.isAssignableFrom(clazz)) {
 				// What.
 				return;
 			}
 			PluginHook pluginHook = (PluginHook) clazz.newInstance();
 			// No need to check if the hook is usable, we know the plugin required is present
-			plugin.getProtectionHooks().add(pluginHook);
+			plugin.addHook(pluginHook);
 			if (plugin.debug(DebugLevel.LOW)) {
 				plugin.debug("Enabled protection hook for " + pluginName);
 			}
+		} catch (IllegalStateException e) {
+			plugin.getLogger().severe("Tried to add hook for " + pluginName + ", but it was already enabled!");
 		} catch (ClassNotFoundException e) {
 			plugin.getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
 		} catch (InstantiationException | IllegalAccessException e) {
@@ -51,16 +53,17 @@ public class HookListener implements Listener {
 
 	public void onPluginDisable(PluginDisableEvent event) {
 		String pluginName = event.getPlugin().getName();
-		Iterator<Hook> iterator = plugin.getProtectionHooks().iterator();
+		Iterator<Hook> iterator = this.plugin.getProtectionHooks().iterator();
 		while (iterator.hasNext()) {
 			Hook hook = iterator.next();
 			if (!(hook instanceof PluginHook)) {
 				continue;
 			}
 			if (pluginName.equals(((PluginHook) hook).getPluginName())) {
-				iterator.remove();
-				if (plugin.debug(DebugLevel.LOW)) {
-					plugin.debug("Disabled protection hook for " + pluginName);
+				// Won't CME; we return after modification.
+				this.plugin.removeHook(hook);
+				if (this.plugin.debug(DebugLevel.LOW)) {
+					this.plugin.debug("Disabled protection hook for " + pluginName);
 				}
 				return;
 			}

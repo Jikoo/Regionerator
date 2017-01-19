@@ -1,6 +1,6 @@
 name: Regionerator
 main: com.github.jikoo.regionerator.Regionerator
-version: 1.3.5
+version: ${project.version}
 author: Jikoo
 softdepend:
 - ASkyBlock
