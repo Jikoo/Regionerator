@@ -36,7 +36,10 @@ public class HookListener implements Listener {
 				return;
 			}
 			PluginHook pluginHook = (PluginHook) clazz.newInstance();
-			// No need to check if the hook is usable, we know the plugin required is present
+			if (!pluginHook.isHookUsable()) {
+				plugin.getLogger().severe("Hook for " + pluginName + " failed usability check and could not be enabled!");
+				return;
+			}
 			plugin.addHook(pluginHook);
 			if (plugin.debug(DebugLevel.LOW)) {
 				plugin.debug("Enabled protection hook for " + pluginName);

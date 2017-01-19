@@ -24,6 +24,7 @@ public abstract class Hook {
 		try {
 			this.isChunkProtected(Bukkit.getWorlds().get(0), 0, 0);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 

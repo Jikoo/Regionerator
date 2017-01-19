@@ -157,6 +157,10 @@ public class Regionerator extends JavaPlugin {
 					if (debug(DebugLevel.LOW)) {
 						debug("Enabled protection hook for " + hookName);
 					}
+				} else {
+					if (debug(DebugLevel.LOW)) {
+						debug("Protection hook for " + hookName + " failed usability check.");
+					}
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
@@ -400,7 +404,7 @@ public class Regionerator extends JavaPlugin {
 		return Collections.unmodifiableList(this.protectionHooks);
 	}
 
-	public void addHook(Hook hook) {
+	public void addHook(PluginHook hook) {
 		if (hook == null) {
 			throw new IllegalArgumentException("Hook cannot be null");
 		}
@@ -409,6 +413,10 @@ public class Regionerator extends JavaPlugin {
 			if (enabledHook.getClass().equals(hook.getClass())) {
 				throw new IllegalStateException(String.format("Hook %s is already enabled", hook.getProtectionName()));
 			}
+		}
+
+		if (!hook.isHookUsable()) {
+			throw new IllegalStateException(String.format("Hook %s is not usable", hook.getProtectionName()));
 		}
 
 		this.protectionHooks.add(hook);
