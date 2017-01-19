@@ -2,13 +2,14 @@ package com.github.jikoo.regionerator.listeners;
 
 import java.util.Iterator;
 
+import com.github.jikoo.regionerator.DebugLevel;
+import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
+import com.github.jikoo.regionerator.Regionerator;
+
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
-
-import com.github.jikoo.regionerator.DebugLevel;
-import com.github.jikoo.regionerator.Hook;
-import com.github.jikoo.regionerator.Regionerator;
 
 /**
  * Listener for hooked plugins being enabled or disabled.
@@ -29,14 +30,14 @@ public class HookListener implements Listener {
 			return;
 		}
 		try {
-			Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "Hook");
-			if (!Hook.class.isAssignableFrom(clazz)) {
+			Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "PluginHook");
+			if (!PluginHook.class.isAssignableFrom(clazz)) {
 				// What.
 				return;
 			}
-			Hook hook = (Hook) clazz.newInstance();
+			PluginHook pluginHook = (PluginHook) clazz.newInstance();
 			// No need to check if the hook is usable, we know the plugin required is present
-			plugin.getProtectionHooks().add(hook);
+			plugin.getProtectionHooks().add(pluginHook);
 			if (plugin.debug(DebugLevel.LOW)) {
 				plugin.debug("Enabled protection hook for " + pluginName);
 			}
@@ -52,7 +53,11 @@ public class HookListener implements Listener {
 		String pluginName = event.getPlugin().getName();
 		Iterator<Hook> iterator = plugin.getProtectionHooks().iterator();
 		while (iterator.hasNext()) {
-			if (pluginName.equals(iterator.next().getPluginName())) {
+			Hook hook = iterator.next();
+			if (!(hook instanceof PluginHook)) {
+				continue;
+			}
+			if (pluginName.equals(((PluginHook) hook).getPluginName())) {
 				iterator.remove();
 				if (plugin.debug(DebugLevel.LOW)) {
 					plugin.debug("Disabled protection hook for " + pluginName);

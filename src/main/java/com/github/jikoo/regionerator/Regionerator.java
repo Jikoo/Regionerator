@@ -65,6 +65,7 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("debug-level", "OFF");
 			dirtyConfig = true;
 		}
+
 		if (debug(DebugLevel.LOW)) {
 			debug("Debug level: " + debugLevel.name());
 		}
@@ -137,12 +138,13 @@ public class Regionerator extends JavaPlugin {
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		boolean hasHooks = false;
-		for (String pluginName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
-			if (!getConfig().getBoolean("hooks." + pluginName)) {
+		for (String hookName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
+			// Default true - hooks should likely be enabled unless explicitly disabled
+			if (!getConfig().getBoolean("hooks." + hookName, true)) {
 				continue;
 			}
 			try {
-				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + pluginName + "Hook");
+				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + hookName + "Hook");
 				if (!Hook.class.isAssignableFrom(clazz)) {
 					// What.
 					continue;
@@ -152,13 +154,13 @@ public class Regionerator extends JavaPlugin {
 					protectionHooks.add(hook);
 					hasHooks = true;
 					if (debug(DebugLevel.LOW)) {
-						debug("Enabled protection hook for " + pluginName);
+						debug("Enabled protection hook for " + hookName);
 					}
 				}
 			} catch (ClassNotFoundException e) {
-				getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
+				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (InstantiationException | IllegalAccessException e) {
-				getLogger().severe("Unable to enable hook for " + pluginName + "!");
+				getLogger().severe("Unable to enable hook for " + hookName + "!");
 				e.printStackTrace();
 			}
 		}
@@ -240,7 +242,7 @@ public class Regionerator extends JavaPlugin {
 				Player player = (Player) sender;
 				Chunk chunk = player.getLocation().getChunk();
 				for (Hook hook : protectionHooks) {
-					player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getPluginName());
+					player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
 				}
 				player.sendMessage("Chunk VisitStatus: " + chunkFlagger.getChunkVisitStatus(chunk.getWorld(), chunk.getX(), chunk.getZ()).name());
 				return true;

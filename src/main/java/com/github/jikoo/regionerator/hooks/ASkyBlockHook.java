@@ -3,17 +3,17 @@ package com.github.jikoo.regionerator.hooks;
 import com.wasteofplastic.askyblock.ASkyBlockAPI;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.Location;
 import org.bukkit.World;
 
 /**
- * Hook for the plugin <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.
+ * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.
  * 
  * @author Jikoo
  */
-public class ASkyBlockHook extends Hook {
+public class ASkyBlockHook extends PluginHook {
 
 	public ASkyBlockHook() {
 		super("ASkyBlock");

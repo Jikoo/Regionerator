@@ -8,17 +8,17 @@ import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.massivecore.ps.PS;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
 /**
- * Hook for the plugins <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
+ * PluginHook for the plugins <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
  * <a href=https://www.spigotmc.org/resources/factionsuuid.1035/>FactionsUUID</a>.
  * 
  * @author Jikoo
  */
-public class FactionsHook extends Hook {
+public class FactionsHook extends PluginHook {
 
 	private boolean isFactionsUUID;
 	private Object board;

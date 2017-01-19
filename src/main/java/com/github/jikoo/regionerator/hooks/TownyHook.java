@@ -2,16 +2,16 @@ package com.github.jikoo.regionerator.hooks;
 
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
 /**
- * Hook for the protection plugin <a href=https://github.com/LlmDl/Towny>Towny</a>.
+ * PluginHook for the protection plugin <a href=https://github.com/LlmDl/Towny>Towny</a>.
  * 
  * @author Jikoo
  */
-public class TownyHook extends Hook {
+public class TownyHook extends PluginHook {
 
 	public TownyHook() {
 		super("Towny");

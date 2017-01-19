@@ -50,6 +50,7 @@
 #   RedProtect: true
 #   Towny: true
 #   WorldGuard: true
+#   VanillaSpawnProtection: true
 # 
 # # Debug-level enables more and more verbose logging of actions as increased.
 # # OFF - no debug messages
@@ -106,6 +107,7 @@ hooks:
   RedProtect: true
   Towny: true
   WorldGuard: true
+  VanillaSpawnProtection: true
 
 # Debug-level enables more and more verbose logging of actions as increased.
 # OFF - no debug messages

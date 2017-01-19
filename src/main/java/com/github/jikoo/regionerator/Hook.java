@@ -4,27 +4,23 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 /**
- * Framework for managing plugin hooks.
+ * Basic framework for all hooks.
  * 
  * @author Jikoo
  */
 public abstract class Hook {
 
-	private final String pluginName;
+	private final String protectionName;
 
-	public Hook(String pluginName) {
-		this.pluginName = pluginName;
+	public Hook(String protectionName) {
+		this.protectionName = protectionName;
 	}
 
-	public String getPluginName() {
-		return pluginName;
+	public String getProtectionName() {
+		return protectionName;
 	}
 
 	public boolean isHookUsable() {
-		if (!Bukkit.getPluginManager().isPluginEnabled(pluginName)) {
-			return false;
-		}
-
 		try {
 			this.isChunkProtected(Bukkit.getWorlds().get(0), 0, 0);
 		} catch (Exception e) {
@@ -35,4 +31,5 @@ public abstract class Hook {
 	}
 
 	public abstract boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ);
+
 }

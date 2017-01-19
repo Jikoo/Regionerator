@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
@@ -9,11 +9,11 @@ import org.kingdoms.constants.land.SimpleChunkLocation;
 import org.kingdoms.manager.game.GameManagement;
 
 /**
- * Hook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.
+ * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.
  * 
  * @author Jikoo
  */
-public class KingdomsHook extends Hook {
+public class KingdomsHook extends PluginHook {
 
 	public KingdomsHook() {
 		super("Kingdoms");

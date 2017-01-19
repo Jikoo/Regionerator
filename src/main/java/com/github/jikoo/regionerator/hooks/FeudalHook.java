@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
@@ -8,11 +8,11 @@ import us.forseth11.feudal.core.Feudal;
 import us.forseth11.feudal.kingdoms.Land;
 
 /**
- * Hook for the plugin <a href=https://www.spigotmc.org/resources/feudal.22873/>Feudal</a>.
+ * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/feudal.22873/>Feudal</a>.
  * 
  * @author Jikoo
  */
-public class FeudalHook extends Hook {
+public class FeudalHook extends PluginHook {
 
 	public FeudalHook() {
 		super("Feudal");

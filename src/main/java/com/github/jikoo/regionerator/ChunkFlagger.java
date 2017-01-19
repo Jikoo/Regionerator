@@ -172,7 +172,7 @@ public class ChunkFlagger {
 		for (Hook hook : plugin.getProtectionHooks()) {
 			if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 				if (plugin.debug(DebugLevel.HIGH)) {
-					plugin.debug("Chunk " + chunkString + " contains protections by " + hook.getPluginName());
+					plugin.debug("Chunk " + chunkString + " contains protections by " + hook.getProtectionName());
 				}
 				return VisitStatus.PROTECTED;
 			}

@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
@@ -8,11 +8,11 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 /**
- * Hook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
+ * PluginHook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
  * 
  * @author Jikoo
  */
-public class GriefPreventionHook extends Hook {
+public class GriefPreventionHook extends PluginHook {
 
 	public GriefPreventionHook() {
 		super("GriefPrevention");

@@ -4,16 +4,16 @@ import br.net.fabiozumbi12.RedProtect.RedProtect;
 import br.net.fabiozumbi12.RedProtect.Region;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
 /**
- * Hook for the plugin <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
+ * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
  * 
  * @author Jikoo
  */
-public class RedProtectHook extends Hook {
+public class RedProtectHook extends PluginHook {
 
 	public RedProtectHook() {
 		super("RedProtect");

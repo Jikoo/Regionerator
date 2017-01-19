@@ -2,16 +2,16 @@ package com.github.jikoo.regionerator.hooks;
 
 import com.jcdesimp.landlord.persistantData.OwnedLand;
 
-import com.github.jikoo.regionerator.Hook;
+import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 
 /**
- * Hook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/landlord/>Landlord</a>.
+ * PluginHook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/landlord/>Landlord</a>.
  * 
  * @author Jikoo
  */
-public class LandlordHook extends Hook {
+public class LandlordHook extends PluginHook {
 
 	public LandlordHook() {
 		super("Landlord");
