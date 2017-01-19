@@ -93,6 +93,13 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/premium/FeudalLite.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>com.bekvon.bukkit</groupId>
+      <artifactId>Residence</artifactId>
+      <version>4.5.13.3</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/premium/Residence.jar</systemPath>
+    </dependency>
   </dependencies>
 
   <repositories>
