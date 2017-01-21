@@ -202,6 +202,9 @@ public class Regionerator extends JavaPlugin {
 					attemptDeletionActivation();
 				}
 			}.runTaskTimer(this, 0L, 1200L);
+
+			// Additionally, since flagging will not be editing values, flagging untouched chunks is not an option
+			getConfig().set("delete-new-unvisited-chunks", true);
 		}
 
 		if (debug(DebugLevel.LOW)) {
@@ -237,9 +240,11 @@ public class Regionerator extends JavaPlugin {
 
 			if (args[0].equals("flag")) {
 				commandFlag.handleFlags(sender, args, true);
+				return true;
 			}
 			if (args[0].equals("unflag")) {
 				commandFlag.handleFlags(sender, args, false);
+				return true;
 			}
 
 			boolean isPlayer = sender instanceof Player;
@@ -268,19 +273,18 @@ public class Regionerator extends JavaPlugin {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
 				// Not time yet.
-				sender.sendMessage(worldName + ": Gathering data, regeneration starts " + format.format(new Date(activeAt)));
+				sender.sendMessage(worldName + ": Gathering data, deletion starts " + format.format(new Date(activeAt)));
 				continue;
 			}
 
 			if (deletionRunnables.containsKey(worldName)) {
 				DeletionRunnable runnable = deletionRunnables.get(worldName);
-				String message = runnable.getRunStats();
+				sender.sendMessage(runnable.getRunStats());
 				if (runnable.getNextRun() < Long.MAX_VALUE) {
-					message += " - next run: " + format.format(runnable.getNextRun());
+					sender.sendMessage(" - Next run: " + format.format(runnable.getNextRun()));
 				} else if (!getConfig().getBoolean("allow-concurrent-cycles")) {
 					running = true;
 				}
-				sender.sendMessage(message);
 				continue;
 			}
 

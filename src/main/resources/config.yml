@@ -1,16 +1,18 @@
 # Regionerator configuration
 # 
 # 
-# # Square around each player's current chunk to mark.
+# # Square around each player's current chunk to flag.
 # chunk-flag-radius: 4
 # 
-# # Every x seconds, chunks around each player online are marked.
+# # Every x seconds, chunks around each player online are flagged.
 # seconds-per-flag: 10
 # 
 # # Flags are saved every x minutes.
 # minutes-per-flag-autosave: 5
 # 
 # # Flags older than x days can be ignored and the region deleted.
+# # To disable flagging, set this to 0.
+# # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
 # days-till-flag-expires: 7
 # 
 # # Chunks generated after the plugin is installed are automatically flagged.
@@ -58,19 +60,21 @@
 # # LOW - Minimal debug messages, periodic deletion reports
 # # MEDIUM - More debug messages. Spammy, not recommended.
 # # HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
-# debug-level: OFF
+# debug-level: LOW
 # 
 
-# Square around each player's current chunk to mark.
+# Square around each player's current chunk to flag.
 chunk-flag-radius: 4
 
-# Every x seconds, chunks around each player online are marked.
+# Every x seconds, chunks around each player online are flagged.
 seconds-per-flag: 10
 
 # Flags are saved every x minutes.
 minutes-per-flag-autosave: 5
 
 # Flags older than x days can be ignored and the region deleted.
+# To disable flagging, set this to 0.
+# days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
 days-till-flag-expires: 7
 
 # Chunks generated after the plugin is installed are automatically flagged.
@@ -116,4 +120,4 @@ hooks:
 # LOW - Minimal debug messages, periodic deletion reports
 # MEDIUM - More debug messages. Spammy, not recommended.
 # HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
-debug-level: OFF
+debug-level: LOW

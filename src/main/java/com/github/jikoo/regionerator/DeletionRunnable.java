@@ -204,7 +204,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (count < regionFileNames.length) {
 			localChunkX = 0;
 			localChunkZ = 0;
-			Pair<Integer, Integer> regionLowestChunk = CoordinateConversions.getRegionChunkCoords(regionFileNames[0]);
+			Pair<Integer, Integer> regionLowestChunk = CoordinateConversions.getRegionChunkCoords(regionFileNames[count]);
 			regionChunkX = regionLowestChunk.getLeft();
 			regionChunkZ = regionLowestChunk.getRight();
 
