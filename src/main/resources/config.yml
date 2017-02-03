@@ -46,6 +46,7 @@
 # hooks:
 #   ASkyBlock: true
 #   Factions: true
+#   Feudal: true
 #   GriefPrevention: true
 #   Kingdoms: true
 #   Landlord: true
@@ -106,6 +107,7 @@ worlds: []
 hooks:
   ASkyBlock: true
   Factions: true
+  Feudal: true
   GriefPrevention: true
   Kingdoms: true
   Landlord: true

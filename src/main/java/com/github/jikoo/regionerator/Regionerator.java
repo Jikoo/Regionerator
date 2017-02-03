@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
@@ -139,7 +140,9 @@ public class Regionerator extends JavaPlugin {
 		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		boolean hasHooks = false;
-		for (String hookName : getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false)) {
+		Set<String> hookNames = getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false);
+		hookNames.addAll(getConfig().getConfigurationSection("hooks").getKeys(false));
+		for (String hookName : hookNames) {
 			// Default true - hooks should likely be enabled unless explicitly disabled
 			if (!getConfig().getBoolean("hooks." + hookName, true)) {
 				continue;
