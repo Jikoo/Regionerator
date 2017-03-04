@@ -22,8 +22,10 @@ public class ResidenceHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		int blockX = CoordinateConversions.chunkToBlock(chunkX);
-		int blockZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int minX = CoordinateConversions.chunkToBlock(chunkX);
+		int maxX = minX + 15;
+		int minZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int maxZ = minZ + 15;
 		for (ClaimedResidence residence : Residence.getInstance().getResidenceManager().getResidences().values()) {
 			if (residence.isSubzone()) {
 				// Skip all subzones, hopefully will perform slightly better.
@@ -33,8 +35,8 @@ public class ResidenceHook extends PluginHook {
 				continue;
 			}
 			for (CuboidArea area : residence.getAreaArray()) {
-				if (area.getHighLoc().getX() >= blockX && area.getLowLoc().getX() <= blockX
-						&& area.getHighLoc().getZ() >= blockZ && area.getLowLoc().getZ() <= blockZ) {
+				if (minX <= area.getHighLoc().getX() && maxX >= area.getLowLoc().getX()
+						&& minZ <= area.getHighLoc().getZ() && maxZ >= area.getLowLoc().getZ()) {
 					return true;
 				}
 			}
