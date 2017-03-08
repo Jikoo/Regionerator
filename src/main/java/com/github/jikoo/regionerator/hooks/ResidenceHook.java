@@ -31,10 +31,10 @@ public class ResidenceHook extends PluginHook {
 				// Skip all subzones, hopefully will perform slightly better.
 				continue;
 			}
-			if (!chunkWorld.equals(residence.getWorld())) {
+			if (!chunkWorld.getName().equals(residence.getWorld())) {
 				continue;
 			}
-			for (CuboidArea area : residence.getAreaArray()) {
+			for (CuboidArea area : residence.getAreaMap().values()) {
 				if (minX <= area.getHighLoc().getX() && maxX >= area.getLowLoc().getX()
 						&& minZ <= area.getHighLoc().getZ() && maxZ >= area.getLowLoc().getZ()) {
 					return true;
