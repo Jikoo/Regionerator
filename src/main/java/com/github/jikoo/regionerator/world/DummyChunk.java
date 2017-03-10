@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator;
+package com.github.jikoo.regionerator.world;
 
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;

@@ -1,6 +1,8 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.PluginHook;
+import com.github.jikoo.regionerator.world.LoadPreventingLocation;
 
 import org.bukkit.World;
 
@@ -20,7 +22,9 @@ public class FeudalHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		return Feudal.getLandKingdom(new Land(chunkX, chunkZ, chunkWorld)) != null;
+		return Feudal.getLandKingdom(new Land(
+				new LoadPreventingLocation(chunkWorld, CoordinateConversions.chunkToBlock(chunkX),
+						0, CoordinateConversions.chunkToBlock(chunkZ)))) != null;
 	}
 
 }
