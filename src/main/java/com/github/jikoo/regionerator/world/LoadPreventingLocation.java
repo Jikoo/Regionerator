@@ -7,7 +7,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 /**
- * 
+ * A Location implementation that returns a DummyChunk instead of CraftBukkit's implementation,
+ * preventing the chunk from being loaded by the server.
  * 
  * @author Jikoo
  */

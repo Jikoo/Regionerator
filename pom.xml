@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>Regionerator</groupId>
   <artifactId>Regionerator</artifactId>
-  <version>1.4.4-SNAPSHOT</version>
+  <version>1.4.4</version>
 
   <dependencies>
     <dependency>
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>com.palmergames</groupId>
       <artifactId>Towny</artifactId>
-      <version>0.89.2.0</version>
+      <version>0.91.4.3</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/Towny.jar</systemPath>
     </dependency>

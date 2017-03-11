@@ -1,7 +1,9 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
+import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
@@ -19,11 +21,27 @@ public class TownyHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		try {
-			return new WorldCoord(chunkWorld.getName(), chunkX, chunkZ).getTownBlock().hasTown();
-		} catch (Exception e) {
-			return false;
+		int minX = CoordinateConversions.chunkToBlock(chunkX);
+		int maxX = minX + 15;
+		int minZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int maxZ = minZ + 15;
+
+		Coord lowCoord = Coord.parseCoord(minX, minZ);
+		Coord highCoord = Coord.parseCoord(maxX, maxZ);
+
+		for (int x = lowCoord.getX(); x <= highCoord.getX(); ++x) {
+			for (int z = lowCoord.getZ(); z <= highCoord.getZ(); ++z) {
+				WorldCoord worldCoord = new WorldCoord(chunkWorld.getName(), x, z);
+				try {
+					if (worldCoord.getTownBlock().hasTown()) {
+						return true;
+					}
+				} catch (Exception e) {
+					continue;
+				}
+			}
 		}
+		return false;
 	}
 
 }
