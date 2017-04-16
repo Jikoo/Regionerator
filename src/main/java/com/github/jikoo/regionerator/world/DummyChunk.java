@@ -94,4 +94,9 @@ public class DummyChunk implements Chunk {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@Override
+	public boolean isSlimeChunk() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
 }

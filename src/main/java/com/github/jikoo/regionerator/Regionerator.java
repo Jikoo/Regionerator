@@ -189,8 +189,6 @@ public class Regionerator extends JavaPlugin {
 			saveConfig();
 		}
 
-		chunkFlagger.scheduleSaving();
-
 		if (flagDuration > 0) {
 			// Flag duration is set, start flagging
 
@@ -311,8 +309,7 @@ public class Regionerator extends JavaPlugin {
 		getServer().getScheduler().cancelTasks(this);
 		HandlerList.unregisterAll(this);
 		if (chunkFlagger != null) {
-			chunkFlagger.cancelSaving();
-			chunkFlagger.save(true);
+			chunkFlagger.save();
 		}
 	}
 

@@ -1,15 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>Regionerator</groupId>
-  <artifactId>Regionerator</artifactId>
-  <version>1.4.4</version>
+  <groupId>com.github.jikoo</groupId>
+  <artifactId>regionerator</artifactId>
+  <name>Regionerator</name>
+  <version>1.4.5-SNAPSHOT</version>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.4</version>
+      <version>3.5</version>
       <type>jar</type>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>21.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -118,7 +125,7 @@
   </repositories>
 
   <build>
-    <finalName>Regionerator</finalName>
+    <finalName>${project.name}</finalName>
 
     <resources>
       <resource>
