@@ -8,21 +8,30 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Runnable for flagging chunks as visited.
- * 
+ *
  * @author Jikoo
  */
 public class FlaggingRunnable extends BukkitRunnable {
 
 	private final Regionerator plugin;
+	private final boolean spectateExists;
 
-	public FlaggingRunnable(Regionerator plugin) {
+	FlaggingRunnable(Regionerator plugin) {
 		this.plugin = plugin;
+		boolean spectate;
+		try {
+			GameMode.valueOf("SPECTATOR");
+			spectate = true;
+		} catch (IllegalArgumentException e) {
+			spectate = false;
+		}
+		this.spectateExists = spectate;
 	}
 
 	@Override
 	public void run() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			if (player.getGameMode() == GameMode.SPECTATOR) {
+			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR) {
 				// Skip spectators - if you can't touch it, you can't really visit it.
 				continue;
 			}

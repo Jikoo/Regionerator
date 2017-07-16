@@ -18,7 +18,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Runnable for checking and deleting chunks and regions.
- * 
+ *
  * @author Jikoo
  */
 public class DeletionRunnable extends BukkitRunnable {
@@ -35,7 +35,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	private int count = 0, regionChunkX, regionChunkZ, localChunkX = 0, localChunkZ = 0, regionsDeleted = 0, chunksDeleted = 0;
 	private long nextRun = Long.MAX_VALUE;
 
-	public DeletionRunnable(Regionerator plugin, World world) {
+	DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
 		this.world = world;
 		this.regionDir = this.findRegionFolder();
@@ -57,9 +57,9 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	/**
 	 * Gets the region directory containing all region files for the World.
-	 * 
+	 *
 	 * @return the region directory
-	 * 
+	 *
 	 * @throws IllegalStateException if the directory cannot be found
 	 */
 	private File findRegionFolder() {
@@ -169,7 +169,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (status.ordinal() < VisitStatus.GENERATED.ordinal()
 				|| (plugin.getGenerateFlag() != Long.MAX_VALUE && status == VisitStatus.GENERATED)) {
 			// Add chunks if unvisited and unprotected or (configurably) freshly generated
-			regionChunks.add(new ImmutablePair<Integer, Integer>(localChunkX, localChunkZ));
+			regionChunks.add(new ImmutablePair<>(localChunkX, localChunkZ));
 		}
 		localChunkX++;
 	}
@@ -217,7 +217,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	/**
 	 * Delete the file for the current region and fire the relevant RegioneratorChunkDeleteEvents.
-	 * 
+	 *
 	 * @param iterator the ListIterator of local chunk coordinates
 	 */
 	private void deleteRegion(ListIterator<Pair<Integer, Integer>> iterator) {
@@ -247,7 +247,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	/**
 	 * Delete individual chunks in the current region and fire the relevant
 	 * RegioneratorChunkDeleteEvents.
-	 * 
+	 *
 	 * @param iterator the ListIterator of local chunk coordinates
 	 */
 	private void deleteChunks(ListIterator<Pair<Integer, Integer>> iterator) {
@@ -324,11 +324,11 @@ public class DeletionRunnable extends BukkitRunnable {
 		}
 	}
 
-	public String getRunStats() {
+	String getRunStats() {
 		return String.format(STATS_FORMAT, world.getName(), count, regionFileNames.length, regionsDeleted, chunksDeleted);
 	}
 
-	public long getNextRun() {
+	long getNextRun() {
 		return nextRun;
 	}
 

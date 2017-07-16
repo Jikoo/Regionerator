@@ -4,7 +4,7 @@ import org.bukkit.Bukkit;
 
 /**
  * Framework for plugin hooks.
- * 
+ *
  * @author Jikoo
  */
 public abstract class PluginHook extends Hook {
@@ -24,11 +24,7 @@ public abstract class PluginHook extends Hook {
 
 	@Override
 	public boolean isHookUsable() {
-		if (!Bukkit.getPluginManager().isPluginEnabled(this.getPluginName())) {
-			return false;
-		}
-
-		return super.isHookUsable();
+		return Bukkit.getPluginManager().isPluginEnabled(this.getPluginName()) && super.isHookUsable();
 	}
 
 }
