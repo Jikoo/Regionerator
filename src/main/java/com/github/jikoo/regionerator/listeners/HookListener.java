@@ -7,13 +7,15 @@ import com.github.jikoo.regionerator.Hook;
 import com.github.jikoo.regionerator.PluginHook;
 import com.github.jikoo.regionerator.Regionerator;
 
+import com.github.jikoo.regionerator.hooks.ASkyBlockHook;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
 
 /**
  * Listener for hooked plugins being enabled or disabled.
- * 
+ *
  * @author Jikoo
  */
 public class HookListener implements Listener {
@@ -24,6 +26,7 @@ public class HookListener implements Listener {
 		this.plugin = plugin;
 	}
 
+	@EventHandler
 	public void onPluginEnable(PluginEnableEvent event) {
 		String pluginName = event.getPlugin().getName();
 		if (!plugin.getConfig().getBoolean("hooks." + pluginName)) {
@@ -54,6 +57,7 @@ public class HookListener implements Listener {
 		}
 	}
 
+	@EventHandler
 	public void onPluginDisable(PluginDisableEvent event) {
 		String pluginName = event.getPlugin().getName();
 		Iterator<Hook> iterator = this.plugin.getProtectionHooks().iterator();
@@ -70,6 +74,30 @@ public class HookListener implements Listener {
 				}
 				return;
 			}
+		}
+	}
+
+	@EventHandler
+	public void onASkyBlockReady(com.wasteofplastic.askyblock.events.ReadyEvent event) {
+		if (!plugin.getConfig().getBoolean("hooks.ASkyBlock")) {
+			return;
+		}
+
+		if (plugin.debug(DebugLevel.MEDIUM)) {
+			plugin.debug("ASkyBlock reports itself ready");
+		}
+
+		ASkyBlockHook pluginHook = new ASkyBlockHook();
+
+		if (!pluginHook.isHookUsable()) {
+			plugin.getLogger().severe("Hook for ASkyBlock failed usability check and could not be enabled!");
+			return;
+		}
+
+		plugin.addHook(pluginHook);
+
+		if (plugin.debug(DebugLevel.LOW)) {
+			plugin.debug("Enabled protection hook for ASkyBlock");
 		}
 	}
 

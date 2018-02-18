@@ -28,7 +28,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Plugin for deleting unused region files gradually.
- * 
+ *
  * @author Jikoo
  */
 public class Regionerator extends JavaPlugin {
@@ -154,6 +154,12 @@ public class Regionerator extends JavaPlugin {
 					continue;
 				}
 				Hook hook = (Hook) clazz.newInstance();
+				if (!hook.isReadyOnEnable()) {
+					if (debug(DebugLevel.LOW)) {
+						debug(String.format("Protection hook for %s is available, but not yet ready.", hookName));
+					}
+					continue;
+				}
 				if (hook.isHookUsable()) {
 					protectionHooks.add(hook);
 					hasHooks = true;
@@ -193,7 +199,7 @@ public class Regionerator extends JavaPlugin {
 			// Flag duration is set, start flagging
 
 			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
-	
+
 			new FlaggingRunnable(this).runTaskTimer(this, 0, getTicksPerFlag());
 		} else {
 			// Flagging runnable is not scheduled, schedule a task to start deletion

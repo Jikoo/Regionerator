@@ -5,7 +5,7 @@ import org.bukkit.World;
 
 /**
  * Basic framework for all hooks.
- * 
+ *
  * @author Jikoo
  */
 public abstract class Hook {
@@ -28,6 +28,10 @@ public abstract class Hook {
 			return false;
 		}
 
+		return true;
+	}
+
+	public boolean isReadyOnEnable() {
 		return true;
 	}
 

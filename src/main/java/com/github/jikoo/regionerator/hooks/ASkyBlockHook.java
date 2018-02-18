@@ -10,7 +10,7 @@ import org.bukkit.World;
 
 /**
  * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.
- * 
+ *
  * @author Jikoo
  */
 public class ASkyBlockHook extends PluginHook {
@@ -24,6 +24,10 @@ public class ASkyBlockHook extends PluginHook {
 		Location chunkLoc = new Location(chunkWorld, CoordinateConversions.chunkToBlock(chunkX), 0,
 				CoordinateConversions.chunkToBlock(chunkZ));
 		return ASkyBlockAPI.getInstance().getIslandAt(chunkLoc) != null;
+	}
+
+	public boolean isReadyOnEnable() {
+		return false;
 	}
 
 }
