@@ -3,7 +3,7 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>1.5.0</version>
+  <version>1.5.1</version>
 
   <dependencies>
     <dependency>
@@ -22,7 +22,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.11.2-R0.1-SNAPSHOT</version>
+      <version>1.12.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -84,6 +84,11 @@
       <version>6.6.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/RedProtect.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.github.marcelo-mason</groupId>
+      <artifactId>PreciousStones</artifactId>
+      <version>24e3d4bf67</version>
     </dependency>
     <!-- Premium dependencies -->
     <dependency>

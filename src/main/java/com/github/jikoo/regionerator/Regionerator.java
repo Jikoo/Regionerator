@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.bekvon.bukkit.residence.commands.message;
 import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
@@ -176,6 +177,10 @@ public class Regionerator extends JavaPlugin {
 			} catch (InstantiationException | IllegalAccessException e) {
 				getLogger().severe("Unable to enable hook for " + hookName + "!");
 				e.printStackTrace();
+			} catch (NoClassDefFoundError e) {
+				if (debug(DebugLevel.LOW)) {
+					debug("Protection hook for " + hookName + " is missing dependencies.");
+				}
 			}
 		}
 
