@@ -181,6 +181,9 @@ public class Regionerator extends JavaPlugin {
 				if (debug(DebugLevel.LOW)) {
 					debug("Protection hook for " + hookName + " is missing dependencies.");
 				}
+				if (debug(DebugLevel.MEDIUM)) {
+					e.printStackTrace();
+				}
 			}
 		}
 
