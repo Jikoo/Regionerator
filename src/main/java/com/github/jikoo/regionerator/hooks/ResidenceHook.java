@@ -10,8 +10,8 @@ import com.github.jikoo.regionerator.PluginHook;
 import org.bukkit.World;
 
 /**
- * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/residence.11480/>Residence</a>.
- * 
+ * PluginHook for <a href=https://www.spigotmc.org/resources/residence.11480/>Residence</a>.
+ *
  * @author Jikoo
  */
 public class ResidenceHook extends PluginHook {

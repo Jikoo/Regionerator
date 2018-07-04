@@ -50,6 +50,7 @@
 #   GriefPrevention: true
 #   Kingdoms: true
 #   Landlord: true
+#   Lands: true
 #   PreciousStones: true
 #   RedProtect: true
 #   Residence: true
@@ -112,6 +113,7 @@ hooks:
   GriefPrevention: true
   Kingdoms: true
   Landlord: true
+  Lands: true
   PreciousStones: true
   RedProtect: true
   Residence: true

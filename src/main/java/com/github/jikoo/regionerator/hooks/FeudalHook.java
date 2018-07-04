@@ -10,8 +10,8 @@ import us.forseth11.feudal.core.Feudal;
 import us.forseth11.feudal.kingdoms.Land;
 
 /**
- * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/feudal.22873/>Feudal</a>.
- * 
+ * PluginHook for <a href=https://www.spigotmc.org/resources/feudal.22873/>Feudal</a>.
+ *
  * @author Jikoo
  */
 public class FeudalHook extends PluginHook {

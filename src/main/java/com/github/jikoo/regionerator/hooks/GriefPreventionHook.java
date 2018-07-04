@@ -8,8 +8,8 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 /**
- * PluginHook for the protection plugin <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
- * 
+ * PluginHook for <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
+ *
  * @author Jikoo
  */
 public class GriefPreventionHook extends PluginHook {

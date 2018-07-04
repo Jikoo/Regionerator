@@ -9,7 +9,7 @@ import com.github.jikoo.regionerator.PluginHook;
 import org.bukkit.World;
 
 /**
- * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
+ * PluginHook for <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
  *
  * @author Jikoo
  */

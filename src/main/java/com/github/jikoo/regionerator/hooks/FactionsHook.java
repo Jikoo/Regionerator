@@ -13,9 +13,9 @@ import com.github.jikoo.regionerator.PluginHook;
 import org.bukkit.World;
 
 /**
- * PluginHook for the plugins <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
+ * PluginHook for <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
  * <a href=https://www.spigotmc.org/resources/factionsuuid.1035/>FactionsUUID</a>.
- * 
+ *
  * @author Jikoo
  */
 public class FactionsHook extends PluginHook {

@@ -9,8 +9,8 @@ import org.kingdoms.constants.land.SimpleChunkLocation;
 import org.kingdoms.manager.game.GameManagement;
 
 /**
- * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.
- * 
+ * PluginHook for <a href=https://www.spigotmc.org/resources/kingdoms.11833/>Kingdoms</a>.
+ *
  * @author Jikoo
  */
 public class KingdomsHook extends PluginHook {

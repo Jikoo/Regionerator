@@ -13,7 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 /**
- * PluginHook for the plugin <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.
+ * PluginHook for <a href=https://www.spigotmc.org/resources/a-skyblock.1220/>ASkyBlock</a>.
  *
  * @author Jikoo
  */
@@ -37,13 +37,16 @@ public class ASkyBlockHook extends PluginHook implements Listener {
 	@Override
 	public void readyLater(Regionerator plugin) {
 
-		plugin.getServer().getPluginManager().registerEvents(new ASkyBlockReadyListener(plugin), plugin);
+		plugin.getServer().getPluginManager().registerEvents(new ASkyBlockReadyListener(plugin, this), plugin);
 	}
+
 	public class ASkyBlockReadyListener implements Listener {
 		private final Regionerator plugin;
+		private final ASkyBlockHook hook;
 
-		public ASkyBlockReadyListener(Regionerator plugin) {
+		ASkyBlockReadyListener(Regionerator plugin, ASkyBlockHook hook) {
 			this.plugin = plugin;
+			this.hook = hook;
 		}
 
 		@EventHandler
@@ -57,14 +60,12 @@ public class ASkyBlockHook extends PluginHook implements Listener {
 				plugin.debug("ASkyBlock reports itself ready");
 			}
 
-			ASkyBlockHook pluginHook = new ASkyBlockHook();
-
-			if (!pluginHook.isHookUsable()) {
+			if (!hook.isHookUsable()) {
 				plugin.getLogger().severe("Hook for ASkyBlock failed usability check and could not be enabled!");
 				return;
 			}
 
-			plugin.addHook(pluginHook);
+			plugin.addHook(hook);
 
 			if (plugin.debug(DebugLevel.LOW)) {
 				plugin.debug("Enabled protection hook for ASkyBlock");

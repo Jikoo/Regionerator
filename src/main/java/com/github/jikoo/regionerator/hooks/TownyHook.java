@@ -9,8 +9,8 @@ import com.github.jikoo.regionerator.PluginHook;
 import org.bukkit.World;
 
 /**
- * PluginHook for the protection plugin <a href=https://github.com/LlmDl/Towny>Towny</a>.
- * 
+ * PluginHook for <a href=https://github.com/LlmDl/Towny>Towny</a>.
+ *
  * @author Jikoo
  */
 public class TownyHook extends PluginHook {

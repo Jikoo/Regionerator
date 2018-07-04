@@ -3,7 +3,7 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>1.5.2</version>
+  <version>1.5.3</version>
 
   <dependencies>
     <dependency>
@@ -53,6 +53,7 @@
       <groupId>com.github.FabioZumbi12.RedProtect</groupId>
       <artifactId>RedProtect-Spigot</artifactId>
       <version>master-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.wasteofplastic</groupId>
@@ -110,6 +111,13 @@
       <version>4.5.13.3</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/premium/Residence.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>me.angeschossen</groupId>
+      <artifactId>Lands</artifactId>
+      <version>1.9.5</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/premium/Lands.jar</systemPath>
     </dependency>
   </dependencies>
 
