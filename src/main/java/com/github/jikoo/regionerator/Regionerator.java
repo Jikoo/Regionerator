@@ -159,6 +159,7 @@ public class Regionerator extends JavaPlugin {
 					if (debug(DebugLevel.LOW)) {
 						debug(String.format("Protection hook for %s is available, but not yet ready.", hookName));
 					}
+					hook.readyLater(this);
 					continue;
 				}
 				if (hook.isHookUsable()) {

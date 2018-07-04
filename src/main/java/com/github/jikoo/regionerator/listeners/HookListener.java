@@ -77,28 +77,4 @@ public class HookListener implements Listener {
 		}
 	}
 
-	@EventHandler
-	public void onASkyBlockReady(com.wasteofplastic.askyblock.events.ReadyEvent event) {
-		if (!plugin.getConfig().getBoolean("hooks.ASkyBlock")) {
-			return;
-		}
-
-		if (plugin.debug(DebugLevel.MEDIUM)) {
-			plugin.debug("ASkyBlock reports itself ready");
-		}
-
-		ASkyBlockHook pluginHook = new ASkyBlockHook();
-
-		if (!pluginHook.isHookUsable()) {
-			plugin.getLogger().severe("Hook for ASkyBlock failed usability check and could not be enabled!");
-			return;
-		}
-
-		plugin.addHook(pluginHook);
-
-		if (plugin.debug(DebugLevel.LOW)) {
-			plugin.debug("Enabled protection hook for ASkyBlock");
-		}
-	}
-
 }
