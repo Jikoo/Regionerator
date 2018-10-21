@@ -38,13 +38,8 @@ public class VanillaSpawnProtectionHook extends Hook {
 		}
 
 		int spawnChunkZ = CoordinateConversions.blockToChunk(spawn.getBlockZ());
-		if (chunkZ > spawnChunkZ + protectionRadius || chunkZ < spawnChunkZ - protectionRadius) {
-			// Chunk z is outside of protection radius
-			return false;
-		}
 
-		// X and z both within radius, huzzah
-		return true;
+		return chunkZ <= spawnChunkZ + protectionRadius && chunkZ >= spawnChunkZ - protectionRadius;
 	}
 
 }

@@ -1,15 +1,17 @@
 package com.github.jikoo.regionerator.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Regionerator;
 
+import com.sk89q.worldedit.IncompleteRegionException;
+import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.bukkit.selections.Selection;
 
+import com.sk89q.worldedit.regions.Region;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -100,7 +102,7 @@ public class CommandFlag {
 				return null;
 			}
 			// This looks silly, but it's necessary to make the compiler happy
-			return Arrays.asList((Triple<String, Integer, Integer>) new ImmutableTriple<>(worldName, chunkX, chunkZ));
+			return Collections.singletonList((Triple<String, Integer, Integer>) new ImmutableTriple<>(worldName, chunkX, chunkZ));
 		}
 
 		// Safe cast: prior 2 blocks remove all non-players.
@@ -109,7 +111,7 @@ public class CommandFlag {
 		// Flag current chunk
 		if (args.length < 2) {
 			Location location = player.getLocation();
-			return Arrays.asList((Triple<String, Integer, Integer>) new ImmutableTriple<>(
+			return Collections.singletonList((Triple<String, Integer, Integer>) new ImmutableTriple<>(
 					location.getWorld().getName(),
 					CoordinateConversions.blockToChunk(location.getBlockX()),
 					CoordinateConversions.blockToChunk(location.getBlockZ())));
@@ -138,7 +140,19 @@ public class CommandFlag {
 			return null;
 		}
 
-		Selection selection = worldedit.getSelection(player);
+		LocalSession session = worldedit.getSession(player);
+
+		if (session == null || session.getSelectionWorld() == null) {
+			sender.sendMessage("You must select an area with WorldEdit to (un)flag!");
+			return null;
+		}
+
+		Region selection = null;
+		try {
+			selection = session.getSelection(session.getSelectionWorld());
+		} catch (IncompleteRegionException e) {
+			// Ignored - we return anyway.
+		}
 
 		if (selection == null) {
 			sender.sendMessage("You must select an area with WorldEdit to (un)flag!");

@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.bekvon.bukkit.residence.commands.message;
 import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;

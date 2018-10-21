@@ -199,14 +199,14 @@ public class ChunkFlagger {
 	}
 
 	private Pair<String, String> getFlagFileIdentifier(String world, int chunkX, int chunkZ) {
-		return new ImmutablePair<String, String>(world,
-				new StringBuilder().append(CoordinateConversions.chunkToRegion(chunkX) >> 9)
-						.append('_').append(CoordinateConversions.chunkToRegion(chunkZ) >> 9)
-						.append(".yml").toString());
+		return new ImmutablePair<>(world,
+				String.valueOf(CoordinateConversions.chunkToRegion(chunkX) >> 9) +
+						'_' + (CoordinateConversions.chunkToRegion(chunkZ) >> 9) +
+						".yml");
 	}
 
 	private String getChunkPath(int chunkX, int chunkZ) {
-		return new StringBuilder().append(chunkX).append('_').append(chunkZ).toString();
+		return String.valueOf(chunkX) + '_' + chunkZ;
 	}
 
 }
