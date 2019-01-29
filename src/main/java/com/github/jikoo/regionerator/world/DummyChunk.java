@@ -99,4 +99,14 @@ public class DummyChunk implements Chunk {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@Override
+	public boolean isForceLoaded() {
+		return this.world.isChunkForceLoaded(this.chunkX, this.chunkZ);
+	}
+
+	@Override
+	public void setForceLoaded(boolean b) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
 }

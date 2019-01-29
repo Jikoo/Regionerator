@@ -3,8 +3,8 @@ package com.github.jikoo.regionerator.hooks;
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.PluginHook;
 
-import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 
@@ -25,8 +25,8 @@ public class WorldGuardHook extends PluginHook {
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		int chunkBlockX = CoordinateConversions.chunkToBlock(chunkX);
 		int chunkBlockZ = CoordinateConversions.chunkToBlock(chunkZ);
-		BlockVector bottom = new BlockVector(chunkBlockX, 0, chunkBlockZ);
-		BlockVector top = new BlockVector(chunkBlockX + 15, 255, chunkBlockZ + 15);
+		BlockVector3 bottom = BlockVector3.at(chunkBlockX, 0, chunkBlockZ);
+		BlockVector3 top = BlockVector3.at(chunkBlockX + 15, 255, chunkBlockZ + 15);
 		return WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(chunkWorld))
 				.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top))
 				.size() > 0;

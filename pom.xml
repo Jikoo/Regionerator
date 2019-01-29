@@ -3,7 +3,7 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>1.5.4.1</version>
+  <version>1.5.4.2</version>
 
   <dependencies>
     <dependency>
@@ -22,7 +22,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.13-pre7-R0.1-SNAPSHOT</version>
+      <version>1.13.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -50,7 +50,7 @@
     <dependency>
       <groupId>com.github.TechFortress</groupId>
       <artifactId>GriefPrevention</artifactId>
-      <version>16.11.4</version>
+      <version>16.11.5</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -140,7 +140,7 @@
   <repositories>
     <repository>
         <id>spigot-repo</id>
-        <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+        <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
     <repository>
       <id>sk89q-repo</id>
