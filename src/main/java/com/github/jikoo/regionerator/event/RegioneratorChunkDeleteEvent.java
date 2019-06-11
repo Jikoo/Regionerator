@@ -3,6 +3,7 @@ package com.github.jikoo.regionerator.event;
 import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Event fired when a Chunk is deleted by Regionerator. This event is not cancellable, because
@@ -22,12 +23,13 @@ public class RegioneratorChunkDeleteEvent extends Event {
 	private final World world;
 	private final int chunkX, chunkZ;
 
-	public RegioneratorChunkDeleteEvent(World world, int chunkX, int chunkZ) {
+	public RegioneratorChunkDeleteEvent(@NotNull World world, int chunkX, int chunkZ) {
 		this.world = world;
 		this.chunkX = chunkX;
 		this.chunkZ = chunkZ;
 	}
 
+	@NotNull
 	public World getWorld() {
 		return this.world;
 	}
@@ -56,6 +58,7 @@ public class RegioneratorChunkDeleteEvent extends Event {
 		return this.chunkZ;
 	}
 
+	@NotNull
 	@Override
 	public HandlerList getHandlers() {
 		return handlers;

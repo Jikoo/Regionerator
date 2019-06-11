@@ -7,11 +7,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.5</version>
-      <type>jar</type>
-      <scope>compile</scope>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>13.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -38,8 +36,8 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>org.bukkit</groupId>
-          <artifactId>bukkit</artifactId>
+          <groupId>com.destroystokyo.paper</groupId>
+          <artifactId>paper-api</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.sk89q</groupId>

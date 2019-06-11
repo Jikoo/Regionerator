@@ -36,9 +36,7 @@ public class TownyHook extends PluginHook {
 					if (worldCoord.getTownBlock().hasTown()) {
 						return true;
 					}
-				} catch (Exception e) {
-					continue;
-				}
+				} catch (Exception ignored) {}
 			}
 		}
 		return false;

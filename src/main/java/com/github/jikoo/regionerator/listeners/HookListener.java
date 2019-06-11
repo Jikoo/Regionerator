@@ -7,7 +7,6 @@ import com.github.jikoo.regionerator.Hook;
 import com.github.jikoo.regionerator.PluginHook;
 import com.github.jikoo.regionerator.Regionerator;
 
-import com.github.jikoo.regionerator.hooks.ASkyBlockHook;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;

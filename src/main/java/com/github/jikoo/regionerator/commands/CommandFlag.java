@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator.commands;
 
+import com.github.jikoo.regionerator.tuple.Triple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,8 +13,6 @@ import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 import com.sk89q.worldedit.regions.Region;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -102,7 +101,7 @@ public class CommandFlag {
 				return null;
 			}
 			// This looks silly, but it's necessary to make the compiler happy
-			return Collections.singletonList((Triple<String, Integer, Integer>) new ImmutableTriple<>(worldName, chunkX, chunkZ));
+			return Collections.singletonList(new Triple<>(worldName, chunkX, chunkZ));
 		}
 
 		// Safe cast: prior 2 blocks remove all non-players.
@@ -111,8 +110,8 @@ public class CommandFlag {
 		// Flag current chunk
 		if (args.length < 2) {
 			Location location = player.getLocation();
-			return Collections.singletonList((Triple<String, Integer, Integer>) new ImmutableTriple<>(
-					location.getWorld().getName(),
+			return Collections.singletonList(new Triple<>(
+					player.getWorld().getName(),
 					CoordinateConversions.blockToChunk(location.getBlockX()),
 					CoordinateConversions.blockToChunk(location.getBlockZ())));
 		}
@@ -160,15 +159,15 @@ public class CommandFlag {
 		}
 
 		ArrayList<Triple<String, Integer, Integer>> chunks = new ArrayList<>();
-		String worldName = selection.getWorld().getName();
-		int minChunkX = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockX());
+		String worldName = session.getSelectionWorld().getName();
 		int maxChunkX = CoordinateConversions.blockToChunk(selection.getMaximumPoint().getBlockX());
-		int minChunkZ = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockZ());
 		int maxChunkZ = CoordinateConversions.blockToChunk(selection.getMaximumPoint().getBlockZ());
 
-		for (; minChunkX <= maxChunkX; minChunkX++) {
-			for (; minChunkZ <= maxChunkZ; minChunkZ++) {
-				chunks.add(new ImmutableTriple<>(worldName, minChunkX, minChunkZ));
+		for (int minChunkX = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockX());
+		     minChunkX <= maxChunkX; minChunkX++) {
+			for (int minChunkZ = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockZ());
+			     minChunkZ <= maxChunkZ; minChunkZ++) {
+				chunks.add(new Triple<>(worldName, minChunkX, minChunkZ));
 			}
 		}
 

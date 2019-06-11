@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.tuple.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -9,10 +10,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
@@ -50,9 +47,9 @@ public class ChunkFlagger {
 					public Pair<YamlConfiguration, Boolean> load(Pair<String, String> key) throws Exception {
 						File flagFile = getFlagFile(key);
 						if (flagFile.exists()) {
-							return new MutablePair<>(YamlConfiguration.loadConfiguration(flagFile), false);
+							return new Pair<>(YamlConfiguration.loadConfiguration(flagFile), false);
 						}
-						return new MutablePair<>(new YamlConfiguration(), false);
+						return new Pair<>(new YamlConfiguration(), false);
 					}
 				});
 
@@ -97,7 +94,7 @@ public class ChunkFlagger {
 
 				Pair<YamlConfiguration, Boolean> flagData = this.flagFileCache.getUnchecked(this.getFlagFileIdentifier(world, chunkX, chunkZ));
 				flagData.getLeft().set(chunkPath, worldSection.getLong(chunkPath));
-				flagData.setValue(true);
+				flagData.setRight(true);
 			}
 		}
 		// Force save
@@ -127,7 +124,7 @@ public class ChunkFlagger {
 			return;
 		}
 		flagData.getLeft().set(chunkPath, flagTil);
-		flagData.setValue(true);
+		flagData.setRight(true);
 	}
 
 	public void unflagRegion(String world, int regionX, int regionZ) {
@@ -147,7 +144,7 @@ public class ChunkFlagger {
 		Pair<YamlConfiguration, Boolean> flagData = this.flagFileCache.getUnchecked(getFlagFileIdentifier(world, chunkX, chunkZ));
 		String chunkPath = this.getChunkPath(chunkX, chunkZ);
 		flagData.getLeft().set(chunkPath, null);
-		flagData.setValue(true);
+		flagData.setRight(true);
 	}
 
 	/**
@@ -199,7 +196,7 @@ public class ChunkFlagger {
 	}
 
 	private Pair<String, String> getFlagFileIdentifier(String world, int chunkX, int chunkZ) {
-		return new ImmutablePair<>(world,
+		return new Pair<>(world,
 				String.valueOf(CoordinateConversions.chunkToRegion(chunkX) >> 9) +
 						'_' + (CoordinateConversions.chunkToRegion(chunkZ) >> 9) +
 						".yml");

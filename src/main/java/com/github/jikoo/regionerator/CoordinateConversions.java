@@ -1,10 +1,8 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.tuple.Pair;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A small class for converting coordinates between blocks, chunks, and regions.
@@ -96,7 +94,7 @@ public class CoordinateConversions {
 			throw new IllegalArgumentException(regionFileName + " does not match the region file name format!");
 		}
 
-		return new ImmutablePair<>(regionToChunk(Integer.parseInt(matcher.group(1))),
+		return new Pair<>(regionToChunk(Integer.parseInt(matcher.group(1))),
 				regionToChunk(Integer.parseInt(matcher.group(2))));
 	}
 

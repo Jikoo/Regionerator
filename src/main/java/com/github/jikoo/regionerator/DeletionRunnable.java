@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.tuple.Pair;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -9,9 +10,6 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 
 import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -169,7 +167,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (status.ordinal() < VisitStatus.GENERATED.ordinal()
 				|| (plugin.getGenerateFlag() != Long.MAX_VALUE && status == VisitStatus.GENERATED)) {
 			// Add chunks if unvisited and unprotected or (configurably) freshly generated
-			regionChunks.add(new ImmutablePair<>(localChunkX, localChunkZ));
+			regionChunks.add(new Pair<>(localChunkX, localChunkZ));
 		}
 		localChunkX++;
 	}
