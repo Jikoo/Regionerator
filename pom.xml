@@ -3,7 +3,7 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>1.5.4.2</version>
+  <version>1.5.6</version>
 
   <dependencies>
     <dependency>
@@ -15,7 +15,7 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>21.0</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.spigotmc</groupId>

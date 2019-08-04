@@ -1,17 +1,15 @@
 package com.github.jikoo.regionerator.commands;
 
-import com.github.jikoo.regionerator.tuple.Triple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Regionerator;
+import com.github.jikoo.regionerator.tuple.Triple;
 
-import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-
 import com.sk89q.worldedit.regions.Region;
 
 import org.bukkit.Bukkit;
@@ -149,7 +147,7 @@ public class CommandFlag {
 		Region selection = null;
 		try {
 			selection = session.getSelection(session.getSelectionWorld());
-		} catch (IncompleteRegionException e) {
+		} catch (Exception ignored) {
 			// Ignored - we return anyway.
 		}
 
