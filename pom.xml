@@ -3,7 +3,7 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>1.5.6</version>
+  <version>1.5.7</version>
 
   <dependencies>
     <dependency>
@@ -129,7 +129,7 @@
     <dependency>
       <groupId>me.angeschossen</groupId>
       <artifactId>Lands</artifactId>
-      <version>1.9.5</version>
+      <version>3.9.8.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/premium/Lands.jar</systemPath>
     </dependency>
@@ -190,8 +190,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
           <showDeprecation>false</showDeprecation>
           <showWarnings>true</showWarnings>
         </configuration>

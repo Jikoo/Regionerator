@@ -1,8 +1,13 @@
 package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.regionerator.PluginHook;
+import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.DummyChunk;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import java.util.concurrent.ExecutionException;
 import me.angeschossen.lands.Lands;
+import me.angeschossen.lands.api.landsaddons.LandsAddon;
+import me.angeschossen.lands.api.objects.LandWorld;
 import org.bukkit.World;
 
 /**
@@ -12,12 +17,27 @@ import org.bukkit.World;
  */
 public class LandsHook extends PluginHook {
 
+	private final LandsAddon landsAPI;
+
 	public LandsHook() {
 		super("Lands");
+		landsAPI = new LandsAddon(Regionerator.getPlugin(Regionerator.class), false);
+		landsAPI.initialize();
 	}
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		return Lands.getLandsAPI().isLandChunk(new DummyChunk(chunkWorld, chunkX, chunkZ));
+		LandWorld landWorld = landsAPI.getLandWorld(chunkWorld.getName());
+
+		if (landWorld == null) {
+			return false;
+		}
+
+		try {
+			return (boolean) landsAPI.isClaimed(chunkWorld.getName(), chunkX, chunkZ).get();
+		} catch (InterruptedException | ExecutionException | ClassCastException e) {
+			e.printStackTrace();
+			return true;
+		}
 	}
 }
