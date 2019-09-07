@@ -56,6 +56,7 @@
 #   Residence: true
 #   Towny: true
 #   WorldGuard: true
+#   UltimateClaims: true
 #   VanillaSpawnProtection: true
 #
 # # Debug-level enables more and more verbose logging of actions as increased.
@@ -119,6 +120,7 @@ hooks:
   Residence: true
   Towny: true
   WorldGuard: true
+  UltimateClaims: true
   VanillaSpawnProtection: true
 
 # Debug-level enables more and more verbose logging of actions as increased.
