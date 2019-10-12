@@ -1,11 +1,7 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.PluginHook;
 import com.github.jikoo.regionerator.Regionerator;
-import com.github.jikoo.regionerator.world.DummyChunk;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import java.util.concurrent.ExecutionException;
-import me.angeschossen.lands.Lands;
 import me.angeschossen.lands.api.landsaddons.LandsAddon;
 import me.angeschossen.lands.api.objects.LandWorld;
 import org.bukkit.World;

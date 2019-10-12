@@ -5,7 +5,6 @@ import com.github.jikoo.regionerator.Regionerator;
 import com.wasteofplastic.askyblock.ASkyBlockAPI;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -56,9 +55,7 @@ public class ASkyBlockHook extends PluginHook implements Listener {
 				return;
 			}
 
-			if (plugin.debug(DebugLevel.MEDIUM)) {
-				plugin.debug("ASkyBlock reports itself ready");
-			}
+			plugin.debug(DebugLevel.MEDIUM, () -> "ASkyBlock reports itself ready");
 
 			if (!hook.isHookUsable()) {
 				plugin.getLogger().severe("Hook for ASkyBlock failed usability check and could not be enabled!");
@@ -67,9 +64,7 @@ public class ASkyBlockHook extends PluginHook implements Listener {
 
 			plugin.addHook(hook);
 
-			if (plugin.debug(DebugLevel.LOW)) {
-				plugin.debug("Enabled protection hook for ASkyBlock");
-			}
+			plugin.debug(DebugLevel.LOW, () -> "Enabled protection hook for ASkyBlock");
 		}
 	}
 

@@ -1,6 +1,5 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.PluginHook;
 import com.github.jikoo.regionerator.world.DummyChunk;
 import net.sacredlabyrinth.Phaed.PreciousStones.PreciousStones;
 import net.sacredlabyrinth.Phaed.PreciousStones.field.FieldFlag;

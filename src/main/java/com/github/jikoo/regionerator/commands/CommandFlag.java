@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Regionerator;
-import com.github.jikoo.regionerator.tuple.Triple;
+import com.github.jikoo.regionerator.util.Triple;
 
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;

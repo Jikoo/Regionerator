@@ -1,7 +1,5 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.PluginHook;
-
 import org.bukkit.World;
 
 import me.ryanhamshire.GriefPrevention.Claim;

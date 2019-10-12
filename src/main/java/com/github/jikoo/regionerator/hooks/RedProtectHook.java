@@ -4,7 +4,6 @@ import br.net.fabiozumbi12.RedProtect.Bukkit.RedProtect;
 import br.net.fabiozumbi12.RedProtect.Bukkit.Region;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.PluginHook;
 
 import com.github.jikoo.regionerator.world.DummyChunk;
 import org.bukkit.Location;

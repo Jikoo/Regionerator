@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator.tuple;
+package com.github.jikoo.regionerator.util;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ public class Triple<L, M, R> extends Pair<L, R> {
 	}
 
 	public @NotNull
-    M getMiddle() {
+	M getMiddle() {
 		return middle;
 	}
 

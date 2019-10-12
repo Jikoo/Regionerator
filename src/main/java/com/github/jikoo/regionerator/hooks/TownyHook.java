@@ -4,7 +4,6 @@ import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.PluginHook;
 
 import org.bukkit.World;
 

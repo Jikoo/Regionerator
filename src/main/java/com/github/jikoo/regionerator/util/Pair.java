@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator.tuple;
+package com.github.jikoo.regionerator.util;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -13,12 +13,12 @@ public class Pair<L, R> {
 	}
 
 	public @NotNull
-    L getLeft() {
+	L getLeft() {
 		return left;
 	}
 
 	public @NotNull
-    R getRight() {
+	R getRight() {
 		return right;
 	}
 

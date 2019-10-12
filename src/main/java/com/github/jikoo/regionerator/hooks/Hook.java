@@ -1,5 +1,6 @@
-package com.github.jikoo.regionerator;
+package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.regionerator.Regionerator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 

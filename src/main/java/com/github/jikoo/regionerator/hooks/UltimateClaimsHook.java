@@ -1,6 +1,5 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.PluginHook;
 import com.songoda.ultimateclaims.UltimateClaims;
 import org.bukkit.World;
 

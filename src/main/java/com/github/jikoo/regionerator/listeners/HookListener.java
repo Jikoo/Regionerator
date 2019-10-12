@@ -3,8 +3,8 @@ package com.github.jikoo.regionerator.listeners;
 import java.util.Iterator;
 
 import com.github.jikoo.regionerator.DebugLevel;
-import com.github.jikoo.regionerator.Hook;
-import com.github.jikoo.regionerator.PluginHook;
+import com.github.jikoo.regionerator.hooks.Hook;
+import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.Regionerator;
 
 import org.bukkit.event.EventHandler;
@@ -43,9 +43,7 @@ public class HookListener implements Listener {
 				return;
 			}
 			plugin.addHook(pluginHook);
-			if (plugin.debug(DebugLevel.LOW)) {
-				plugin.debug("Enabled protection hook for " + pluginName);
-			}
+			plugin.debug(DebugLevel.LOW, () -> "Enabled protection hook for " + pluginName);
 		} catch (IllegalStateException e) {
 			plugin.getLogger().severe("Tried to add hook for " + pluginName + ", but it was already enabled!");
 		} catch (ClassNotFoundException e) {
@@ -68,9 +66,7 @@ public class HookListener implements Listener {
 			if (pluginName.equals(((PluginHook) hook).getPluginName())) {
 				// Won't CME; we return after modification.
 				this.plugin.removeHook(hook);
-				if (this.plugin.debug(DebugLevel.LOW)) {
-					this.plugin.debug("Disabled protection hook for " + pluginName);
-				}
+				plugin.debug(DebugLevel.LOW, () -> "Disabled protection hook for " + pluginName);
 				return;
 			}
 		}

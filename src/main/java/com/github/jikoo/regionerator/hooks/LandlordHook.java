@@ -2,8 +2,6 @@ package com.github.jikoo.regionerator.hooks;
 
 import com.jcdesimp.landlord.persistantData.OwnedLand;
 
-import com.github.jikoo.regionerator.PluginHook;
-
 import org.bukkit.World;
 
 /**

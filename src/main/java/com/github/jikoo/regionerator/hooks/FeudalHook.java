@@ -1,7 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
-import com.github.jikoo.regionerator.PluginHook;
 import com.github.jikoo.regionerator.world.LoadPreventingLocation;
 
 import org.bukkit.World;

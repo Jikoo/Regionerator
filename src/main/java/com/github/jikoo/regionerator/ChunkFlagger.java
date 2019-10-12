@@ -1,6 +1,7 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.tuple.Pair;
+import com.github.jikoo.regionerator.hooks.Hook;
+import com.github.jikoo.regionerator.util.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -159,31 +160,31 @@ public class ChunkFlagger {
 		String chunkPath = this.getChunkPath(chunkX, chunkZ);
 		long visit = flagData.getLeft().getLong(chunkPath, -1);
 		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
-			if (this.plugin.debug(DebugLevel.HIGH)) {
-				this.plugin.debug("Chunk " + chunkPath + " is flagged.");
-			}
+			this.plugin.debug(DebugLevel.HIGH, () -> {
+				// TODO debug
+				System.out.println("supplier debug");
+				return "Chunk " + chunkPath + " is flagged.";
+			});
+
 			if (visit == this.plugin.getEternalFlag()) {
 				return VisitStatus.PERMANENTLY_FLAGGED;
 			}
+
 			return VisitStatus.VISITED;
 		}
+
 		for (Hook hook : this.plugin.getProtectionHooks()) {
 			if (hook.isChunkProtected(world, chunkX, chunkZ)) {
-				if (this.plugin.debug(DebugLevel.HIGH)) {
-					this.plugin.debug("Chunk " + chunkPath + " contains protections by " + hook.getProtectionName());
-				}
+				this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + chunkPath + " contains protections by " + hook.getProtectionName());
 				return VisitStatus.PROTECTED;
 			}
 		}
+
 		if (visit == Long.MAX_VALUE) {
-			if (this.plugin.debug(DebugLevel.HIGH)) {
-				this.plugin.debug("Chunk " + chunkPath + " has not been visited since it was generated.");
-			}
+			this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + chunkPath + " has not been visited since it was generated.");
 			return VisitStatus.GENERATED;
 		}
-		if (visit == -1) {
-			return VisitStatus.UNKNOWN;
-		}
+
 		return VisitStatus.UNVISITED;
 	}
 

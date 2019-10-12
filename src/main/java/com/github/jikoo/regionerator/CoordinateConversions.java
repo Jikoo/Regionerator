@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.tuple.Pair;
+import com.github.jikoo.regionerator.util.Pair;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

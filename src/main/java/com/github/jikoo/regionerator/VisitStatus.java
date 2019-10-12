@@ -7,11 +7,11 @@ package com.github.jikoo.regionerator;
  */
 public enum VisitStatus {
 
-	UNKNOWN,
 	UNVISITED,
 	GENERATED,
 	VISITED,
 	PERMANENTLY_FLAGGED,
-	PROTECTED
+	PROTECTED,
+	UNKNOWN
 
 }

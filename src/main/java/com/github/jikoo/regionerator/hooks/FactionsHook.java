@@ -8,8 +8,6 @@ import com.massivecraft.factions.entity.BoardColl;
 import com.massivecraft.factions.entity.Faction;
 import com.massivecraft.massivecore.ps.PS;
 
-import com.github.jikoo.regionerator.PluginHook;
-
 import org.bukkit.World;
 
 /**

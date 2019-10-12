@@ -1,5 +1,8 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.hooks.Hook;
+import com.github.jikoo.regionerator.hooks.PluginHook;
+import com.github.jikoo.regionerator.util.Config;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,15 +10,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -25,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -33,111 +36,22 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class Regionerator extends JavaPlugin {
 
-	private final long flagEternal = Long.MAX_VALUE - 1;
 	private final CommandFlag commandFlag = new CommandFlag(this);
-
-	private long flagDuration;
-	private long ticksPerFlag;
-	private long ticksPerFlagAutosave;
-	private List<String> worlds;
-	private List<Hook> protectionHooks;
-	private ChunkFlagger chunkFlagger;
 	private HashMap<String, DeletionRunnable> deletionRunnables;
-	private long millisBetweenCycles;
-	private DebugLevel debugLevel;
+	private ChunkFlagger chunkFlagger;
+	private List<Hook> protectionHooks;
+	private Config config;
 	private boolean paused = false;
 
 	@Override
 	public void onEnable() {
 
 		saveDefaultConfig();
+		config = new Config(this);
 
 		deletionRunnables = new HashMap<>();
 		chunkFlagger = new ChunkFlagger(this);
 		protectionHooks = new ArrayList<>();
-
-		List<String> worldList = getConfig().getStringList("worlds");
-
-		boolean dirtyConfig = false;
-
-		try {
-			debugLevel = DebugLevel.valueOf(getConfig().getString("debug-level", "OFF").toUpperCase());
-		} catch (IllegalArgumentException e) {
-			debugLevel = DebugLevel.OFF;
-			getConfig().set("debug-level", "OFF");
-			dirtyConfig = true;
-		}
-
-		if (debug(DebugLevel.LOW)) {
-			debug("Debug level: " + debugLevel.name());
-		}
-
-		worlds = new ArrayList<>();
-		for (World world : Bukkit.getWorlds()) {
-			if (worldList.contains(world.getName())) {
-				worlds.add(world.getName());
-				continue;
-			}
-			for (String name : worldList) {
-				if (world.getName().equalsIgnoreCase(name)) {
-					worlds.add(world.getName());
-					dirtyConfig = true;
-					break;
-				}
-			}
-		}
-		// Immutable list, this should not be changed during run by myself or another plugin
-		worlds = ImmutableList.copyOf(worlds);
-		if (dirtyConfig) {
-			getConfig().set("worlds", worlds);
-		}
-
-		// 86,400,000 = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-		flagDuration = 86400000L * getConfig().getInt("days-till-flag-expires");
-
-		for (String worldName : worlds) {
-			if (!getConfig().isLong("delete-this-to-reset-plugin." + worldName)) {
-				// Set time to start actually deleting chunks to ensure that all existing areas are given a chance
-				getConfig().set("delete-this-to-reset-plugin." + worldName, System.currentTimeMillis() + flagDuration);
-				dirtyConfig = true;
-			}
-		}
-
-		if (getConfig().getInt("chunk-flag-radius") < 0) {
-			getConfig().set("chunk-flag-radius", 4);
-			dirtyConfig = true;
-		}
-
-		if (getConfig().getInt("seconds-per-flag") < 1) {
-			getConfig().set("seconds-per-flag", 10);
-			dirtyConfig = true;
-		}
-		// 20 ticks per second
-		ticksPerFlag = getConfig().getInt("seconds-per-flag") * 20L;
-
-		if (getConfig().getInt("minutes-per-flag-autosave") < 1) {
-			getConfig().set("minutes-per-flag-autosave", 5);
-			dirtyConfig = true;
-		}
-		// 60 seconds per minute, 20 ticks per second
-		ticksPerFlagAutosave = getConfig().getInt("minutes-per-flag-autosave") * 1200L;
-
-		if (getConfig().getLong("ticks-per-deletion") < 1) {
-			getConfig().set("ticks-per-deletion", 20L);
-			dirtyConfig = true;
-		}
-
-		if (getConfig().getInt("chunks-per-deletion") < 1) {
-			getConfig().set("chunks-per-deletion", 20);
-			dirtyConfig = true;
-		}
-
-		if (getConfig().getInt("hours-between-cycles") < 0) {
-			getConfig().set("hours-between-cycles", 0);
-			dirtyConfig = true;
-		}
-		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
-		millisBetweenCycles = getConfig().getInt("hours-between-cycles") * 3600000L;
 
 		boolean hasHooks = false;
 		Set<String> hookNames = getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false);
@@ -155,40 +69,31 @@ public class Regionerator extends JavaPlugin {
 				}
 				Hook hook = (Hook) clazz.newInstance();
 				if (!hook.isReadyOnEnable()) {
-					if (debug(DebugLevel.LOW)) {
-						debug(String.format("Protection hook for %s is available, but not yet ready.", hookName));
-					}
+					debug(DebugLevel.LOW, () -> String.format("Protection hook for %s is available, but not yet ready.", hookName));
 					hook.readyLater(this);
 					continue;
 				}
 				if (hook.isHookUsable()) {
 					protectionHooks.add(hook);
 					hasHooks = true;
-					if (debug(DebugLevel.LOW)) {
-						debug("Enabled protection hook for " + hookName);
-					}
+					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
 				} else {
-					if (debug(DebugLevel.LOW)) {
-						debug("Protection hook for " + hookName + " failed usability check.");
-					}
+					debug(DebugLevel.LOW, () -> "Protection hook for " + hookName + " failed usability check.");
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (InstantiationException | IllegalAccessException e) {
+				paused = true;
 				getLogger().severe("Unable to enable hook for " + hookName + "!");
 				e.printStackTrace();
 			} catch (NoClassDefFoundError e) {
-				if (debug(DebugLevel.LOW)) {
-					debug("Protection hook for " + hookName + " is missing dependencies.");
-				}
-				if (debug(DebugLevel.MEDIUM)) {
-					e.printStackTrace();
-				}
+				debug(DebugLevel.LOW, () -> "Protection hook for " + hookName + " is missing dependencies.");
+				debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
 			}
 		}
 
 		// Don't register listeners if there are no worlds configured
-		if (worlds.isEmpty()) {
+		if (config.getWorlds().isEmpty()) {
 			getLogger().severe("No worlds are enabled. There's nothing to do!");
 			return;
 		}
@@ -198,12 +103,7 @@ public class Regionerator extends JavaPlugin {
 			getServer().getPluginManager().registerEvents(new HookListener(this), this);
 		}
 
-		if (dirtyConfig) {
-			getConfig().options().copyHeader(true);
-			saveConfig();
-		}
-
-		if (flagDuration > 0) {
+		if (config.getFlagDuration() > 0) {
 			// Flag duration is set, start flagging
 
 			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
@@ -222,13 +122,11 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("delete-new-unvisited-chunks", true);
 		}
 
-		if (debug(DebugLevel.LOW)) {
-			onCommand(Bukkit.getConsoleSender(), null, null, new String[0]);
-		}
+		debug(DebugLevel.LOW, () -> onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(getCommand("regionerator")), "regionerator", new String[0]));
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
 
 		attemptDeletionActivation();
 
@@ -236,8 +134,7 @@ public class Regionerator extends JavaPlugin {
 			args[0] = args[0].toLowerCase();
 			if (args[0].equals("reload")) {
 				reloadConfig();
-				onDisable();
-				onEnable();
+				config.reload(this);
 				sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
 				return true;
 			}
@@ -276,7 +173,7 @@ public class Regionerator extends JavaPlugin {
 			return false;
 		}
 
-		if (worlds.isEmpty()) {
+		if (config.getWorlds().isEmpty()) {
 			sender.sendMessage("No worlds are configured. Edit your config and use /regionerator reload.");
 			return true;
 		}
@@ -284,7 +181,7 @@ public class Regionerator extends JavaPlugin {
 		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
 
 		boolean running = false;
-		for (String worldName : worlds) {
+		for (String worldName : config.getWorlds()) {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
 				// Not time yet.
@@ -328,7 +225,7 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public long getVisitFlag() {
-		return flagDuration + System.currentTimeMillis();
+		return System.currentTimeMillis() + config.getFlagDuration();
 	}
 
 	public long getGenerateFlag() {
@@ -336,7 +233,7 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public long getEternalFlag() {
-		return flagEternal;
+		return config.getFlagEternal();
 	}
 
 	public int getChunkFlagRadius() {
@@ -344,11 +241,11 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public long getTicksPerFlag() {
-		return ticksPerFlag;
+		return config.getFlagInterval();
 	}
 
 	public long getTicksPerFlagAutosave() {
-		return ticksPerFlagAutosave;
+		return config.getFlagAutosaveInterval();
 	}
 
 	public int getChunksPerDeletionCheck() {
@@ -360,22 +257,18 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public long getMillisecondsBetweenDeletionCycles() {
-		return millisBetweenCycles;
+		return config.getMillisBetweenCycles();
 	}
 
 	public void attemptDeletionActivation() {
-		Iterator<Entry<String, DeletionRunnable>> iterator = deletionRunnables.entrySet().iterator();
-		while (iterator.hasNext()) {
-			if (iterator.next().getValue().getNextRun() < System.currentTimeMillis()) {
-				iterator.remove();
-			}
-		}
+		deletionRunnables.entrySet().removeIf(stringDeletionRunnableEntry ->
+				stringDeletionRunnableEntry.getValue().getNextRun() < System.currentTimeMillis());
 
 		if (isPaused()) {
 			return;
 		}
 
-		for (String worldName : worlds) {
+		for (String worldName : config.getWorlds()) {
 			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName) > System.currentTimeMillis()) {
 				// Not time yet.
 				continue;
@@ -398,16 +291,12 @@ public class Regionerator extends JavaPlugin {
 			try {
 				runnable = new DeletionRunnable(this, world);
 			} catch (RuntimeException e) {
-				if (debug(DebugLevel.HIGH)) {
-					debug(e.getMessage());
-				}
+				debug(DebugLevel.HIGH, e::getMessage);
 				continue;
 			}
 			runnable.runTaskTimer(this, 0, getTicksPerDeletionCheck());
 			deletionRunnables.put(worldName, runnable);
-			if (debug(DebugLevel.LOW)) {
-				debug("Deletion run scheduled for " + world.getName());
-			}
+			debug(DebugLevel.LOW, () -> "Deletion run scheduled for " + world.getName());
 			if (!getConfig().getBoolean("allow-concurrent-cycles")) {
 				return;
 			}
@@ -415,7 +304,7 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public List<String> getActiveWorlds() {
-		return worlds;
+		return config.getWorlds();
 	}
 
 	public List<Hook> getProtectionHooks() {
@@ -464,10 +353,19 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public boolean debug(DebugLevel level) {
-		return debugLevel.ordinal() >= level.ordinal();
+		return config.getDebugLevel().ordinal() >= level.ordinal();
 	}
 
-	public void debug(String message) {
-		getLogger().info(message);
+	public void debug(DebugLevel level, Supplier<String> message) {
+		if (Regionerator.this.debug(level)) {
+			getLogger().info(message.get());
+		}
 	}
+
+	public void debug(DebugLevel level, Runnable runnable) {
+		if (debug(level)) {
+			runnable.run();
+		}
+	}
+
 }

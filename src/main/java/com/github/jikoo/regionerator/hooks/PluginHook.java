@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator;
+package com.github.jikoo.regionerator.hooks;
 
 import org.bukkit.Bukkit;
 
@@ -24,7 +24,8 @@ public abstract class PluginHook extends Hook {
 
 	@Override
 	public boolean isHookUsable() {
-		return Bukkit.getPluginManager().isPluginEnabled(this.getPluginName()) && super.isHookUsable();
+		// TODO rework for autopause if present but disabled
+		return Bukkit.getPluginManager().getPlugin(getPluginName()) != null && super.isHookUsable();
 	}
 
 }
