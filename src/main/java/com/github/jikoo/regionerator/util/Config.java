@@ -17,10 +17,6 @@ public class Config {
 	private long millisBetweenCycles;
 	private DebugLevel debugLevel;
 
-	public Config(Regionerator plugin) {
-		reload(plugin);
-	}
-
 	public void reload(Regionerator plugin) {
 
 		List<String> worldList = plugin.getConfig().getStringList("worlds");

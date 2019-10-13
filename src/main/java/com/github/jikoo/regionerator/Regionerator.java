@@ -47,7 +47,8 @@ public class Regionerator extends JavaPlugin {
 	public void onEnable() {
 
 		saveDefaultConfig();
-		config = new Config(this);
+		config = new Config();
+		config.reload(this);
 
 		deletionRunnables = new HashMap<>();
 		chunkFlagger = new ChunkFlagger(this);

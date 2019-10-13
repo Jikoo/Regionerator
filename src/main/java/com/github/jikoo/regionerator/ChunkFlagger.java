@@ -214,11 +214,7 @@ public class ChunkFlagger {
 		String chunkPath = this.getChunkPath(chunkX, chunkZ);
 		long visit = flagData.getLeft().getLong(chunkPath, -1);
 		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
-			this.plugin.debug(DebugLevel.HIGH, () -> {
-				// TODO debug
-				System.out.println("supplier debug");
-				return "Chunk " + chunkPath + " is flagged.";
-			});
+			this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + chunkPath + " is flagged.");
 
 			if (visit == this.plugin.getEternalFlag()) {
 				return VisitStatus.PERMANENTLY_FLAGGED;
