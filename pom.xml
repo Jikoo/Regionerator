@@ -110,6 +110,13 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/Towny.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>org.redcastlemedia.multitallented</groupId>
+      <artifactId>civs</artifactId>
+      <version>1.5.4</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/civs.jar</systemPath>
+    </dependency>
     <!-- Premium dependencies -->
     <dependency>
       <groupId>org.kingdoms</groupId>

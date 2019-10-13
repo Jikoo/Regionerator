@@ -44,7 +44,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	@Override
 	public void run() {
-		if (index >= regions.length) {
+		if (index >= regions.length - 1) {
 			plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 			nextRun = System.currentTimeMillis() + plugin.getMillisecondsBetweenDeletionCycles();
 			this.cancel();
