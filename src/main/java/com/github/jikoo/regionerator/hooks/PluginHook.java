@@ -23,9 +23,13 @@ public abstract class PluginHook extends Hook {
 	}
 
 	@Override
+	public boolean areDependenciesPresent() {
+		return Bukkit.getPluginManager().getPlugin(getPluginName()) != null;
+	}
+
+	@Override
 	public boolean isHookUsable() {
-		// TODO rework for autopause if present but disabled
-		return Bukkit.getPluginManager().getPlugin(getPluginName()) != null && super.isHookUsable();
+		return Bukkit.getPluginManager().isPluginEnabled(getPluginName()) && super.isHookUsable();
 	}
 
 }

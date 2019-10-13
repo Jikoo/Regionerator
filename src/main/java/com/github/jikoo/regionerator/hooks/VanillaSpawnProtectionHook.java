@@ -18,6 +18,11 @@ public class VanillaSpawnProtectionHook extends Hook {
 	}
 
 	@Override
+	public boolean areDependenciesPresent() {
+		return true;
+	}
+
+	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		int protectionRadius = Bukkit.getSpawnRadius();
 

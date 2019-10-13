@@ -68,8 +68,12 @@ public class Regionerator extends JavaPlugin {
 					continue;
 				}
 				Hook hook = (Hook) clazz.newInstance();
+				if (!hook.areDependenciesPresent()) {
+					debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
+					continue;
+				}
 				if (!hook.isReadyOnEnable()) {
-					debug(DebugLevel.LOW, () -> String.format("Protection hook for %s is available, but not yet ready.", hookName));
+					debug(DebugLevel.LOW, () -> String.format("Protection hook for %s is available but not yet ready.", hookName));
 					hook.readyLater(this);
 					continue;
 				}
@@ -78,13 +82,14 @@ public class Regionerator extends JavaPlugin {
 					hasHooks = true;
 					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
 				} else {
-					debug(DebugLevel.LOW, () -> "Protection hook for " + hookName + " failed usability check.");
+					debug(DebugLevel.OFF, () -> "Protection hook for " + hookName + " failed usability check! Deletion is paused.");
+					paused = true;
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (InstantiationException | IllegalAccessException e) {
+				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
 				paused = true;
-				getLogger().severe("Unable to enable hook for " + hookName + "!");
 				e.printStackTrace();
 			} catch (NoClassDefFoundError e) {
 				debug(DebugLevel.LOW, () -> "Protection hook for " + hookName + " is missing dependencies.");

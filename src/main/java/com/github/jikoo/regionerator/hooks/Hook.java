@@ -21,6 +21,8 @@ public abstract class Hook {
 		return protectionName;
 	}
 
+	public abstract boolean areDependenciesPresent();
+
 	public boolean isHookUsable() {
 		try {
 			this.isChunkProtected(Bukkit.getWorlds().get(0), 0, 0);
