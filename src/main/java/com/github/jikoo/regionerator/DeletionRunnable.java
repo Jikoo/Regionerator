@@ -4,6 +4,7 @@ import com.github.jikoo.regionerator.util.AnvilRegion;
 import com.github.jikoo.regionerator.util.Pair;
 import com.github.jikoo.regionerator.util.Region;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -27,6 +28,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
 		this.world = world;
+		// TODO: RegionProvider or some such thing
 		File regionDir = new File(world.getWorldFolder(), "region");
 		File[] regionFiles = regionDir.listFiles((dir, name) -> AnvilRegion.ANVIL_REGION.matcher(name).matches());
 
@@ -58,6 +60,18 @@ public class DeletionRunnable extends BukkitRunnable {
 			++index;
 			plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s/%s)",
 					world.getName(), regions[index].getRegionFile().getName(), index, regions.length));
+		}
+
+		if (!regions[index].isPopulated()) {
+			try {
+				regions[index].populate(plugin);
+			} catch (IOException e) {
+				plugin.debug(DebugLevel.LOW, () -> String.format(
+						"Caught an IOException attempting to populate chunk data: %s", e.getMessage()));
+				plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+				++index;
+				return;
+			}
 		}
 
 		if (!regions[index].isCompletelyChecked()) {

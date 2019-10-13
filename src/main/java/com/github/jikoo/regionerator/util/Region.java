@@ -32,6 +32,10 @@ public abstract class Region {
 		chunks = new ArrayList<>(1024);
 	}
 
+	public boolean isPopulated() {
+		return populated;
+	}
+
 	public abstract void populate(Regionerator plugin) throws IOException;
 
 	public File getRegionFile() {
@@ -55,6 +59,9 @@ public abstract class Region {
 	}
 
 	public void checkChunks(Regionerator plugin) {
+		if (!isPopulated()) {
+			throw new IllegalStateException("Region cannot be checked before being populated!");
+		}
 		for (int i = 0; i < plugin.getChunksPerDeletionCheck() && chunkIndex < chunks.size(); ++i, ++chunkIndex) {
 			checkChunk(plugin, chunkIndex);
 		}
@@ -73,13 +80,13 @@ public abstract class Region {
 	}
 
 	public final int deleteChunks(Regionerator plugin) {
+		if (!this.isCompletelyChecked()) {
+			throw new IllegalStateException("Cannot delete until region is completely checked!");
+		}
 		if (deleted) {
 			return 0;
 		}
 		deleted = true;
-		if (!this.isCompletelyChecked()) {
-			throw new IllegalStateException("Cannot delete until region is completely checked!");
-		}
 
 		if (!chunks.removeIf(chunkData -> chunkData.getVisitStatus().ordinal() >= VisitStatus.VISITED.ordinal())) {
 
