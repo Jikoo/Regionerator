@@ -2,19 +2,23 @@ package com.github.jikoo.regionerator;
 
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.Pair;
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Storing time stamps for chunks made easy.
@@ -25,27 +29,30 @@ public class ChunkFlagger {
 
 	private final Regionerator plugin;
 	private final LoadingCache<Pair<String, String>, Pair<YamlConfiguration, Boolean>> flagFileCache;
+	private final HashMap<Pair<String, String>, YamlConfiguration> saveQueue;
+	private BukkitTask saveTask = null;
 
-	public ChunkFlagger(Regionerator plugin) {
+	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
+		this.saveQueue = new HashMap<>();
 		this.flagFileCache = CacheBuilder.newBuilder()
 				// Minimum 1 minute cache duration even if flags are saved more often than every 30s
 				.expireAfterAccess(Math.max(60, plugin.getTicksPerFlagAutosave() * 10), TimeUnit.SECONDS)
 				.removalListener(new RemovalListener<Pair<String, String>, Pair<YamlConfiguration, Boolean>>() {
 					@Override
-					public void onRemoval(RemovalNotification<Pair<String, String>, Pair<YamlConfiguration, Boolean>> notification) {
+					public void onRemoval(@NotNull RemovalNotification<Pair<String, String>, Pair<YamlConfiguration, Boolean>> notification) {
 						// Only attempt to save if dirty to minimize writes
 						if (notification.getValue().getRight()) {
-							try {
-								notification.getValue().getLeft().save(getFlagFile(notification.getKey()));
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
+							saveQueue.put(notification.getKey(), notification.getValue().getLeft());
+							startSaveQueue();
 						}
 					}
 				}).build(new CacheLoader<Pair<String, String>, Pair<YamlConfiguration, Boolean>>() {
 					@Override
-					public Pair<YamlConfiguration, Boolean> load(Pair<String, String> key) throws Exception {
+					public Pair<YamlConfiguration, Boolean> load(@NotNull Pair<String, String> key) throws Exception {
+						if (saveQueue.containsKey(key)) {
+							return new Pair<>(saveQueue.get(key), false);
+						}
 						File flagFile = getFlagFile(key);
 						if (flagFile.exists()) {
 							return new Pair<>(YamlConfiguration.loadConfiguration(flagFile), false);
@@ -55,6 +62,54 @@ public class ChunkFlagger {
 				});
 
 		convertOldFlagsFile();
+	}
+
+	private void startSaveQueue() {
+
+		// If plugin is disabling, save all files.
+		if (!plugin.isEnabled()) {
+			if (saveTask != null) {
+				saveTask.cancel();
+				saveTask = null;
+			}
+			saveQueue.entrySet().removeIf(entry -> {
+				try {
+					entry.getValue().save(getFlagFile(entry.getKey()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return true;
+			});
+		}
+
+		if (saveTask != null && !saveTask.isCancelled()) {
+			return;
+		}
+
+		// Save 1 file per tick - it's inconceivable that ordinary play would exceed this in load.
+		saveTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+			if (saveQueue.isEmpty()) {
+				if (saveTask != null) {
+					saveTask.cancel();
+				}
+				saveTask = null;
+				return;
+			}
+
+			Iterator<Map.Entry<Pair<String, String>, YamlConfiguration>> iterator = saveQueue.entrySet().iterator();
+			Map.Entry<Pair<String, String>, YamlConfiguration> entry = iterator.next();
+			try {
+				entry.getValue().save(getFlagFile(entry.getKey()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			iterator.remove();
+
+			if (saveQueue.isEmpty() && saveTask != null) {
+				saveTask.cancel();
+				saveTask = null;
+			}
+		}, 1L, 1L);
 	}
 
 	private void convertOldFlagsFile() {
@@ -129,16 +184,15 @@ public class ChunkFlagger {
 	}
 
 	public void unflagRegion(String world, int regionX, int regionZ) {
-		this.unflagRegionByLowestChunk(world, CoordinateConversions.regionToChunk(regionX),
-				CoordinateConversions.regionToChunk(regionZ));
+		unflagRegionByLowestChunk(world, CoordinateConversions.regionToChunk(regionX), CoordinateConversions.regionToChunk(regionZ));
 	}
 
 	public void unflagRegionByLowestChunk(String world, int regionLowestChunkX, int regionLowestChunkZ) {
-		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
-			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
-				this.unflagChunk(world, chunkX, chunkZ);
-			}
-		}
+		Pair<String, String> flagFileIdentifier = getFlagFileIdentifier(world, regionLowestChunkX, regionLowestChunkZ);
+		Pair<YamlConfiguration, Boolean> flagData = this.flagFileCache.getUnchecked(flagFileIdentifier);
+		flagData.setRight(false);
+		this.flagFileCache.invalidate(flagData);
+		getFlagFile(flagFileIdentifier).delete();
 	}
 
 	public void unflagChunk(String world, int chunkX, int chunkZ) {
