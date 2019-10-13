@@ -7,6 +7,7 @@ package com.github.jikoo.regionerator;
  */
 public enum VisitStatus {
 
+	ORPHANED,
 	UNVISITED,
 	GENERATED,
 	VISITED,

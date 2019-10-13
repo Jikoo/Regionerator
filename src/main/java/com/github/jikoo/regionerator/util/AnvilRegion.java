@@ -88,21 +88,18 @@ public class AnvilRegion extends Region {
 			Iterator<ChunkData> chunkIterator = chunks.iterator();
 			while (chunkIterator.hasNext()) {
 				ChunkData chunk = chunkIterator.next();
+
+				if (chunk.isOrphaned()) {
+					// Chunk was already marked as orphaned, skip.
+					chunkIterator.remove();
+					continue;
+				}
+
 				// Pointers for chunks are 4 byte integers stored at coordinates relative to the region file itself.
 				int pointer = 4 * (chunk.getLocalChunkX() + chunk.getLocalChunkZ() * 32);
 
-				boolean orphaned = true;
 				for (int i = pointer; i < pointer + 4; ++i) {
-					if (pointers[i] != 0) {
-						orphaned = false;
-						pointers[i] = 0;
-					}
-				}
-
-				// Chunk is already orphaned, continue on.
-				if (orphaned) {
-					chunkIterator.remove();
-					continue;
+					pointers[i] = 0;
 				}
 
 				++chunkCount;

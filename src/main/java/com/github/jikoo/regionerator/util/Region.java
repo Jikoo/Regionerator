@@ -63,16 +63,25 @@ public abstract class Region {
 			throw new IllegalStateException("Region cannot be checked before being populated!");
 		}
 		for (int i = 0; i < plugin.getChunksPerDeletionCheck() && chunkIndex < chunks.size(); ++i, ++chunkIndex) {
-			checkChunk(plugin, chunkIndex);
+			if (!checkChunk(plugin, chunkIndex)) {
+				--i;
+			}
 		}
 	}
 
-	private void checkChunk(Regionerator plugin, int i) {
+	private boolean checkChunk(Regionerator plugin, int i) {
 		ChunkData chunkData = chunks.get(i);
+
+		if (chunkData.isOrphaned()) {
+			chunkData.setVisitStatus(VisitStatus.ORPHANED);
+			return false;
+		}
 
 		int chunkX = lowestChunkX + chunkData.getLocalChunkX();
 		int chunkZ = lowestChunkZ + chunkData.getLocalChunkZ();
 		VisitStatus chunkFlagStatus = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ);
+		chunkData.setVisitStatus(chunkFlagStatus);
+		return true;
 	}
 
 	public boolean hasDeletionRun() {
