@@ -34,5 +34,7 @@ public class FlaggingListener implements Listener {
 	public void onChunkPopulate(ChunkPopulateEvent event) {
 		plugin.getFlagger().flagChunk(event.getWorld().getName(), event.getChunk().getX(),
 				event.getChunk().getZ(), 0, plugin.getGenerateFlag());
+		// TODO update active region(s) to change orphan status of generated chunks
 	}
+
 }

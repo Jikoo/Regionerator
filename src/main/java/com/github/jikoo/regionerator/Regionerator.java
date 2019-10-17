@@ -93,7 +93,7 @@ public class Regionerator extends JavaPlugin {
 				paused = true;
 				e.printStackTrace();
 			} catch (NoClassDefFoundError e) {
-				debug(DebugLevel.LOW, () -> "Protection hook for " + hookName + " is missing dependencies.");
+				debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
 				debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
 			}
 		}

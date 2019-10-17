@@ -80,6 +80,8 @@ public class ChunkFlagger {
 				}
 				return true;
 			});
+
+			return;
 		}
 
 		if (saveTask != null && !saveTask.isCancelled()) {
