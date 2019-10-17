@@ -45,6 +45,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	@Override
 	public void run() {
 		if (index >= regions.length - 1) {
+			--index;
 			plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 			nextRun = System.currentTimeMillis() + plugin.getMillisecondsBetweenDeletionCycles();
 			this.cancel();
@@ -59,7 +60,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 			++index;
 			plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s/%s)",
-					world.getName(), regions[index].getRegionFile().getName(), index, regions.length));
+					world.getName(), regions[index].getRegionFile().getName(), index + 1, regions.length));
 		}
 
 		if (!regions[index].isPopulated()) {
@@ -96,13 +97,13 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 		}
 
-		if (index > 0 && index % 20 == 0) {
+		if (index > 0 && (index + 1) % 20 == 0) {
 			plugin.debug(DebugLevel.LOW, this::getRunStats);
 		}
 	}
 
 	String getRunStats() {
-		return String.format(STATS_FORMAT, world.getName(), index, regions.length, regionsDeleted, chunksDeleted);
+		return String.format(STATS_FORMAT, world.getName(), index + 1, regions.length, regionsDeleted, chunksDeleted);
 	}
 
 	long getNextRun() {
