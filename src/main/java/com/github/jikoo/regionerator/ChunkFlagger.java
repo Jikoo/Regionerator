@@ -92,6 +92,9 @@ public class ChunkFlagger {
 			}
 
 			ConfigurationSection worldSection = oldFlags.getConfigurationSection(world);
+			if (worldSection == null) {
+				continue;
+			}
 
 			for (String chunkPath : worldSection.getKeys(false)) {
 				if (!worldSection.isLong(chunkPath)) {
@@ -123,8 +126,11 @@ public class ChunkFlagger {
 		// Force save
 		this.flagCache.invalidateAll();
 		// Rename old flag file
-		oldFlagsFile.renameTo(new File(oldFlagsFile.getParentFile(), "flags.yml.bak"));
-		this.plugin.getLogger().info("Finished converting flags.yml, renamed to flags.yml.bak. Delete at convenience if all appears well.");
+		if (oldFlagsFile.renameTo(new File(oldFlagsFile.getParentFile(), "flags.yml.bak"))) {
+			this.plugin.getLogger().info("Finished converting flags.yml, renamed to flags.yml.bak. Delete at convenience if all appears well.");
+		} else {
+			this.plugin.getLogger().warning("Finished converting flags.yml but could not rename! Conversion will run again on startup.");
+		}
 	}
 
 	private void convertOldPerWorldFlagFiles() {
@@ -136,12 +142,22 @@ public class ChunkFlagger {
 
 		Pattern chunkCoordsSplitter = Pattern.compile("_");
 
-		for (File worldFlagsFolder : oldFlagsFolder.listFiles()) {
+		File[] worldDirectories = oldFlagsFolder.listFiles();
+		if (worldDirectories == null) {
+			return;
+		}
+
+		for (File worldFlagsFolder : worldDirectories) {
 			if (!worldFlagsFolder.isDirectory()) continue;
 
 			String worldName = worldFlagsFolder.getName();
 
-			for (File regionFlagsFile : worldFlagsFolder.listFiles()) {
+			File[] regionFlagsFiles = worldFlagsFolder.listFiles();
+			if (regionFlagsFiles == null) {
+				continue;
+			}
+
+			for (File regionFlagsFile : regionFlagsFiles) {
 				YamlConfiguration regionConfig = YamlConfiguration.loadConfiguration(regionFlagsFile);
 
 				Map<String, Object> values = regionConfig.getValues(false);
@@ -161,8 +177,11 @@ public class ChunkFlagger {
 		// Force save
 		this.flagCache.invalidateAll();
 		// Rename old flag file
-		oldFlagsFolder.renameTo(new File(oldFlagsFolder.getParentFile(), "flags.bak"));
-		this.plugin.getLogger().info("Finished converting flags folder, renamed to flags.bak. Delete at convenience if all appears well.");
+		if (oldFlagsFolder.renameTo(new File(oldFlagsFolder.getParentFile(), "flags.bak"))) {
+			this.plugin.getLogger().info("Finished converting flags folder, renamed to flags.bak. Delete at convenience if all appears well.");
+		} else {
+			this.plugin.getLogger().warning("Finished converting flags folder but could not rename! Conversion will run again on startup.");
+		}
 	}
 
 	public void flagChunksInRadius(String world, int chunkX, int chunkZ) {
@@ -276,7 +295,7 @@ public class ChunkFlagger {
 			this.time = time;
 		}
 
-		public boolean isDirty() {
+		boolean isDirty() {
 			return dirty;
 		}
 
