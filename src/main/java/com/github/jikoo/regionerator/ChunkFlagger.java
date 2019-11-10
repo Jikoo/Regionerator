@@ -11,9 +11,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Storing time stamps for chunks made easy.
@@ -25,6 +27,7 @@ public class ChunkFlagger {
 	private final Regionerator plugin;
 	private final SimpleLoadingCache<String, FlagData> flagCache;
 	private final Connection database;
+	private final BukkitTask dbCommitTask;
 
 	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
@@ -34,6 +37,7 @@ public class ChunkFlagger {
 			try (Statement st = database.createStatement()) {
 				st.executeUpdate("CREATE TABLE IF NOT EXISTS `chunkdata`(`chunk_id` TEXT NOT NULL UNIQUE, `time` BIGINT NOT NULL)");
 			}
+			this.database.setAutoCommit(false);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("An error occurred while connecting SQLite");
@@ -77,6 +81,15 @@ public class ChunkFlagger {
 
 		convertOldFlagsFile();
 		convertOldPerWorldFlagFiles();
+
+		// Saving changes to the database every 3 minutes
+		this.dbCommitTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+			try {
+				database.commit();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}, 20 * 60 * 3, 20 * 60 * 3);
 	}
 
 	private void convertOldFlagsFile() {
@@ -124,7 +137,7 @@ public class ChunkFlagger {
 			}
 		}
 		// Force save
-		this.flagCache.invalidateAll();
+		save();
 		// Rename old flag file
 		if (oldFlagsFile.renameTo(new File(oldFlagsFile.getParentFile(), "flags.yml.bak"))) {
 			this.plugin.getLogger().info("Finished converting flags.yml, renamed to flags.yml.bak. Delete at convenience if all appears well.");
@@ -175,7 +188,7 @@ public class ChunkFlagger {
 			}
 		}
 		// Force save
-		this.flagCache.invalidateAll();
+		save();
 		// Rename old flag file
 		if (oldFlagsFolder.renameTo(new File(oldFlagsFolder.getParentFile(), "flags.bak"))) {
 			this.plugin.getLogger().info("Finished converting flags folder, renamed to flags.bak. Delete at convenience if all appears well.");
@@ -251,6 +264,11 @@ public class ChunkFlagger {
 	 */
 	public void save() {
 		this.flagCache.invalidateAll();
+		try {
+			this.database.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public VisitStatus getChunkVisitStatus(World world, int chunkX, int chunkZ) {
