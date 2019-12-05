@@ -2,8 +2,8 @@ package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.regionerator.Regionerator;
 import java.util.concurrent.ExecutionException;
-import me.angeschossen.lands.api.landsaddons.LandsAddon;
-import me.angeschossen.lands.api.objects.LandWorld;
+import me.angeschossen.lands.api.integration.LandsIntegration;
+import me.angeschossen.lands.api.land.LandWorld;
 import org.bukkit.World;
 
 /**
@@ -13,11 +13,11 @@ import org.bukkit.World;
  */
 public class LandsHook extends PluginHook {
 
-	private final LandsAddon landsAPI;
+	private final LandsIntegration landsAPI;
 
 	public LandsHook() {
 		super("Lands");
-		landsAPI = new LandsAddon(Regionerator.getPlugin(Regionerator.class), false);
+		landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class), false);
 		landsAPI.initialize();
 	}
 
@@ -30,7 +30,7 @@ public class LandsHook extends PluginHook {
 		}
 
 		try {
-			return (boolean) landsAPI.isClaimed(chunkWorld.getName(), chunkX, chunkZ).get();
+			return landsAPI.isClaimed(chunkWorld.getName(), chunkX, chunkZ).get();
 		} catch (InterruptedException | ExecutionException | ClassCastException e) {
 			e.printStackTrace();
 			return true;
