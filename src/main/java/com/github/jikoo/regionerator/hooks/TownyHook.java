@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
@@ -27,9 +28,10 @@ public class TownyHook extends PluginHook {
 
 		Coord lowCoord = Coord.parseCoord(minX, minZ);
 		Coord highCoord = Coord.parseCoord(maxX, maxZ);
+		int cellSize = TownySettings.getTownBlockSize();
 
-		for (int x = lowCoord.getX(); x <= highCoord.getX(); ++x) {
-			for (int z = lowCoord.getZ(); z <= highCoord.getZ(); ++z) {
+		for (int x = lowCoord.getX(); x <= highCoord.getX(); x += cellSize) {
+			for (int z = lowCoord.getZ(); z <= highCoord.getZ(); z += cellSize) {
 				WorldCoord worldCoord = new WorldCoord(chunkWorld.getName(), x, z);
 				try {
 					if (worldCoord.getTownBlock().hasTown()) {
