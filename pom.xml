@@ -5,6 +5,10 @@
   <name>Regionerator</name>
   <version>2.0.0-BETA-2</version>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.jetbrains</groupId>

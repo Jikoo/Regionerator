@@ -1,7 +1,10 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.commands.CommandFlag;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
+import com.github.jikoo.regionerator.listeners.FlaggingListener;
+import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.Config;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,11 +15,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
-import com.github.jikoo.regionerator.commands.CommandFlag;
-import com.github.jikoo.regionerator.listeners.FlaggingListener;
-import com.github.jikoo.regionerator.listeners.HookListener;
-
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -68,7 +66,7 @@ public class Regionerator extends JavaPlugin {
 					// What.
 					continue;
 				}
-				Hook hook = (Hook) clazz.newInstance();
+				Hook hook = (Hook) clazz.getDeclaredConstructor().newInstance();
 				if (!hook.areDependenciesPresent()) {
 					debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
 					continue;
@@ -88,7 +86,7 @@ public class Regionerator extends JavaPlugin {
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
-			} catch (InstantiationException | IllegalAccessException e) {
+			} catch (ReflectiveOperationException e) {
 				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
 				paused = true;
 				e.printStackTrace();

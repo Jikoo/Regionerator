@@ -37,7 +37,7 @@ public class HookListener implements Listener {
 				// What.
 				return;
 			}
-			PluginHook pluginHook = (PluginHook) clazz.newInstance();
+			PluginHook pluginHook = (PluginHook) clazz.getDeclaredConstructor().newInstance();
 			if (!pluginHook.isHookUsable()) {
 				plugin.getLogger().severe("Hook for " + pluginName + " failed usability check and could not be enabled!");
 				return;
@@ -48,7 +48,7 @@ public class HookListener implements Listener {
 			plugin.getLogger().severe("Tried to add hook for " + pluginName + ", but it was already enabled!");
 		} catch (ClassNotFoundException e) {
 			plugin.getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (ReflectiveOperationException e) {
 			plugin.getLogger().severe("Unable to enable hook for " + pluginName + "!");
 			e.printStackTrace();
 		}
