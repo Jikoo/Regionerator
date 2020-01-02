@@ -1,11 +1,9 @@
 package com.github.jikoo.regionerator;
 
 import com.github.jikoo.regionerator.util.AnvilRegion;
-import com.github.jikoo.regionerator.util.Pair;
 import com.github.jikoo.regionerator.util.Region;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -21,7 +19,6 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final Regionerator plugin;
 	private final World world;
 	private final Region[] regions;
-	private final ArrayList<Pair<Integer, Integer>> regionChunks = new ArrayList<>();
 	private long nextRun = Long.MAX_VALUE;
 	private int index = -1, chunksDeleted = 0, regionsDeleted = 0;
 
@@ -45,7 +42,6 @@ public class DeletionRunnable extends BukkitRunnable {
 	@Override
 	public void run() {
 		if (index >= regions.length - 1) {
-			--index;
 			plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 			nextRun = System.currentTimeMillis() + plugin.getMillisecondsBetweenDeletionCycles();
 			this.cancel();
