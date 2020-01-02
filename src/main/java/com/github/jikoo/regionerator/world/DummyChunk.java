@@ -1,11 +1,15 @@
 package com.github.jikoo.regionerator.world;
 
+import java.util.Collection;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Dummy chunk used to prevent chunk loading when checking protection plugins.
@@ -23,32 +27,38 @@ public class DummyChunk implements Chunk {
 		this.chunkZ = chunkZ;
 	}
 
+	@NotNull
 	@Override
 	public Block getBlock(int x, int y, int z) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@NotNull
 	@Override
 	public ChunkSnapshot getChunkSnapshot() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@NotNull
 	@Override
 	public ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome,
 			boolean includeBiomeTempRain) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@NotNull
 	@Override
 	public Entity[] getEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@NotNull
 	@Override
 	public BlockState[] getTileEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
+	@NotNull
 	@Override
 	public World getWorld() {
 		return this.world;
@@ -90,11 +100,6 @@ public class DummyChunk implements Chunk {
 	}
 
 	@Override
-	public boolean unload(boolean save, boolean safe) {
-		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
-	}
-
-	@Override
 	public boolean isSlimeChunk() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
@@ -106,6 +111,37 @@ public class DummyChunk implements Chunk {
 
 	@Override
 	public void setForceLoaded(boolean b) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public boolean addPluginChunkTicket(@NotNull Plugin plugin) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public boolean removePluginChunkTicket(@NotNull Plugin plugin) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@NotNull
+	@Override
+	public Collection<Plugin> getPluginChunkTickets() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public long getInhabitedTime() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public void setInhabitedTime(long l) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public boolean contains(@NotNull BlockData blockData) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
