@@ -15,7 +15,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Storing time stamps for chunks made easy.
@@ -27,7 +26,6 @@ public class ChunkFlagger {
 	private final Regionerator plugin;
 	private final SimpleLoadingCache<String, FlagData> flagCache;
 	private final Connection database;
-	private final BukkitTask dbCommitTask;
 
 	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
@@ -83,7 +81,7 @@ public class ChunkFlagger {
 		convertOldPerWorldFlagFiles();
 
 		// Saving changes to the database every 3 minutes
-		this.dbCommitTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> {
 			try {
 				database.commit();
 			} catch (SQLException e) {
@@ -134,6 +132,11 @@ public class ChunkFlagger {
 				FlagData flagData = this.flagCache.get(this.getFlagDbId(world, chunkX, chunkZ));
 				flagData.time = worldSection.getLong(chunkPath);
 				flagData.dirty = true;
+
+				// Force save to prevent too much buildup in queue
+				if (this.flagCache.size() >= 100) {
+					save();
+				}
 			}
 		}
 		// Force save
@@ -184,6 +187,11 @@ public class ChunkFlagger {
 					FlagData flagData = flagCache.get(getFlagDbId(worldName, chunkX, chunkZ));
 					flagData.time = (Long) entry.getValue();
 					flagData.dirty = true;
+
+					// Force save to prevent too much buildup in queue
+					if (this.flagCache.size() >= 100) {
+						save();
+					}
 				}
 			}
 		}

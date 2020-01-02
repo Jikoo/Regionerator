@@ -158,4 +158,8 @@ public class SimpleLoadingCache<K, V> {
 		}
 	}
 
+	public int size() {
+		return this.internal.size();
+	}
+
 }
