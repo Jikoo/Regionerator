@@ -1,7 +1,7 @@
 package com.github.jikoo.regionerator;
 
 import com.github.jikoo.regionerator.hooks.Hook;
-import com.github.jikoo.regionerator.util.SimpleLoadingCache;
+import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -24,8 +25,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public class ChunkFlagger {
 
 	private final Regionerator plugin;
-	private final SimpleLoadingCache<String, FlagData> flagCache;
 	private final Connection database;
+	private final BatchExpirationLoadingCache<String, FlagData> flagCache;
 
 	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
@@ -40,7 +41,7 @@ public class ChunkFlagger {
 			e.printStackTrace();
 			throw new RuntimeException("An error occurred while connecting SQLite");
 		}
-		this.flagCache = new SimpleLoadingCache<>(Math.max(60, plugin.getTicksPerFlagAutosave() * 10) * 1000,
+		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(60, plugin.getTicksPerFlagAutosave() * 10) * 1000,
 				key -> {
 					try (PreparedStatement st = database.prepareStatement("SELECT time FROM chunkdata WHERE chunk_id=?")) {
 						st.setString(1, key);
@@ -57,16 +58,16 @@ public class ChunkFlagger {
 					}
 				},
 				expiredData -> {
-					if (expiredData.stream().noneMatch(FlagData::isDirty)) {
-						// Only attempt to save if dirty to minimize writes
+					// Only attempt to save if dirty to minimize write time
+					expiredData.removeIf(next -> !next.isDirty());
+
+					if (expiredData.isEmpty()) {
 						return;
 					}
 
+
 					try (PreparedStatement st = database.prepareStatement("INSERT OR REPLACE INTO chunkdata(chunk_id,time) VALUES (?,?)")) {
 						for (FlagData data : expiredData) {
-							if (!data.dirty) {
-								continue;
-							}
 							st.setString(1, data.chunkId);
 							st.setLong(2, data.time);
 							st.addBatch();
@@ -129,18 +130,11 @@ public class ChunkFlagger {
 					continue;
 				}
 
-				FlagData flagData = this.flagCache.get(this.getFlagDbId(world, chunkX, chunkZ));
-				flagData.time = worldSection.getLong(chunkPath);
+				FlagData flagData = new FlagData(this.getFlagDbId(world, chunkX, chunkZ), worldSection.getLong(chunkPath));
 				flagData.dirty = true;
-
-				// Force save to prevent too much buildup in queue
-				if (this.flagCache.size() >= 100) {
-					save();
-				}
+				flagCache.put(flagData.chunkId, flagData);
 			}
 		}
-		// Force save
-		save();
 		// Rename old flag file
 		if (oldFlagsFile.renameTo(new File(oldFlagsFile.getParentFile(), "flags.yml.bak"))) {
 			this.plugin.getLogger().info("Finished converting flags.yml, renamed to flags.yml.bak. Delete at convenience if all appears well.");
@@ -184,19 +178,12 @@ public class ChunkFlagger {
 					int chunkX = Integer.parseInt(args[0]);
 					int chunkZ = Integer.parseInt(args[1]);
 
-					FlagData flagData = flagCache.get(getFlagDbId(worldName, chunkX, chunkZ));
-					flagData.time = (Long) entry.getValue();
+					FlagData flagData = new FlagData(this.getFlagDbId(worldName, chunkX, chunkZ), (Long) entry.getValue());
 					flagData.dirty = true;
-
-					// Force save to prevent too much buildup in queue
-					if (this.flagCache.size() >= 100) {
-						save();
-					}
+					flagCache.put(flagData.chunkId, flagData);
 				}
 			}
 		}
-		// Force save
-		save();
 		// Rename old flag file
 		if (oldFlagsFolder.renameTo(new File(oldFlagsFolder.getParentFile(), "flags.bak"))) {
 			this.plugin.getLogger().info("Finished converting flags folder, renamed to flags.bak. Delete at convenience if all appears well.");
@@ -218,12 +205,18 @@ public class ChunkFlagger {
 	}
 
 	private void flag(String world, int chunkX, int chunkZ, long flagTil) {
-		FlagData flagData = this.flagCache.get(this.getFlagDbId(world, chunkX, chunkZ));
-		long current = flagData.time;
-		if (current == this.plugin.getEternalFlag()) {
-			return;
+		String flagDbId = this.getFlagDbId(world, chunkX, chunkZ);
+		FlagData flagData = this.flagCache.getIfPresent(flagDbId);
+		if (flagData != null) {
+			long current = flagData.time;
+			if (current == this.plugin.getEternalFlag()) {
+				return;
+			}
+			flagData.time = flagTil;
+		} else {
+			flagData = new FlagData(flagDbId, flagTil);
+			flagCache.put(flagDbId, flagData);
 		}
-		flagData.time = flagTil;
 		flagData.dirty = true;
 	}
 
@@ -256,11 +249,10 @@ public class ChunkFlagger {
 	}
 
 	public void unflagChunk(String world, int chunkX, int chunkZ) {
-		FlagData flagData = this.flagCache.get(getFlagDbId(world, chunkX, chunkZ));
-		flagData.time = -1;
-		flagData.dirty = false;
+		String flagDBId = getFlagDbId(world, chunkX, chunkZ);
+		this.flagCache.remove(flagDBId);
 		try (PreparedStatement st = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
-			st.setString(1, getFlagDbId(world, chunkX, chunkZ));
+			st.setString(1, flagDBId);
 			st.execute();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -271,7 +263,7 @@ public class ChunkFlagger {
 	 * Save all flag files.
 	 */
 	public void save() {
-		this.flagCache.invalidateAll();
+		// TODO: force save
 		try {
 			this.database.commit();
 		} catch (SQLException e) {
@@ -279,32 +271,34 @@ public class ChunkFlagger {
 		}
 	}
 
-	public VisitStatus getChunkVisitStatus(World world, int chunkX, int chunkZ) {
-		FlagData flagData = this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ));
-		long visit = flagData.time;
-		if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
-			this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " is flagged.");
+	public CompletableFuture<VisitStatus> getChunkVisitStatus(World world, int chunkX, int chunkZ) {
+		CompletableFuture<FlagData> flagDataFuture = this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ));
+		 return flagDataFuture.thenApply(flagData -> {
+			long visit = flagData.time;
+			if (visit != Long.MAX_VALUE && visit > System.currentTimeMillis()) {
+				this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " is flagged.");
 
-			if (visit == this.plugin.getEternalFlag()) {
-				return VisitStatus.PERMANENTLY_FLAGGED;
+				if (visit == this.plugin.getEternalFlag()) {
+					return VisitStatus.PERMANENTLY_FLAGGED;
+				}
+
+				return VisitStatus.VISITED;
 			}
 
-			return VisitStatus.VISITED;
-		}
-
-		for (Hook hook : this.plugin.getProtectionHooks()) {
-			if (hook.isChunkProtected(world, chunkX, chunkZ)) {
-				this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " contains protections by " + hook.getProtectionName());
-				return VisitStatus.PROTECTED;
+			for (Hook hook : this.plugin.getProtectionHooks()) {
+				if (hook.isChunkProtected(world, chunkX, chunkZ)) {
+					this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " contains protections by " + hook.getProtectionName());
+					return VisitStatus.PROTECTED;
+				}
 			}
-		}
 
-		if (visit == Long.MAX_VALUE) {
-			this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " has not been visited since it was generated.");
-			return VisitStatus.GENERATED;
-		}
+			if (visit == Long.MAX_VALUE) {
+				this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " has not been visited since it was generated.");
+				return VisitStatus.GENERATED;
+			}
 
-		return VisitStatus.UNVISITED;
+			return VisitStatus.UNVISITED;
+		});
 	}
 
 	private String getFlagDbId(String worldName, int chunkX, int chunkZ) {
@@ -325,6 +319,15 @@ public class ChunkFlagger {
 			return dirty;
 		}
 
+		@Override
+		public int hashCode() {
+			return chunkId.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return obj != null && getClass().equals(obj.getClass()) && ((FlagData) obj).chunkId.equals(chunkId);
+		}
 	}
 
 }

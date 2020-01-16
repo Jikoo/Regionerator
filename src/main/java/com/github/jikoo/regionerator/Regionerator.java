@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author Jikoo
  */
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class Regionerator extends JavaPlugin {
 
 	private final CommandFlag commandFlag = new CommandFlag(this);
@@ -170,7 +171,7 @@ public class Regionerator extends JavaPlugin {
 				for (Hook hook : protectionHooks) {
 					player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
 				}
-				player.sendMessage("Chunk VisitStatus: " + chunkFlagger.getChunkVisitStatus(chunk.getWorld(), chunk.getX(), chunk.getZ()).name());
+				player.sendMessage("Chunk VisitStatus: " + chunkFlagger.getChunkVisitStatus(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().name());
 				return true;
 			}
 

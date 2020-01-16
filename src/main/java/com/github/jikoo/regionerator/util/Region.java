@@ -79,7 +79,8 @@ public abstract class Region {
 
 		int chunkX = lowestChunkX + chunkData.getLocalChunkX();
 		int chunkZ = lowestChunkZ + chunkData.getLocalChunkZ();
-		VisitStatus chunkFlagStatus = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ);
+		// TODO: ensure not on main thread
+		VisitStatus chunkFlagStatus = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ).join();
 		chunkData.setVisitStatus(chunkFlagStatus);
 		return true;
 	}
