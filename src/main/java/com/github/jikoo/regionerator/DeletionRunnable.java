@@ -26,7 +26,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		this.plugin = plugin;
 		this.world = world;
 		// TODO: RegionProvider or some such thing
-		File regionDir = new File(world.getWorldFolder(), "region");
+		File regionDir = AnvilRegion.findRegionContainer(world);
 		File[] regionFiles = regionDir.listFiles((dir, name) -> AnvilRegion.ANVIL_REGION.matcher(name).matches());
 
 		if (regionFiles != null) {

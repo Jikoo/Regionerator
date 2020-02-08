@@ -17,6 +17,18 @@ public class AnvilRegion extends Region {
 	// r.0.0.mca, r.-1.0.mca, etc.
 	public static final Pattern ANVIL_REGION = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)\\.mca");
 
+	public static File findRegionContainer(@NotNull World world) {
+		switch (world.getEnvironment()) {
+			case NETHER:
+				return new File(world.getWorldFolder(), "DIM-1" + File.separatorChar + "region");
+			case THE_END:
+				return new File(world.getWorldFolder(), "DIM1" + File.separatorChar + "region");
+			case NORMAL:
+			default:
+				return new File(world.getWorldFolder(), "region");
+		}
+	}
+
 	public static Region parseAnvilRegion(@NotNull World world, @NotNull File regionFile) {
 		Matcher matcher = ANVIL_REGION.matcher(regionFile.getName());
 		if (!matcher.matches()) {
