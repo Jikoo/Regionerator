@@ -82,7 +82,7 @@ public class Regionerator extends JavaPlugin {
 					hasHooks = true;
 					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
 				} else {
-					debug(DebugLevel.OFF, () -> "Protection hook for " + hookName + " failed usability check! Deletion is paused.");
+					getLogger().info("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
 					paused = true;
 				}
 			} catch (ClassNotFoundException e) {

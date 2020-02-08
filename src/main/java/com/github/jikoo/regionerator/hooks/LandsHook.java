@@ -13,12 +13,18 @@ import org.bukkit.World;
  */
 public class LandsHook extends PluginHook {
 
-	private final LandsIntegration landsAPI;
+	private LandsIntegration landsAPI;
 
 	public LandsHook() {
 		super("Lands");
+	}
+
+	@Override
+	public boolean isHookUsable() {
+		boolean hookUsable = super.isHookUsable();
 		landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class), false);
 		landsAPI.initialize();
+		return hookUsable;
 	}
 
 	@Override
