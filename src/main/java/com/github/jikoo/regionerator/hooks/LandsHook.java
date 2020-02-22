@@ -48,4 +48,9 @@ public class LandsHook extends PluginHook {
 		return landsAPI;
 	}
 
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }

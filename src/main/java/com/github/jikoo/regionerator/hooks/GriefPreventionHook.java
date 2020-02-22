@@ -25,4 +25,10 @@ public class GriefPreventionHook extends PluginHook {
 		}
 		return false;
 	}
+
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }

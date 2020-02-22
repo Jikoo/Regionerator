@@ -38,8 +38,10 @@ public abstract class Hook {
 		return true;
 	}
 
-	public void readyLater(Regionerator plugin) {
+	public void readyLater(Regionerator plugin) {}
 
+	public boolean isAsyncCapable() {
+		return false;
 	}
 
 	public abstract boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ);

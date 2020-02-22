@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator.util;
+package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.Regionerator;
@@ -79,7 +79,6 @@ public abstract class Region {
 
 		int chunkX = lowestChunkX + chunkData.getLocalChunkX();
 		int chunkZ = lowestChunkZ + chunkData.getLocalChunkZ();
-		// TODO: ensure not on main thread
 		VisitStatus chunkFlagStatus = plugin.getFlagger().getChunkVisitStatus(world, chunkX, chunkZ).join();
 		chunkData.setVisitStatus(chunkFlagStatus);
 		return true;
@@ -100,7 +99,7 @@ public abstract class Region {
 
 		if (!chunks.removeIf(chunkData -> chunkData.getVisitStatus().ordinal() >= VisitStatus.VISITED.ordinal())) {
 
-			if (!deleteRegion()) {
+			if (!deleteRegion(plugin)) {
 				plugin.debug(DebugLevel.MEDIUM, () -> String.format("Unable to delete %s from %s", getRegionFile().getName(), world.getName()));
 				return 0;
 			} else {
@@ -127,9 +126,9 @@ public abstract class Region {
 						lowestChunkX + chunk.getLocalChunkX(), lowestChunkZ + chunk.getLocalChunkZ()));
 			}
 			try {
-				return deleteChunks(chunks);
-			} catch (IOException e) {
-				plugin.debug(DebugLevel.LOW, () -> String.format("Caught an IOException writing %s in %s to delete %s chunks",
+				return deleteChunks(plugin, chunks);
+			} catch (Exception e) {
+				plugin.debug(DebugLevel.LOW, () -> String.format("Caught an exception writing %s in %s to delete %s chunks",
 						getRegionFile().getName(), getWorld().getName(), chunks.size()));
 				e.printStackTrace();
 				return 0;
@@ -137,10 +136,10 @@ public abstract class Region {
 		}
 	}
 
-	protected boolean deleteRegion() {
+	protected boolean deleteRegion(Regionerator plugin) {
 		return regionFile.exists() && getRegionFile().delete();
 	}
 
-	protected abstract int deleteChunks(Collection<ChunkData> chunks) throws IOException;
+	protected abstract int deleteChunks(Regionerator plugin, Collection<ChunkData> chunks) throws Exception;
 
 }

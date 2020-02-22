@@ -9,8 +9,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -285,10 +289,35 @@ public class ChunkFlagger {
 				return VisitStatus.VISITED;
 			}
 
+			Collection<Hook> syncHooks = Bukkit.isPrimaryThread() ? null : new ArrayList<>();
+
 			for (Hook hook : this.plugin.getProtectionHooks()) {
+				if (syncHooks != null && !hook.isAsyncCapable()) {
+					syncHooks.add(hook);
+					continue;
+				}
 				if (hook.isChunkProtected(world, chunkX, chunkZ)) {
 					this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " contains protections by " + hook.getProtectionName());
 					return VisitStatus.PROTECTED;
+				}
+			}
+
+			if (syncHooks != null) {
+				try {
+					VisitStatus visitStatus = Bukkit.getScheduler().callSyncMethod(this.plugin, () -> {
+						for (Hook hook : syncHooks) {
+							if (hook.isChunkProtected(world, chunkX, chunkZ)) {
+								this.plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.chunkId + " contains protections by " + hook.getProtectionName());
+								return VisitStatus.PROTECTED;
+							}
+						}
+						return VisitStatus.UNKNOWN;
+					}).get();
+					if (visitStatus == VisitStatus.PROTECTED) {
+						return visitStatus;
+					}
+				} catch (InterruptedException | ExecutionException e) {
+					throw new CancellationException(e.getMessage());
 				}
 			}
 

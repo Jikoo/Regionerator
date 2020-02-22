@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator.util;
+package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.regionerator.VisitStatus;
 

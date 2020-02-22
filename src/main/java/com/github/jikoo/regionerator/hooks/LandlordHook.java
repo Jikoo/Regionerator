@@ -20,4 +20,9 @@ public class LandlordHook extends PluginHook {
 		return OwnedLand.getLandFromDatabase(chunkX, chunkZ, chunkWorld.getName()) != null;
 	}
 
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }

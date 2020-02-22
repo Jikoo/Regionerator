@@ -1,4 +1,4 @@
-package com.github.jikoo.regionerator.util;
+package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.regionerator.CoordinateConversions;
 import com.github.jikoo.regionerator.Regionerator;
@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
@@ -86,7 +87,16 @@ public class AnvilRegion extends Region {
 	}
 
 	@Override
-	protected int deleteChunks(Collection<ChunkData> chunks) throws IOException {
+	protected int deleteChunks(Regionerator plugin, Collection<ChunkData> chunks) throws Exception {
+		if (Bukkit.isPrimaryThread()) {
+			return deleteChunksNow(chunks);
+		} else {
+			return Bukkit.getScheduler().callSyncMethod(plugin, () -> deleteChunksNow(chunks)).get();
+		}
+	}
+
+	private int deleteChunksNow(Collection<ChunkData> chunks) throws IOException {
+
 		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
 			throw new IOException("Unable to set " + getRegionFile().getName() + " writable");
 		}

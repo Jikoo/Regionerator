@@ -1,7 +1,7 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.util.AnvilRegion;
-import com.github.jikoo.regionerator.util.Region;
+import com.github.jikoo.regionerator.world.AnvilRegion;
+import com.github.jikoo.regionerator.world.Region;
 import java.io.File;
 import java.io.IOException;
 import org.bukkit.World;

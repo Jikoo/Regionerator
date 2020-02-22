@@ -24,4 +24,9 @@ public class KingdomsHook extends PluginHook {
 		return land.getOwner() != null;
 	}
 
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }

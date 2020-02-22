@@ -185,7 +185,6 @@ public class Regionerator extends JavaPlugin {
 
 		SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
 
-		boolean running = false;
 		for (String worldName : config.getWorlds()) {
 			long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
 			if (activeAt > System.currentTimeMillis()) {
@@ -199,21 +198,12 @@ public class Regionerator extends JavaPlugin {
 				sender.sendMessage(runnable.getRunStats());
 				if (runnable.getNextRun() < Long.MAX_VALUE) {
 					sender.sendMessage(" - Next run: " + format.format(runnable.getNextRun()));
-				} else if (!getConfig().getBoolean("allow-concurrent-cycles")) {
-					running = true;
 				}
-				continue;
-			}
-
-			if (running && !getConfig().getBoolean("allow-concurrent-cycles")) {
+			} else {
 				sender.sendMessage("Cycle for " + worldName + " is ready to start.");
-				continue;
-			}
-
-			if (!running) {
-				getLogger().severe("Deletion cycle failed to start for " + worldName + "! Please report this issue if you see any errors!");
 			}
 		}
+
 		if (paused) {
 			sender.sendMessage("Regionerator is paused. Use \"/regionerator resume\" to continue.");
 		}
@@ -280,11 +270,6 @@ public class Regionerator extends JavaPlugin {
 			}
 			if (deletionRunnables.containsKey(worldName)) {
 				// Already running/ran
-				if (!getConfig().getBoolean("allow-concurrent-cycles")
-						&& deletionRunnables.get(worldName).getNextRun() == Long.MAX_VALUE) {
-					// Concurrent runs aren't allowed, we've got one going. Quit out.
-					return;
-				}
 				continue;
 			}
 			World world = Bukkit.getWorld(worldName);
@@ -299,12 +284,10 @@ public class Regionerator extends JavaPlugin {
 				debug(DebugLevel.HIGH, e::getMessage);
 				continue;
 			}
-			runnable.runTaskTimer(this, 0, getTicksPerDeletionCheck());
+			runnable.runTaskTimerAsynchronously(this, 0, getTicksPerDeletionCheck());
 			deletionRunnables.put(worldName, runnable);
 			debug(DebugLevel.LOW, () -> "Deletion run scheduled for " + world.getName());
-			if (!getConfig().getBoolean("allow-concurrent-cycles")) {
-				return;
-			}
+			return;
 		}
 	}
 

@@ -5,6 +5,7 @@ import com.github.jikoo.regionerator.CoordinateConversions;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 
 import org.bukkit.World;
@@ -24,10 +25,17 @@ public class WorldGuardHook extends PluginHook {
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		int chunkBlockX = CoordinateConversions.chunkToBlock(chunkX);
 		int chunkBlockZ = CoordinateConversions.chunkToBlock(chunkZ);
+
 		BlockVector3 bottom = BlockVector3.at(chunkBlockX, 0, chunkBlockZ);
 		BlockVector3 top = BlockVector3.at(chunkBlockX + 15, 255, chunkBlockZ + 15);
-		return WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(chunkWorld))
-				.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top))
-				.size() > 0;
+
+		RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(chunkWorld));
+
+		if (regionManager == null) {
+			return false;
+		}
+
+		return regionManager.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top)).size() > 0;
 	}
+
 }

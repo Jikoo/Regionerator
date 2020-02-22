@@ -46,4 +46,9 @@ public class VanillaSpawnProtectionHook extends Hook {
 		return chunkZ <= spawnChunkZ + protectionRadius && chunkZ >= spawnChunkZ - protectionRadius;
 	}
 
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }
