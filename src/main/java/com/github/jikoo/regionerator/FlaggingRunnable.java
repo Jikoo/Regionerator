@@ -1,5 +1,7 @@
 package com.github.jikoo.regionerator;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.GameMode;
@@ -30,17 +32,42 @@ public class FlaggingRunnable extends BukkitRunnable {
 
 	@Override
 	public void run() {
+		List<ChunkId> flagged = new ArrayList<>();
+
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR) {
-				// Skip spectators - if you can't touch it, you can't really visit it.
+			// Skip spectators - if you can't touch it, you can't really visit it.
+			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR
+					|| !plugin.getActiveWorlds().contains(player.getWorld().getName())) {
 				continue;
 			}
-			if (plugin.getActiveWorlds().contains(player.getWorld().getName())) {
-				Chunk chunk = player.getLocation().getChunk();
-				plugin.getFlagger().flagChunksInRadius(chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
-			}
+
+			flagged.add(new ChunkId(player.getLocation().getChunk()));
+		}
+
+		if (!flagged.isEmpty()) {
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					for (ChunkId chunk : flagged) {
+						plugin.getFlagger().flagChunksInRadius(chunk.worldName, chunk.chunkX, chunk.chunkZ);
+					}
+
+				}
+			}.runTaskAsynchronously(plugin);
 		}
 
 		plugin.attemptDeletionActivation();
 	}
+
+	private static class ChunkId {
+		private final String worldName;
+		private final int chunkX, chunkZ;
+
+		private ChunkId(Chunk chunk) {
+			this.worldName = chunk.getWorld().getName();
+			this.chunkX = chunk.getX();
+			this.chunkZ = chunk.getZ();
+		}
+	}
+
 }

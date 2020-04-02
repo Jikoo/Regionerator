@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
  * @param <K> the key type
  * @param <V> the value stored
  */
-// TODO: multiple expiration implementations? I.E. SQLCache, YAMLCache, etc.
 public class BatchExpirationLoadingCache<K, V> {
 
 	private final Map<K, V> internal = new ConcurrentHashMap<>();
