@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.CoordinateConversions;
+import com.github.jikoo.regionerator.Coords;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -23,8 +23,8 @@ public class WorldGuardHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		int chunkBlockX = CoordinateConversions.chunkToBlock(chunkX);
-		int chunkBlockZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int chunkBlockX = Coords.chunkToBlock(chunkX);
+		int chunkBlockZ = Coords.chunkToBlock(chunkZ);
 
 		BlockVector3 bottom = BlockVector3.at(chunkBlockX, 0, chunkBlockZ);
 		BlockVector3 top = BlockVector3.at(chunkBlockX + 15, 255, chunkBlockZ + 15);

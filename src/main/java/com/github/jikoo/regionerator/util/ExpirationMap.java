@@ -77,4 +77,9 @@ public class ExpirationMap<K> {
 		return inverse.containsKey(key);
 	}
 
+	public void clear() {
+		multiMap.clear();
+		inverse.clear();
+	}
+
 }

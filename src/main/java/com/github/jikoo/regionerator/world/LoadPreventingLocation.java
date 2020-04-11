@@ -1,10 +1,11 @@
 package com.github.jikoo.regionerator.world;
 
-import com.github.jikoo.regionerator.CoordinateConversions;
+import com.github.jikoo.regionerator.Coords;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Location implementation that returns a DummyChunk instead of CraftBukkit's implementation,
@@ -18,10 +19,11 @@ public class LoadPreventingLocation extends Location {
 		super(world, x, y, z);
 	}
 
+	@NotNull
 	@Override
 	public Chunk getChunk() {
-		return new DummyChunk(getWorld(), CoordinateConversions.blockToChunk((int) this.getX()),
-				CoordinateConversions.blockToChunk((int) this.getZ()));
+		return new DummyChunk(getWorld(), Coords.blockToChunk((int) this.getX()),
+				Coords.blockToChunk((int) this.getZ()));
 	}
 
 }

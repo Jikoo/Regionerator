@@ -1,10 +1,11 @@
 package com.github.jikoo.regionerator.commands;
 
+import com.github.jikoo.regionerator.util.Config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.github.jikoo.regionerator.CoordinateConversions;
+import com.github.jikoo.regionerator.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.Triple;
 
@@ -59,7 +60,7 @@ public class CommandFlag {
 
 		for (Triple<String, Integer, Integer> chunk : chunks) {
 			if (flag) {
-				plugin.getFlagger().flagChunk(worldName, chunk.getMiddle(), chunk.getRight(), 0, plugin.getEternalFlag());
+				plugin.getFlagger().flagChunk(worldName, chunk.getMiddle(), chunk.getRight(), 0, Config.getFlagEternal());
 			} else {
 				plugin.getFlagger().unflagChunk(worldName, chunk.getMiddle(), chunk.getRight());
 			}
@@ -110,8 +111,8 @@ public class CommandFlag {
 			Location location = player.getLocation();
 			return Collections.singletonList(new Triple<>(
 					player.getWorld().getName(),
-					CoordinateConversions.blockToChunk(location.getBlockX()),
-					CoordinateConversions.blockToChunk(location.getBlockZ())));
+					Coords.blockToChunk(location.getBlockX()),
+					Coords.blockToChunk(location.getBlockZ())));
 		}
 
 		// 2 args guaranteed, safe
@@ -158,13 +159,13 @@ public class CommandFlag {
 
 		ArrayList<Triple<String, Integer, Integer>> chunks = new ArrayList<>();
 		String worldName = session.getSelectionWorld().getName();
-		int maxChunkX = CoordinateConversions.blockToChunk(selection.getMaximumPoint().getBlockX());
-		int maxChunkZ = CoordinateConversions.blockToChunk(selection.getMaximumPoint().getBlockZ());
+		int maxChunkX = Coords.blockToChunk(selection.getMaximumPoint().getBlockX());
+		int maxChunkZ = Coords.blockToChunk(selection.getMaximumPoint().getBlockZ());
 
-		for (int minChunkX = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockX());
-		     minChunkX <= maxChunkX; minChunkX++) {
-			for (int minChunkZ = CoordinateConversions.blockToChunk(selection.getMinimumPoint().getBlockZ());
-			     minChunkZ <= maxChunkZ; minChunkZ++) {
+		for (int minChunkX = Coords.blockToChunk(selection.getMinimumPoint().getBlockX());
+			minChunkX <= maxChunkX; minChunkX++) {
+			for (int minChunkZ = Coords.blockToChunk(selection.getMinimumPoint().getBlockZ());
+				minChunkZ <= maxChunkZ; minChunkZ++) {
 				chunks.add(new Triple<>(worldName, minChunkX, minChunkZ));
 			}
 		}

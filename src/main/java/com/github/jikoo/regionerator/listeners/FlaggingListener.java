@@ -1,10 +1,9 @@
 package com.github.jikoo.regionerator.listeners;
 
+import com.github.jikoo.regionerator.Regionerator;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkPopulateEvent;
-
-import com.github.jikoo.regionerator.Regionerator;
 
 /**
  * Listener used to flag chunks.
@@ -20,20 +19,16 @@ public class FlaggingListener implements Listener {
 	}
 
 	/**
-	 * Deleting freshly generated chunks is not worth it. During its live test, I've noticed that
-	 * Regionerator periodically spends a sizeable amount of time deleting untouched area, causing
-	 * unnecessary load. To combat this a little, freshly generated chunks are automatically
-	 * flagged.
-	 * <p>
-	 * Rather than use the ChunkLoadEvent, to reduce server load we use the ChunkPopulateEvent,
-	 * which is called when the decorations are added to a fresh chunk.
+	 * Deleting freshly generated chunks is not worth it. Regionerator periodically spends a sizable
+	 * amount of time deleting untouched area, causing unnecessary load. To combat this a little,
+	 * freshly generated chunks are automatically flagged.
 	 * 
 	 * @param event the ChunkPopulateEvent
 	 */
 	@EventHandler
 	public void onChunkPopulate(ChunkPopulateEvent event) {
 		plugin.getFlagger().flagChunk(event.getWorld().getName(), event.getChunk().getX(),
-				event.getChunk().getZ(), 0, plugin.getGenerateFlag());
+				event.getChunk().getZ(), 0, plugin.config().getFlagGenerated());
 		// TODO update active region(s) to change orphan status of generated chunks
 	}
 

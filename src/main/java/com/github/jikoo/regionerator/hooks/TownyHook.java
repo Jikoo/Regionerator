@@ -4,7 +4,7 @@ import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 
-import com.github.jikoo.regionerator.CoordinateConversions;
+import com.github.jikoo.regionerator.Coords;
 
 import org.bukkit.World;
 
@@ -21,9 +21,9 @@ public class TownyHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		int minX = CoordinateConversions.chunkToBlock(chunkX);
+		int minX = Coords.chunkToBlock(chunkX);
 		int maxX = minX + 15;
-		int minZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int minZ = Coords.chunkToBlock(chunkZ);
 		int maxZ = minZ + 15;
 
 		Coord lowCoord = Coord.parseCoord(minX, minZ);

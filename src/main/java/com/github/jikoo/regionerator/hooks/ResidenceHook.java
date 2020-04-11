@@ -4,7 +4,7 @@ import com.bekvon.bukkit.residence.Residence;
 import com.bekvon.bukkit.residence.protection.ClaimedResidence;
 import com.bekvon.bukkit.residence.protection.CuboidArea;
 
-import com.github.jikoo.regionerator.CoordinateConversions;
+import com.github.jikoo.regionerator.Coords;
 
 import org.bukkit.World;
 
@@ -21,9 +21,9 @@ public class ResidenceHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		int minX = CoordinateConversions.chunkToBlock(chunkX);
+		int minX = Coords.chunkToBlock(chunkX);
 		int maxX = minX + 15;
-		int minZ = CoordinateConversions.chunkToBlock(chunkZ);
+		int minZ = Coords.chunkToBlock(chunkZ);
 		int maxZ = minZ + 15;
 		for (ClaimedResidence residence : Residence.getInstance().getResidenceManager().getResidences().values()) {
 			if (residence.isSubzone()) {

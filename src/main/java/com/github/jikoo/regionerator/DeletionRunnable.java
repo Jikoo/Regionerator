@@ -1,9 +1,13 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.world.AnvilRegion;
-import com.github.jikoo.regionerator.world.Region;
-import java.io.File;
+import com.github.jikoo.regionerator.event.RegioneratorDeleteEvent;
+import com.github.jikoo.regionerator.world.ChunkInfo;
+import com.github.jikoo.regionerator.world.WorldInfo;
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -14,92 +18,76 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class DeletionRunnable extends BukkitRunnable {
 
-	private static final String STATS_FORMAT = "%s: %s/%s, deleted %s regions, %s chunks";
+	private static final String STATS_FORMAT = "%s: checked %s, deleted %s regions & %s chunks";
 
 	private final Regionerator plugin;
-	private final World world;
-	private final Region[] regions;
+	private final WorldInfo world;
 	private long nextRun = Long.MAX_VALUE;
-	private int index = -1, chunksDeleted = 0, regionsDeleted = 0;
+	AtomicInteger regionCount = new AtomicInteger(), regionsDeleted = new AtomicInteger(), chunksDeleted = new AtomicInteger();
 
 	DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
-		this.world = world;
-		// TODO: RegionProvider or some such thing
-		File regionDir = AnvilRegion.findRegionContainer(world);
-		File[] regionFiles = regionDir.listFiles((dir, name) -> AnvilRegion.ANVIL_REGION.matcher(name).matches());
-
-		if (regionFiles != null) {
-			regions = new Region[regionFiles.length];
-			for (int i = 0; i < regionFiles.length; i++) {
-				regions[i] = AnvilRegion.parseAnvilRegion(world, regionFiles[i]);
-			}
-		} else {
-			regions = new Region[0];
-		}
+		this.world = plugin.getWorldManager().getWorld(world);
 	}
 
 	@Override
 	public void run() {
-		if (index >= regions.length - 1) {
-			plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
-			nextRun = System.currentTimeMillis() + plugin.getMillisecondsBetweenDeletionCycles();
-			this.cancel();
-			return;
-		}
+		world.getRegions().filter(Objects::nonNull).forEach(region -> {
+			regionCount.incrementAndGet();
+			plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
+					world.getWorld().getName(), region.getRegionFile().getName(), regionCount.get()));
 
-		if (index == -1 || regions[index].hasDeletionRun()) {
-			// Only pause before next region - who knows how long we'll be paused for?
-			if (plugin.isPaused()) {
-				return;
+			List<ChunkInfo> chunks = region.getChunks().filter(chunkInfo -> {
+				if (chunkInfo.isOrphaned()) {
+					return true;
+				}
+
+				long now = System.currentTimeMillis();
+				if (now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified() || now <= chunkInfo.getLastVisit()) {
+					return false;
+				}
+
+				return chunkInfo.getVisitStatus().ordinal() < VisitStatus.VISITED.ordinal();
+
+			}).collect(Collectors.toList());
+
+			if (chunks.size() != 1024) {
+				chunks.removeIf(chunk -> {
+					VisitStatus visitStatus = chunk.getVisitStatus();
+					return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks() && visitStatus == VisitStatus.GENERATED;
+				});
+
+
+				chunks.forEach(ChunkInfo::setOrphaned);
 			}
 
-			++index;
-			plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s/%s)",
-					world.getName(), regions[index].getRegionFile().getName(), index + 1, regions.length));
-		}
-
-		if (!regions[index].isPopulated()) {
 			try {
-				regions[index].populate(plugin);
+				region.write();
+				new RegioneratorDeleteEvent(world.getWorld(), chunks);
+				if (chunks.size() == 1024) {
+					plugin.getFlagger().unflagRegionByLowestChunk(world.getWorld().getName(), region.getLowestChunkX(), region.getLowestChunkZ());
+					regionsDeleted.incrementAndGet();
+				} else {
+					chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
+					chunksDeleted.addAndGet(chunks.size());
+				}
 			} catch (IOException e) {
 				plugin.debug(DebugLevel.LOW, () -> String.format(
 						"Caught an IOException attempting to populate chunk data: %s", e.getMessage()));
 				plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
-				++index;
-				return;
 			}
-		}
 
-		if (!regions[index].isCompletelyChecked()) {
-			regions[index].checkChunks(plugin);
-			if (plugin.getChunksPerDeletionCheck() <= 1024) {
-				/*
-				 * Deletion is by far the worst offender for lag. It has to be done on the main thread
-				 * or we may risk corruption, so to combat any issues we dedicate an entire run cycle
-				 * to deletion unless the user has configured the plugin to check more than an entire
-				 * region per run.
-				 */
-				return;
+			if (regionCount.get() % 20 == 0) {
+				plugin.debug(DebugLevel.LOW, this::getRunStats);
 			}
-		}
 
-		if (regions[index].isCompletelyChecked()) {
-			int cycleDeletedChunks = regions[index].deleteChunks(plugin);
-			if (cycleDeletedChunks == 1024) {
-				++regionsDeleted;
-			} else {
-				chunksDeleted += cycleDeletedChunks;
-			}
-		}
-
-		if (index > 0 && (index + 1) % 20 == 0) {
-			plugin.debug(DebugLevel.LOW, this::getRunStats);
-		}
+		});
+		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
+		nextRun = System.currentTimeMillis() + plugin.config().getMillisBetweenCycles();
 	}
 
 	String getRunStats() {
-		return String.format(STATS_FORMAT, world.getName(), index + 1, regions.length, regionsDeleted, chunksDeleted);
+		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount.get(), regionsDeleted, chunksDeleted);
 	}
 
 	long getNextRun() {

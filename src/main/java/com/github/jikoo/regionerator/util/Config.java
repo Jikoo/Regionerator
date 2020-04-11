@@ -10,12 +10,11 @@ import org.bukkit.World;
 
 public class Config {
 
-	private long flagDuration;
-	private long ticksPerFlag;
-	private long ticksPerFlagAutosave;
-	private List<String> worlds;
-	private long millisBetweenCycles;
 	private DebugLevel debugLevel;
+	private List<String> worlds;
+	private boolean deleteFreshChunks;
+	private long flagDuration, ticksPerFlag, ticksPerFlagAutosave, millisBetweenCycles, deletionInterval;
+	private int flaggingRadius, deletionChunkCount;
 
 	public void reload(Regionerator plugin) {
 
@@ -70,6 +69,8 @@ public class Config {
 			dirtyConfig = true;
 		}
 
+		flaggingRadius = plugin.getConfig().getInt("chunk-flag-radius");
+
 		if (plugin.getConfig().getInt("seconds-per-flag") < 1) {
 			plugin.getConfig().set("seconds-per-flag", 10);
 			dirtyConfig = true;
@@ -89,10 +90,14 @@ public class Config {
 			dirtyConfig = true;
 		}
 
+		deletionInterval = plugin.getConfig().getLong("ticks-per-deletion") * 50;
+
 		if (plugin.getConfig().getInt("chunks-per-deletion") < 1) {
 			plugin.getConfig().set("chunks-per-deletion", 20);
 			dirtyConfig = true;
 		}
+
+		deletionChunkCount = plugin.getConfig().getInt("chunks-per-deletion");
 
 		if (plugin.getConfig().getInt("hours-between-cycles") < 0) {
 			plugin.getConfig().set("hours-between-cycles", 0);
@@ -101,6 +106,8 @@ public class Config {
 		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
 		millisBetweenCycles = plugin.getConfig().getInt("hours-between-cycles") * 3600000L;
 
+		deleteFreshChunks = plugin.getConfig().getBoolean("delete-new-unvisited-chunks");
+
 		if (dirtyConfig) {
 			plugin.getConfig().options().copyHeader(true);
 			plugin.saveConfig();
@@ -108,28 +115,56 @@ public class Config {
 
 	}
 
-	public long getFlagDuration() {
-		return flagDuration;
+	public DebugLevel getDebugLevel() {
+		return debugLevel;
 	}
 
-	public long getFlagEternal() {
-		return Long.MAX_VALUE - 1;
+	public int getDeletionChunkCount() {
+		return deletionChunkCount;
 	}
 
-	public long getFlagInterval() {
-		return ticksPerFlag;
-	}
-
-	public long getFlagAutosaveInterval() {
-		return ticksPerFlagAutosave;
+	public long getDeletionRecoveryMillis() {
+		return deletionInterval;
 	}
 
 	public long getMillisBetweenCycles() {
 		return millisBetweenCycles;
 	}
 
-	public DebugLevel getDebugLevel() {
-		return debugLevel;
+	public boolean isDeleteFreshChunks() {
+		return deleteFreshChunks;
+	}
+
+	public long getFlagDuration() {
+		return flagDuration;
+	}
+
+	public long getFlagGenerated() {
+		return deleteFreshChunks ? getFlagVisit() : Long.MAX_VALUE;
+	}
+
+	public long getFlagVisit() {
+		return System.currentTimeMillis() + getFlagDuration();
+	}
+
+	public static long getFlagEternal() {
+		return Long.MAX_VALUE - 1;
+	}
+
+	public static long getFlagDefault() {
+		return -1;
+	}
+
+	public long getFlaggingInterval() {
+		return ticksPerFlag;
+	}
+
+	public int getFlaggingRadius() {
+		return flaggingRadius;
+	}
+
+	public long getFlagSaveInterval() {
+		return ticksPerFlagAutosave;
 	}
 
 	public List<String> getWorlds() {
