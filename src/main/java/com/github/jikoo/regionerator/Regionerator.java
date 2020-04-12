@@ -289,8 +289,7 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public void attemptDeletionActivation() {
-		deletionRunnables.entrySet().removeIf(stringDeletionRunnableEntry ->
-				stringDeletionRunnableEntry.getValue().getNextRun() < System.currentTimeMillis());
+		deletionRunnables.values().removeIf(value -> value.getNextRun() < System.currentTimeMillis());
 
 		if (isPaused()) {
 			return;
@@ -301,8 +300,13 @@ public class Regionerator extends JavaPlugin {
 				// Not time yet.
 				continue;
 			}
-			if (deletionRunnables.containsKey(worldName)) {
-				// Already running/ran
+			DeletionRunnable runnable = deletionRunnables.get(worldName);
+			if (runnable != null) {
+				// Deletion is ongoing for world.
+				if (runnable.getNextRun() == Long.MAX_VALUE) {
+					return;
+				}
+				// Deletion is complete for world.
 				continue;
 			}
 			World world = Bukkit.getWorld(worldName);
@@ -310,7 +314,6 @@ public class Regionerator extends JavaPlugin {
 				// World is not loaded.
 				continue;
 			}
-			DeletionRunnable runnable;
 			try {
 				runnable = new DeletionRunnable(this, world);
 			} catch (RuntimeException e) {
