@@ -31,7 +31,7 @@ public class AnvilWorld extends WorldInfo {
 	@Override
 	public RegionInfo getRegion(int regionX, int regionZ) throws IOException {
 		File regionFolder = findRegionFolder(getWorld());
-		File regionFile = new File(regionFolder, "r" + regionX + "." + regionZ + ".mca");
+		File regionFile = new File(regionFolder, "r." + regionX + "." + regionZ + ".mca");
 		if (regionFile.exists()) {
 			return parseRegion(regionFile);
 		}

@@ -151,6 +151,7 @@ public class Regionerator extends JavaPlugin {
 
 	@Override
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+		// TODO tab completion
 
 		attemptDeletionActivation();
 
@@ -249,7 +250,7 @@ public class Regionerator extends JavaPlugin {
 				} else {
 					player.sendMessage("Chunk is flagged as visited until " + format.format(new Date(visit)));
 				}
-				player.sendMessage("Region has not been saved to disk! Cannot check chunk detail data.");
+				player.sendMessage("Region has not been saved to disk! Cannot check chunk details.");
 				return true;
 			}
 

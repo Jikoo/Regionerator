@@ -2,7 +2,6 @@ package com.github.jikoo.regionerator.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -147,7 +146,7 @@ public class BatchExpirationLoadingCache<K, V> {
 	}
 
 	public void expireAll() {
-		expirationConsumer.accept(Collections.unmodifiableCollection(internal.values()));
+		expirationConsumer.accept(internal.values());
 		internal.clear();
 		expirationMap.clear();
 	}

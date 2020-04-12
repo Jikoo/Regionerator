@@ -46,7 +46,7 @@ public class ChunkFlagger {
 						"DECLARE @time BIGINT;\n" +
 						"SET @chunk_id_old = (SELECT chunk_id FROM deleted);\n" +
 						"SET @time = (SELECT time FROM deleted);\n" +
-						"IF NOT @chunk_id_old LIKE %old AND @time NOT NULL INSERT INTO chunkdata (chunk_id,time) VALUES (CONCAT(@chunk_id_old, '_old'),@time) ON CONFLICT UPDATE (time=@time);\n" +
+						"IF NOT @chunk_id_old LIKE %old AND @time NOT NULL INSERT INTO chunkdata (chunk_id,time) VALUES (CONCAT(@chunk_id_old, '_old'),@time) ON CONFLICT(chunk_id) UPDATE (time=@time);\n" +
 						"END");*/
 			}
 			this.database.setAutoCommit(false);
@@ -79,10 +79,12 @@ public class ChunkFlagger {
 					}
 
 
-					try (PreparedStatement st = database.prepareStatement("INSERT OR REPLACE INTO chunkdata(chunk_id,time) VALUES (?,?)")) {
+					try (PreparedStatement st = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=?")) {
+						// TODO prepare 2 statements - one drop, one upsert. If lastVisit == -1, drop instead. Allows using queue to drop as well as update
 						for (FlagData data : expiredData) {
 							st.setString(1, data.chunkId);
-							st.setLong(2, data.time);
+							st.setLong(2, data.getLastVisit());
+							st.setLong(3, data.getLastVisit());
 							st.addBatch();
 						}
 						st.executeBatch();

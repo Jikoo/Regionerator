@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class AnvilRegion extends RegionInfo {
 
-	private final byte[] header = new byte[8192];
+	private byte[] header;
 
 	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) throws IOException {
 		super(world, regionFile, lowestChunkX, lowestChunkZ);
@@ -31,6 +31,10 @@ public class AnvilRegion extends RegionInfo {
 	public void read() throws IOException {
 		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
 			throw new IOException("Unable to write file " + getRegionFile().getPath());
+		}
+
+		if (header == null) {
+			header = new byte[8192];
 		}
 
 		// Chunk pointers are the first 4096 bytes, last modification is the second set
@@ -158,13 +162,9 @@ public class AnvilRegion extends RegionInfo {
 
 			@Override
 			public long getLastModified() {
-				long lastModified = 0;
 				int index = 4096 + 4 * (localChunkX + localChunkZ * 32);
-				for (int i = 0; i < 4; ++i) {
-					// Last modification is stored as a big endian integer
-					lastModified += header[index + i] << 24 - i * 8;
-				}
-				return lastModified * 1000;
+				// Last modification is stored as a big endian integer. Last 3 bytes are unsigned.
+				return 1000 * (long) (header[index] << 24 | (header[index + 1] & 0xFF) << 16 | (header[index + 2] & 0xFF) << 8 | (header[index + 3] & 0xFF));
 			}
 
 			@Override
