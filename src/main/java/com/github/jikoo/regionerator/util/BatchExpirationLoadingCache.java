@@ -38,7 +38,6 @@ public class BatchExpirationLoadingCache<K, V> {
 			@NotNull final Consumer<Collection<V>> expirationConsumer, int maxBatchSize, long batchDelay) {
 		expirationMap = new ExpirationMap<>(retention);
 
-		// TODO load function -> load CompletableFuture? Clarity + better error handling
 		// Wrap load function to update expiration when used
 		this.load = key -> {
 			V value = load.apply(key);

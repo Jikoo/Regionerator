@@ -27,15 +27,12 @@ public class AnvilWorld extends WorldInfo {
 		return plugin;
 	}
 
-	@Nullable
+	@NotNull
 	@Override
 	public RegionInfo getRegion(int regionX, int regionZ) throws IOException {
 		File regionFolder = findRegionFolder(getWorld());
 		File regionFile = new File(regionFolder, "r." + regionX + "." + regionZ + ".mca");
-		if (regionFile.exists()) {
-			return parseRegion(regionFile);
-		}
-		return null;
+		return parseRegion(regionFile);
 	}
 
 	@Nullable

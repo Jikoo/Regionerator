@@ -32,6 +32,10 @@ public class ChunkFlagger {
 
 	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
+
+		// TODO: Configure logger for errors, log4j2 rolling file appender
+
+		// Set up SQLite database
 		try {
 			Class.forName("org.sqlite.JDBC");
 			this.database = DriverManager.getConnection("jdbc:sqlite://" + plugin.getDataFolder().getAbsolutePath() + "/data.db");
@@ -51,9 +55,9 @@ public class ChunkFlagger {
 			}
 			this.database.setAutoCommit(false);
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("An error occurred while connecting SQLite");
+			throw new RuntimeException("An error occurred while connecting SQLite", e);
 		}
+
 		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(60, plugin.config().getFlagSaveInterval() / 20) * 1000,
 				key -> {
 					try (PreparedStatement st = database.prepareStatement("SELECT time FROM chunkdata WHERE chunk_id=?")) {
@@ -78,16 +82,22 @@ public class ChunkFlagger {
 						return;
 					}
 
-
-					try (PreparedStatement st = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=?")) {
-						// TODO prepare 2 statements - one drop, one upsert. If lastVisit == -1, drop instead. Allows using queue to drop as well as update
+					try (PreparedStatement upsert = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=?");
+							PreparedStatement delete = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
 						for (FlagData data : expiredData) {
-							st.setString(1, data.chunkId);
-							st.setLong(2, data.getLastVisit());
-							st.setLong(3, data.getLastVisit());
-							st.addBatch();
+							if (data.getLastVisit() == -1) {
+								delete.setString(1, data.getChunkId());
+								delete.addBatch();
+							} else {
+								upsert.setString(1, data.getChunkId());
+								upsert.setLong(2, data.getLastVisit());
+								upsert.setLong(3, data.getLastVisit());
+								upsert.addBatch();
+							}
 						}
-						st.executeBatch();
+						delete.executeBatch();
+						upsert.executeBatch();
+						this.database.commit();
 					} catch (SQLException e) {
 						e.printStackTrace();
 					}
@@ -234,31 +244,16 @@ public class ChunkFlagger {
 	}
 
 	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
-		try (PreparedStatement st = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
-			for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
-				for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
-					String flagDbId = getFlagDbId(world, chunkX, chunkZ);
-					this.flagCache.remove(flagDbId);
-
-					st.setString(1, flagDbId);
-					st.addBatch();
-				}
+		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
+			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
+				unflagChunk(world, chunkX, chunkZ);
 			}
-			st.executeBatch();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 	}
 
 	public void unflagChunk(@NotNull String world, int chunkX, int chunkZ) {
 		String flagDBId = getFlagDbId(world, chunkX, chunkZ);
-		this.flagCache.remove(flagDBId);
-		try (PreparedStatement st = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
-			st.setString(1, flagDBId);
-			st.execute();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		flagCache.put(flagDBId, new FlagData(flagDBId, -1));
 	}
 
 	/**

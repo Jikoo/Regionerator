@@ -27,6 +27,7 @@ import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
@@ -39,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author Jikoo
  */
-@SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class Regionerator extends JavaPlugin {
 
 	private final CommandFlag commandFlag = new CommandFlag(this);
@@ -63,8 +64,11 @@ public class Regionerator extends JavaPlugin {
 		worldManager = new WorldManager(this);
 
 		boolean hasHooks = false;
-		Set<String> hookNames = getConfig().getDefaults().getConfigurationSection("hooks").getKeys(false);
-		hookNames.addAll(getConfig().getConfigurationSection("hooks").getKeys(false));
+		Set<String> hookNames = Objects.requireNonNull(Objects.requireNonNull(getConfig().getDefaults()).getConfigurationSection("hooks")).getKeys(false);
+		ConfigurationSection hookSection = getConfig().getConfigurationSection("hooks");
+		if (hookSection != null) {
+			hookNames.addAll(hookSection.getKeys(false));
+		}
 		for (String hookName : hookNames) {
 			// Default true - hooks should likely be enabled unless explicitly disabled
 			if (!getConfig().getBoolean("hooks." + hookName, true)) {
@@ -229,7 +233,7 @@ public class Regionerator extends JavaPlugin {
 				player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
 			}
 
-			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
+			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM yyyy");
 			RegionInfo regionInfo = null;
 			try {
 				regionInfo = getWorldManager().getWorld(player.getWorld()).getRegion(Coords.chunkToRegion(chunk.getX()), Coords.chunkToRegion(chunk.getZ()));
@@ -239,7 +243,7 @@ public class Regionerator extends JavaPlugin {
 			}
 
 			// Region not yet saved, cannot obtain chunk detail data
-			if (regionInfo == null) {
+			if (regionInfo == null || !regionInfo.getRegionFile().exists()) {
 				long visit = chunkFlagger.getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
 				if (visit == Config.getFlagDefault()) {
 					player.sendMessage("Chunk has not been visited.");
@@ -250,7 +254,7 @@ public class Regionerator extends JavaPlugin {
 				} else {
 					player.sendMessage("Chunk is flagged as visited until " + format.format(new Date(visit)));
 				}
-				player.sendMessage("Region has not been saved to disk! Cannot check chunk details.");
+				player.sendMessage("Region not available from disk! Cannot check details.");
 				return true;
 			}
 

@@ -2,6 +2,7 @@ package com.github.jikoo.regionerator.world.impl;
 
 import com.github.jikoo.regionerator.ChunkFlagger;
 import com.github.jikoo.regionerator.DebugLevel;
+import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.VisitStatus;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.Config;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -28,12 +30,16 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public void read() throws IOException {
-		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
-			throw new IOException("Unable to write file " + getRegionFile().getPath());
-		}
-
 		if (header == null) {
 			header = new byte[8192];
+		}
+
+		if (!getRegionFile().exists()) {
+			Arrays.fill(header, (byte) 0);
+		}
+
+		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
+			throw new IOException("Unable to write file " + getRegionFile().getPath());
 		}
 
 		// Chunk pointers are the first 4096 bytes, last modification is the second set
@@ -80,13 +86,19 @@ public class AnvilRegion extends RegionInfo {
 					return VisitStatus.ORPHANED;
 				}
 
-				ChunkFlagger.FlagData flagData = getWorldInfo().getPlugin().getFlagger().getChunkFlag(getWorld(), getChunkX(), getChunkZ()).join();
+				long now = System.currentTimeMillis();
+				Regionerator plugin = getWorldInfo().getPlugin();
+				if (now - plugin.config().getFlagDuration() <= getLastModified()) {
+					return VisitStatus.VISITED;
+				}
+
+				ChunkFlagger.FlagData flagData = plugin.getFlagger().getChunkFlag(getWorld(), getChunkX(), getChunkZ()).join();
 				AnvilWorld world = getWorldInfo();
 
 				long lastVisit = flagData.getLastVisit();
 
-				if (lastVisit != Long.MAX_VALUE && lastVisit > System.currentTimeMillis()) {
-					world.getPlugin().debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " is flagged.");
+				if (lastVisit != Long.MAX_VALUE && lastVisit > now) {
+					plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " is flagged.");
 
 					if (lastVisit == Config.getFlagEternal()) {
 						return VisitStatus.PERMANENTLY_FLAGGED;
@@ -99,23 +111,23 @@ public class AnvilRegion extends RegionInfo {
 				int chunkX = getChunkX();
 				int chunkZ = getChunkZ();
 
-				for (Hook hook : world.getPlugin().getProtectionHooks()) {
+				for (Hook hook : plugin.getProtectionHooks()) {
 					if (syncHooks != null && !hook.isAsyncCapable()) {
 						syncHooks.add(hook);
 						continue;
 					}
 					if (hook.isChunkProtected(world.getWorld(), chunkX, chunkZ)) {
-						world.getPlugin().debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
+						plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
 						return VisitStatus.PROTECTED;
 					}
 				}
 
 				if (syncHooks != null) {
 					try {
-						VisitStatus visitStatus = Bukkit.getScheduler().callSyncMethod(world.getPlugin(), () -> {
+						VisitStatus visitStatus = Bukkit.getScheduler().callSyncMethod(plugin, () -> {
 							for (Hook hook : syncHooks) {
 								if (hook.isChunkProtected(world.getWorld(), chunkX, chunkZ)) {
-									world.getPlugin().debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
+									plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
 									return VisitStatus.PROTECTED;
 								}
 							}
@@ -125,15 +137,12 @@ public class AnvilRegion extends RegionInfo {
 							return VisitStatus.PROTECTED;
 						}
 					} catch (InterruptedException | ExecutionException e) {
-						world.getPlugin().debug(DebugLevel.LOW, () -> String.format(
-								"Caught an exception attempting to populate chunk data: %s", e.getMessage()));
-						world.getPlugin().debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
-						return VisitStatus.UNKNOWN;
+						throw new RuntimeException(e);
 					}
 				}
 
 				if (lastVisit == Long.MAX_VALUE) {
-					world.getPlugin().debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " has not been visited since it was generated.");
+					plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " has not been visited since it was generated.");
 					return VisitStatus.GENERATED;
 				}
 

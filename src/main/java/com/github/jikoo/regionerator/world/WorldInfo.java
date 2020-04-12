@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.bukkit.World;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class WorldInfo {
 
@@ -25,13 +25,13 @@ public abstract class WorldInfo {
 	}
 
 	/**
-	 * Gets RegionInfo if generated.
+	 * Gets RegionInfo for the specified region coordinates. Note that the region may not exist.
 	 *
 	 * @param regionX the region's X coordinate
 	 * @param regionZ the region's Z coordinate
-	 * @return the RegionInfo, or <pre>null</pre> if the region does not exist
+	 * @return the RegionInfo
 	 */
-	@Nullable
+	@NotNull
 	public abstract RegionInfo getRegion(int regionX, int regionZ) throws IOException;
 
 	public abstract Stream<RegionInfo> getRegions();
