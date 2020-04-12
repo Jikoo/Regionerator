@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
@@ -126,7 +125,10 @@ public class AnvilRegion extends RegionInfo {
 							return VisitStatus.PROTECTED;
 						}
 					} catch (InterruptedException | ExecutionException e) {
-						throw new CancellationException(e.getMessage());
+						world.getPlugin().debug(DebugLevel.LOW, () -> String.format(
+								"Caught an exception attempting to populate chunk data: %s", e.getMessage()));
+						world.getPlugin().debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+						return VisitStatus.UNKNOWN;
 					}
 				}
 
