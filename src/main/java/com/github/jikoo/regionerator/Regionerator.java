@@ -220,6 +220,12 @@ public class Regionerator extends JavaPlugin {
 			return true;
 		}
 
+		if (args[0].equals("cache")) {
+			sender.sendMessage("Cached chunk values: " + getFlagger().getCached());
+			sender.sendMessage("Queued saves: " + getFlagger().getQueued());
+			return true;
+		}
+
 		if (sender instanceof Player && args[0].equals("check")) {
 			Player player = (Player) sender;
 

@@ -2,11 +2,12 @@ package com.github.jikoo.regionerator.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public class BatchExpirationLoadingCache<K, V> {
 
 	private final Map<K, V> internal = new ConcurrentHashMap<>();
-	private final Queue<K> expired = new ConcurrentLinkedQueue<>();
+	private final Set<K> expired = new LinkedHashSet<>();
 	private final AtomicBoolean expirationQueued = new AtomicBoolean();
 	private final ExpirationMap<K> expirationMap;
 	private final Function<K, V> load;
@@ -121,9 +122,11 @@ public class BatchExpirationLoadingCache<K, V> {
 					}
 
 					ArrayList<V> expiredValues = new ArrayList<>();
-					for (int i = 0; i < maxBatchSize && !expired.isEmpty(); ++i) {
-						K expiredKey = expired.poll();
-						// Batch expire even if re-added to expiration queue - writes vs reliability.
+					Iterator<K> expiredIterator = expired.iterator();
+					while (expiredValues.size() < maxBatchSize && expiredIterator.hasNext()) {
+						K expiredKey = expiredIterator.next();
+						expiredIterator.remove();
+						// Don't remove if still in expiration map - still active.
 						V value = expirationMap.contains(expiredKey) ? internal.get(expiredKey) : internal.remove(expiredKey);
 						if (value != null) {
 							expiredValues.add(value);
@@ -148,6 +151,14 @@ public class BatchExpirationLoadingCache<K, V> {
 		expirationConsumer.accept(internal.values());
 		internal.clear();
 		expirationMap.clear();
+	}
+
+	public int getCached() {
+		return internal.size();
+	}
+
+	public int getQueued() {
+		return expired.size();
 	}
 
 }

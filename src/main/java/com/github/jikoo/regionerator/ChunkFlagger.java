@@ -105,6 +105,7 @@ public class ChunkFlagger {
 
 		convertOldFlagsFile();
 		convertOldPerWorldFlagFiles();
+		flagCache.lazyExpireAll();
 
 		// Even if cache is stagnant, save every 3 minutes
 		Bukkit.getScheduler().runTaskTimer(plugin, flagCache::lazyExpireAll, 20 * 60 * 3, 20 * 60 * 3);
@@ -266,6 +267,14 @@ public class ChunkFlagger {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public int getCached() {
+		return flagCache.getCached();
+	}
+
+	public int getQueued() {
+		return flagCache.getQueued();
 	}
 
 	public CompletableFuture<FlagData> getChunkFlag(@NotNull World world, int chunkX, int chunkZ) {
