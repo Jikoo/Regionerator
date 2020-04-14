@@ -3,6 +3,7 @@ package com.github.jikoo.regionerator.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class BatchExpirationLoadingCache<K, V> {
 
 	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
 		@NotNull final Consumer<Collection<V>> expirationConsumer) {
-		this(retention, load, expirationConsumer, 100, 5000);
+		this(retention, load, expirationConsumer, 1024, 5000);
 	}
 
 	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
@@ -148,7 +149,20 @@ public class BatchExpirationLoadingCache<K, V> {
 	}
 
 	public void expireAll() {
-		expirationConsumer.accept(internal.values());
+		if (internal.size() < maxBatchSize) {
+			expirationConsumer.accept(internal.values());
+		} else {
+			HashSet<V> subset = new HashSet<>(maxBatchSize);
+			Iterator<V> iterator = internal.values().iterator();
+			while (!internal.isEmpty()) {
+				for (int i = 0; i < maxBatchSize && iterator.hasNext(); ++i) {
+					subset.add(iterator.next());
+					iterator.remove();
+				}
+				expirationConsumer.accept(subset);
+				subset.clear();
+			}
+		}
 		internal.clear();
 		expirationMap.clear();
 	}
