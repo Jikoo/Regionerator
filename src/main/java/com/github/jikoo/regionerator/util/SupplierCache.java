@@ -1,6 +1,5 @@
 package com.github.jikoo.regionerator.util;
 
-import java.lang.ref.SoftReference;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -11,10 +10,10 @@ import java.util.function.Supplier;
  */
 public class SupplierCache<T> {
 
-	final Supplier<T> supplier;
-	final long cacheDuration;
-	SoftReference<T> value;
-	long lastUpdate;
+	private final Supplier<T> supplier;
+	private final long cacheDuration;
+	private T value;
+	private long lastUpdate;
 
 	public SupplierCache(Supplier<T> supplier, long duration, TimeUnit timeUnit) {
 		this.supplier = supplier;
@@ -22,13 +21,11 @@ public class SupplierCache<T> {
 	}
 
 	public T get() {
-		if (value == null || value.isEnqueued() || lastUpdate <= System.currentTimeMillis() - cacheDuration) {
-			T obj = supplier.get();
-			value = new SoftReference<>(obj);
+		if (value == null || lastUpdate <= System.currentTimeMillis() - cacheDuration) {
+			value = supplier.get();
 			lastUpdate = System.currentTimeMillis();
-			return obj;
 		}
-		return value.get();
+		return value;
 	}
 
 }
