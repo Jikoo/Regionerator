@@ -123,6 +123,12 @@ public class AnvilRegion extends RegionInfo {
 				}
 
 				if (syncHooks != null) {
+
+					if (!plugin.isEnabled()) {
+						// Cannot return to main thread to check hooks requiring synchronization
+						return VisitStatus.UNKNOWN;
+					}
+
 					try {
 						VisitStatus visitStatus = Bukkit.getScheduler().callSyncMethod(plugin, () -> {
 							for (Hook hook : syncHooks) {

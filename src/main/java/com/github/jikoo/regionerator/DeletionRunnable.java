@@ -50,6 +50,9 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (chunks.size() != 1024) {
 			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
 			chunks.removeIf(chunk -> {
+				if (isCancelled()) {
+					return true;
+				}
 				VisitStatus visitStatus = chunk.getVisitStatus();
 				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks() && visitStatus == VisitStatus.GENERATED;
 			});
@@ -102,10 +105,14 @@ public class DeletionRunnable extends BukkitRunnable {
 			} catch (InterruptedException ignored) {}
 		}
 
+		if (isCancelled()) {
+			return true;
+		}
+
 		try {
 			return chunkInfo.getVisitStatus().ordinal() < VisitStatus.VISITED.ordinal();
 		} catch (RuntimeException e) {
-			if (this.isCancelled()) {
+			if (this.isCancelled() || !plugin.isEnabled()) {
 				// Interruption is due to task cancellation, likely for shutdown.
 				return true;
 			}
