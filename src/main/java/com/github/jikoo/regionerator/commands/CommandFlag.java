@@ -60,7 +60,7 @@ public class CommandFlag {
 
 		for (Triple<String, Integer, Integer> chunk : chunks) {
 			if (flag) {
-				plugin.getFlagger().flagChunk(worldName, chunk.getMiddle(), chunk.getRight(), 0, Config.getFlagEternal());
+				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getMiddle(), chunk.getRight(), 0, Config.getFlagEternal());
 			} else {
 				plugin.getFlagger().unflagChunk(worldName, chunk.getMiddle(), chunk.getRight());
 			}

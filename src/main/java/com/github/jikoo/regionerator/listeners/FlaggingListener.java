@@ -27,7 +27,7 @@ public class FlaggingListener implements Listener {
 	 */
 	@EventHandler
 	public void onChunkPopulate(ChunkPopulateEvent event) {
-		plugin.getFlagger().flagChunk(event.getWorld().getName(), event.getChunk().getX(),
+		plugin.getFlagger().flagChunksInRadius(event.getWorld().getName(), event.getChunk().getX(),
 				event.getChunk().getZ(), 0, plugin.config().getFlagGenerated());
 	}
 

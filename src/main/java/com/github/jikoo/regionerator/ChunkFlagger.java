@@ -209,18 +209,18 @@ public class ChunkFlagger {
 	}
 
 	public void flagChunksInRadius(@NotNull String world, int chunkX, int chunkZ) {
-		flagChunk(world, chunkX, chunkZ, this.plugin.config().getFlaggingRadius(), this.plugin.config().getFlagVisit());
+		flagChunksInRadius(world, chunkX, chunkZ, this.plugin.config().getFlaggingRadius(), this.plugin.config().getFlagVisit());
 	}
 
-	public void flagChunk(@NotNull String world, int chunkX, int chunkZ, int radius, long flagTil) {
+	public void flagChunksInRadius(@NotNull String world, int chunkX, int chunkZ, int radius, long flagTil) {
 		for (int dX = -radius; dX <= radius; dX++) {
 			for (int dZ = -radius; dZ <= radius; dZ++) {
-				flag(world, chunkX + dX, chunkZ + dZ, flagTil);
+				flagChunk(world, chunkX + dX, chunkZ + dZ, flagTil);
 			}
 		}
 	}
 
-	private void flag(@NotNull String world, int chunkX, int chunkZ, long flagTil) {
+	public void flagChunk(@NotNull String world, int chunkX, int chunkZ, long flagTil) {
 		String flagDbId = this.getFlagDbId(world, chunkX, chunkZ);
 		FlagData flagData = this.flagCache.getIfPresent(flagDbId);
 		if (flagData != null) {
