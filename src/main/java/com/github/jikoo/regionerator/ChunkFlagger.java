@@ -41,17 +41,13 @@ public class ChunkFlagger {
 			this.database = DriverManager.getConnection("jdbc:sqlite://" + plugin.getDataFolder().getAbsolutePath() + "/data.db");
 			try (Statement st = database.createStatement()) {
 				st.executeUpdate("CREATE TABLE IF NOT EXISTS `chunkdata`(`chunk_id` TEXT NOT NULL UNIQUE, `time` BIGINT NOT NULL)");
-				// TODO: Create trigger to copy old data to ID+"_old" - need to do more research & testing
-				// N.B. REPLACE call actually internally deletes + re-inserts - must be replaced with upserts
-				// (ON CONFLICT UPDATE) or trigger will update with replace values instead of just deletes.
-				/*st.executeUpdate("CREATE TRIGGER IF NOT EXISTS chunkdataold AFTER DELETE ON chunkdata\n" +
+				st.executeUpdate(
+						"CREATE TRIGGER IF NOT EXISTS chunkdataold\n" +
+						"AFTER DELETE ON chunkdata\n" +
+						"WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'"+
 						"BEGIN\n" +
-						"DECLARE @chunk_id_old TEXT;\n" +
-						"DECLARE @time BIGINT;\n" +
-						"SET @chunk_id_old = (SELECT chunk_id FROM deleted);\n" +
-						"SET @time = (SELECT time FROM deleted);\n" +
-						"IF NOT @chunk_id_old LIKE %old AND @time NOT NULL INSERT INTO chunkdata (chunk_id,time) VALUES (CONCAT(@chunk_id_old, '_old'),@time) ON CONFLICT(chunk_id) UPDATE (time=@time);\n" +
-						"END");*/
+						"INSERT INTO chunkdata (chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;\n" +
+						"END");
 			}
 			this.database.setAutoCommit(false);
 		} catch (Exception e) {
@@ -254,7 +250,9 @@ public class ChunkFlagger {
 
 	public void unflagChunk(@NotNull String world, int chunkX, int chunkZ) {
 		String flagDBId = getFlagDbId(world, chunkX, chunkZ);
-		flagCache.put(flagDBId, new FlagData(flagDBId, -1));
+		FlagData flagData = new FlagData(flagDBId, -1);
+		flagData.dirty = true;
+		flagCache.put(flagDBId, flagData);
 	}
 
 	/**
@@ -279,6 +277,10 @@ public class ChunkFlagger {
 
 	public CompletableFuture<FlagData> getChunkFlag(@NotNull World world, int chunkX, int chunkZ) {
 		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ));
+	}
+
+	public CompletableFuture<FlagData> getChunkFlagOnDelete(@NotNull World world, int chunkX, int chunkZ) {
+		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ) + "_old");
 	}
 
 	@NotNull

@@ -258,7 +258,11 @@ public class Regionerator extends JavaPlugin {
 				} else if (visit == Config.getFlagEternal()) {
 					player.sendMessage("Chunk is eternally flagged.");
 				} else {
-					player.sendMessage("Chunk is flagged as visited until " + format.format(new Date(visit)));
+					player.sendMessage("Chunk visited until: " + format.format(new Date(visit)));
+				}
+				visit = chunkFlagger.getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
+				if (visit != Config.getFlagDefault()) {
+					player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
 				}
 				player.sendMessage("Region not available from disk! Cannot check details.");
 				return true;
@@ -268,6 +272,10 @@ public class Regionerator extends JavaPlugin {
 			player.sendMessage("Chunk visited until: " + format.format(new Date(chunkInfo.getLastVisit())));
 			player.sendMessage("Chunk last modified: " + format.format(new Date(chunkInfo.getLastModified())));
 			player.sendMessage("Chunk VisitStatus: " + chunkInfo.getVisitStatus().name());
+			long visit = chunkFlagger.getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
+			if (visit != Config.getFlagDefault()) {
+				player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
+			}
 			if (chunkInfo.isOrphaned()) {
 				player.sendMessage("Chunk is marked as orphaned. VisitStatus should be GENERATED or UNKNOWN.");
 			}
@@ -279,11 +287,12 @@ public class Regionerator extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		getServer().getScheduler().cancelTasks(this);
-		HandlerList.unregisterAll(this);
 		if (chunkFlagger != null) {
 			chunkFlagger.save();
 		}
+		deletionRunnables.values().forEach(BukkitRunnable::cancel);
+		getServer().getScheduler().cancelTasks(this);
+		HandlerList.unregisterAll(this);
 	}
 
 	public Config config() {
