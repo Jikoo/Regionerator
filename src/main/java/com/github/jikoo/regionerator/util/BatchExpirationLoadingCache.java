@@ -2,10 +2,10 @@ package com.github.jikoo.regionerator.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public class BatchExpirationLoadingCache<K, V> {
 
 	private final Map<K, V> internal = new ConcurrentHashMap<>();
-	private final Set<K> expired = new LinkedHashSet<>();
+	private final Collection<K> expired = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final AtomicBoolean expirationQueued = new AtomicBoolean();
 	private final ExpirationMap<K> expirationMap;
 	private final Function<K, V> load;
