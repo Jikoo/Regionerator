@@ -3,14 +3,23 @@ package com.github.jikoo.regionerator;
 import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.Config;
 import java.io.File;
+import java.nio.file.AccessDeniedException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -29,14 +38,44 @@ public class ChunkFlagger {
 	private final Regionerator plugin;
 	private final Connection database;
 	private final BatchExpirationLoadingCache<String, FlagData> flagCache;
+	private final Logger logger;
 
 	ChunkFlagger(Regionerator plugin) {
 		this.plugin = plugin;
 
-		// TODO: Configure logger for errors, log4j2 rolling file appender
-
-		// Set up SQLite database
 		try {
+			// Set up logger
+			this.logger = Logger.getLogger("Regionerator-DB");
+
+			File errors = new File(plugin.getDataFolder(), "db-errors");
+			if (!errors.mkdirs()) {
+				throw new AccessDeniedException(errors.getPath());
+			}
+			Handler handler = new FileHandler(plugin.getDataFolder().getPath() + File.separatorChar + "db-errors" + File.separatorChar + "error-log-%g-%u.log",
+					10 * 1024 * 1024, 10, false);
+			handler.setLevel(Level.WARNING);
+			handler.setFilter(record -> record.getThrown() != null);
+			handler.setFormatter(new Formatter() {
+				final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("'['yyyy-MM-dd HH:MM:ss'] '");
+				@Override
+				public String format(LogRecord record) {
+					StringBuilder builder = new StringBuilder(simpleDateFormat.format(new Date(record.getMillis())));
+					builder.append(record.getThrown().getMessage());
+					for (StackTraceElement element : record.getThrown().getStackTrace()) {
+						builder.append("\n\t").append(element.toString());
+					}
+					if (record.getThrown().getCause() != null) {
+						builder.append("\nCaused by: ").append(record.getThrown().getCause().getMessage());
+						for (StackTraceElement element : record.getThrown().getCause().getStackTrace()) {
+							builder.append("\n\t").append(element.toString());
+						}
+					}
+					return builder.append('\n').toString();
+				}
+			});
+			logger.addHandler(handler);
+
+			// Set up SQLite database
 			Class.forName("org.sqlite.JDBC");
 			this.database = DriverManager.getConnection("jdbc:sqlite://" + plugin.getDataFolder().getAbsolutePath() + "/data.db");
 			try (Statement st = database.createStatement()) {
@@ -51,7 +90,7 @@ public class ChunkFlagger {
 			}
 			this.database.setAutoCommit(false);
 		} catch (Exception e) {
-			throw new RuntimeException("An error occurred while connecting SQLite", e);
+			throw new RuntimeException("An error occurred while setting up the chunk flagger", e);
 		}
 
 		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(60, plugin.config().getFlagSaveInterval() / 20) * 1000,
@@ -95,7 +134,7 @@ public class ChunkFlagger {
 						upsert.executeBatch();
 						this.database.commit();
 					} catch (SQLException e) {
-						e.printStackTrace();
+						logger.log(Level.WARNING, "Exception updating chunk flags", e);
 					}
 				});
 
