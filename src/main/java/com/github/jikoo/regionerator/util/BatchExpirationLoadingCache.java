@@ -153,14 +153,18 @@ public class BatchExpirationLoadingCache<K, V> {
 			expirationConsumer.accept(internal.values());
 			internal.clear();
 		} else {
-			HashSet<V> subset = new HashSet<>(maxBatchSize);
 			Iterator<V> iterator = internal.values().iterator();
 
+			Collection<Collection<V>> subsets = new ArrayList<>();
 			while (!internal.isEmpty()) {
+				ArrayList<V> subset = new ArrayList<>(maxBatchSize);
 				for (int i = 0; i < maxBatchSize && iterator.hasNext(); ++i) {
 					subset.add(iterator.next());
 					iterator.remove();
 				}
+				subsets.add(subset);
+			}
+			for (Collection<V> subset : subsets) {
 				expirationConsumer.accept(subset);
 				subset.clear();
 			}
