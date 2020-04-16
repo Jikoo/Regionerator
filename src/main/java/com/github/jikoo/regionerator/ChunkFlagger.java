@@ -47,11 +47,11 @@ public class ChunkFlagger {
 			// Set up logger
 			this.logger = Logger.getLogger("Regionerator-DB");
 
-			File errors = new File(plugin.getDataFolder(), "db-errors");
+			File errors = new File(plugin.getDataFolder(), "logs");
 			if (!errors.mkdirs()) {
 				throw new AccessDeniedException(errors.getPath());
 			}
-			Handler handler = new FileHandler(plugin.getDataFolder().getPath() + File.separatorChar + "db-errors" + File.separatorChar + "error-log-%g-%u.log",
+			Handler handler = new FileHandler(plugin.getDataFolder().getPath() + File.separatorChar + "logs" + File.separatorChar + "error-log-%g-%u.log",
 					10 * 1024 * 1024, 10, false);
 			handler.setLevel(Level.WARNING);
 			handler.setFilter(record -> record.getThrown() != null);
@@ -133,6 +133,9 @@ public class ChunkFlagger {
 						delete.executeBatch();
 						upsert.executeBatch();
 						this.database.commit();
+
+						// Flag as no longer dirty to reduce saves if data is still in use
+						expiredData.forEach(flagData -> flagData.dirty = false);
 					} catch (SQLException e) {
 						logger.log(Level.WARNING, "Exception updating chunk flags", e);
 					}
@@ -275,10 +278,6 @@ public class ChunkFlagger {
 		flagData.dirty = true;
 	}
 
-	public void unflagRegion(@NotNull String world, int regionX, int regionZ) {
-		unflagRegionByLowestChunk(world, Coords.regionToChunk(regionX), Coords.regionToChunk(regionZ));
-	}
-
 	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
 		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
 			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
@@ -295,14 +294,15 @@ public class ChunkFlagger {
 	}
 
 	/**
-	 * Save all flag files.
+	 * Force a save of all flags and close the connection.
 	 */
-	public void save() {
+	void shutdown() {
 		flagCache.expireAll();
 		try {
-			this.database.commit();
+			database.commit();
+			database.close();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			logger.log(Level.WARNING, "Exception committing to and closing DB connection", e);
 		}
 	}
 

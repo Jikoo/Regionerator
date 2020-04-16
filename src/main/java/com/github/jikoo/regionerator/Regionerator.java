@@ -29,7 +29,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -288,11 +287,12 @@ public class Regionerator extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		if (chunkFlagger != null) {
-			chunkFlagger.save();
+			getLogger().info("Shutting down flagger - currently holds " + chunkFlagger.getCached() + " flags.");
+			chunkFlagger.shutdown();
 		}
+
+		// Manually cancel deletion runnables - Bukkit does not do a good job of informing tasks they can't continue.
 		deletionRunnables.values().forEach(BukkitRunnable::cancel);
-		getServer().getScheduler().cancelTasks(this);
-		HandlerList.unregisterAll(this);
 	}
 
 	public Config config() {

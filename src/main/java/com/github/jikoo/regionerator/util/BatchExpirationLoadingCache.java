@@ -3,7 +3,6 @@ package com.github.jikoo.regionerator.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -52,6 +51,9 @@ public class BatchExpirationLoadingCache<K, V> {
 		};
 
 		this.expirationConsumer = expirationConsumer;
+		if (maxBatchSize < 1) {
+			throw new IllegalArgumentException("Max batch size cannot be smaller than 1");
+		}
 		this.maxBatchSize = maxBatchSize;
 		this.batchDelay = batchDelay;
 	}
@@ -149,6 +151,7 @@ public class BatchExpirationLoadingCache<K, V> {
 	}
 
 	public void expireAll() {
+		expired.clear();
 		if (internal.size() <= maxBatchSize) {
 			expirationConsumer.accept(internal.values());
 			internal.clear();
@@ -156,7 +159,7 @@ public class BatchExpirationLoadingCache<K, V> {
 			Iterator<V> iterator = internal.values().iterator();
 
 			Collection<Collection<V>> subsets = new ArrayList<>();
-			while (!internal.isEmpty()) {
+			while (iterator.hasNext()) {
 				ArrayList<V> subset = new ArrayList<>(maxBatchSize);
 				for (int i = 0; i < maxBatchSize && iterator.hasNext(); ++i) {
 					subset.add(iterator.next());
@@ -166,7 +169,6 @@ public class BatchExpirationLoadingCache<K, V> {
 			}
 			for (Collection<V> subset : subsets) {
 				expirationConsumer.accept(subset);
-				subset.clear();
 			}
 		}
 
