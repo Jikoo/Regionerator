@@ -93,7 +93,7 @@ public class ChunkFlagger {
 			throw new RuntimeException("An error occurred while setting up the chunk flagger", e);
 		}
 
-		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(60, plugin.config().getFlagSaveInterval() / 20) * 1000,
+		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(300000, plugin.config().getMillisBetweenFlagSave()),
 				key -> {
 					try (PreparedStatement st = database.prepareStatement("SELECT time FROM chunkdata WHERE chunk_id=?")) {
 						st.setString(1, key);

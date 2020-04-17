@@ -13,7 +13,7 @@ public class Config {
 	private DebugLevel debugLevel;
 	private List<String> worlds;
 	private boolean deleteFreshChunks;
-	private long flagDuration, ticksPerFlag, ticksPerFlagAutosave, millisBetweenCycles, deletionInterval;
+	private long flagDuration, ticksPerFlag, millisBetweenFlagAutosave, millisBetweenCycles, deletionInterval;
 	private int flaggingRadius, deletionChunkCount;
 
 	/**
@@ -85,11 +85,11 @@ public class Config {
 		ticksPerFlag = plugin.getConfig().getInt("seconds-per-flag") * 20L;
 
 		if (plugin.getConfig().getInt("minutes-per-flag-autosave") < 1) {
-			plugin.getConfig().set("minutes-per-flag-autosave", 5);
+			plugin.getConfig().set("minutes-per-flag-autosave", 1);
 			dirtyConfig = true;
 		}
-		// 60 seconds per minute, 20 ticks per second
-		ticksPerFlagAutosave = plugin.getConfig().getInt("minutes-per-flag-autosave") * 1200L;
+		// 60 seconds per minute, 1000 millis per second
+		millisBetweenFlagAutosave = plugin.getConfig().getInt("minutes-per-flag-autosave") * 60000L;
 
 		if (plugin.getConfig().getLong("ticks-per-deletion") < 1) {
 			plugin.getConfig().set("ticks-per-deletion", 20L);
@@ -169,8 +169,8 @@ public class Config {
 		return flaggingRadius;
 	}
 
-	public long getFlagSaveInterval() {
-		return ticksPerFlagAutosave;
+	public long getMillisBetweenFlagSave() {
+		return millisBetweenFlagAutosave;
 	}
 
 	public List<String> getWorlds() {
