@@ -48,6 +48,7 @@
 #   Civs: true
 #   Factions: true
 #   Feudal: true
+#   GriefDefender: true
 #   GriefPrevention: true
 #   Kingdoms: true
 #   Landlord: true
@@ -108,6 +109,7 @@ hooks:
   Civs: true
   Factions: true
   Feudal: true
+  GriefDefender: true
   GriefPrevention: true
   Kingdoms: true
   Landlord: true

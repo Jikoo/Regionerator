@@ -7,6 +7,7 @@ softdepend:
 - Civs
 - Factions
 - Feudal
+- GriefDefender
 - GriefPrevention
 - Kingdoms
 - Landlord
@@ -24,4 +25,4 @@ commands:
   aliases: [regeninfo, rgr]
   description: Check Regionerator's progress, stop/start, or reload configuration.
   permission: regionerator.command
-  usage: /regionerator [pause|resume|reload|(un)flag|check] (no arguments for a report)
+  usage: /regionerator [pause|resume|reload|(un)flag|check|cache] (no args for a report)
