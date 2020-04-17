@@ -28,6 +28,8 @@ public class AnvilRegion extends RegionInfo {
 	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) throws IOException {
 		super(world, lowestChunkX, lowestChunkZ);
 		this.regionFile = regionFile;
+
+		read();
 	}
 
 	public File getRegionFile() {

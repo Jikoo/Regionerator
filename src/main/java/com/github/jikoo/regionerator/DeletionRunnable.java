@@ -1,6 +1,5 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.event.RegioneratorDeleteEvent;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
@@ -40,12 +39,16 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	private void handleRegion(RegionInfo region) {
+		if (isCancelled()) {
+			return;
+		}
+
 		regionCount.incrementAndGet();
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
 				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
 		// Collect potentially eligible chunks
-		List<ChunkInfo> chunks = region.getChunks().filter(this::filterChunk).collect(Collectors.toList());
+		List<ChunkInfo> chunks = region.getChunks().filter(this::isDeleteEligible).collect(Collectors.toList());
 
 		if (chunks.size() != 1024) {
 			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
@@ -88,13 +91,20 @@ public class DeletionRunnable extends BukkitRunnable {
 		} catch (InterruptedException ignored) {}
 	}
 
-	private boolean filterChunk(ChunkInfo chunkInfo) {
+	private boolean isDeleteEligible(ChunkInfo chunkInfo) {
+		if (isCancelled()) {
+			// If task is cancelled, report all chunks ineligible for deletion
+			return false;
+		}
+
 		if (chunkInfo.isOrphaned()) {
+			// Chunk already deleted
 			return true;
 		}
 
 		long now = System.currentTimeMillis();
 		if (now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified() || now <= chunkInfo.getLastVisit()) {
+			// Chunk is visited
 			return false;
 		}
 
@@ -105,28 +115,24 @@ public class DeletionRunnable extends BukkitRunnable {
 			} catch (InterruptedException ignored) {}
 		}
 
-		if (isCancelled()) {
-			return true;
-		}
-
 		try {
 			return chunkInfo.getVisitStatus().ordinal() < VisitStatus.VISITED.ordinal();
 		} catch (RuntimeException e) {
-			if (this.isCancelled() || !plugin.isEnabled()) {
-				// Interruption is due to task cancellation, likely for shutdown.
-				return true;
+			if (!this.isCancelled() && plugin.isEnabled()) {
+				// Interruption is not due to plugin shutdown, log.
+				plugin.debug(DebugLevel.LOW, () -> String.format("Caught an exception getting VisitStatus: %s", e.getMessage()));
+				plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
 			}
-			plugin.debug(DebugLevel.LOW, () -> String.format("Caught an exception getting VisitStatus: %s", e.getMessage()));
-			plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
-			return true;
+			// If an exception occurred, do not delete chunk.
+			return false;
 		}
 	}
 
-	String getRunStats() {
+	public String getRunStats() {
 		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount.get(), regionsDeleted, chunksDeleted);
 	}
 
-	long getNextRun() {
+	public long getNextRun() {
 		return nextRun;
 	}
 

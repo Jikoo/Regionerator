@@ -30,14 +30,10 @@ public abstract class RegionInfo {
 		this.world = world;
 		this.lowestChunkX = lowestChunkX;
 		this.lowestChunkZ = lowestChunkZ;
-
-		read();
 	}
 
 	/**
 	 * Reads the RegionInfo into memory.
-	 * <p>
-	 * This is called by the constructor, but may be called again to refresh data.
 	 *
 	 * @throws IOException if there is an error reading the RegionInfo
 	 */
