@@ -63,7 +63,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		try {
 			region.write();
-			new RegioneratorDeleteEvent(world.getWorld(), chunks);
+			plugin.getServer().getPluginManager().callEvent(new RegioneratorDeleteEvent(world.getWorld(), chunks));
 			if (chunks.size() == 1024) {
 				plugin.getFlagger().unflagRegionByLowestChunk(world.getWorld().getName(), region.getLowestChunkX(), region.getLowestChunkZ());
 				regionsDeleted.incrementAndGet();
