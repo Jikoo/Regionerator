@@ -3,7 +3,7 @@ package com.github.jikoo.regionerator.hooks;
 import org.bukkit.Bukkit;
 
 /**
- * Framework for plugin hooks.
+ * An extension of the {@link Hook} framework for depending on specific {@link org.bukkit.plugin.Plugin}s.
  *
  * @author Jikoo
  */
@@ -18,6 +18,11 @@ public abstract class PluginHook extends Hook {
 		return "Plugin:" + super.getProtectionName();
 	}
 
+	/**
+	 * Gets the name of the {@link org.bukkit.plugin.Plugin} being hooked.
+	 *
+	 * @return the name of the {@code Plugin}
+	 */
 	public String getPluginName() {
 		return super.getProtectionName();
 	}

@@ -12,43 +12,53 @@ import java.util.concurrent.ConcurrentSkipListMap;
  *
  * @author Jikoo
  */
-public class ExpirationMap<K> {
+public class ExpirationMap<V> {
 
-	private final ConcurrentSkipListMap<Long, Collection<K>> multiMap = new ConcurrentSkipListMap<>();
-	private final ConcurrentHashMap<K, Long> inverse = new ConcurrentHashMap<>();
+	private final ConcurrentSkipListMap<Long, Collection<V>> multiMap = new ConcurrentSkipListMap<>();
+	private final ConcurrentHashMap<V, Long> inverse = new ConcurrentHashMap<>();
 	private final long durationMillis;
 
 	public ExpirationMap(long durationMillis) {
 		this.durationMillis = durationMillis;
 	}
 
-	public Set<K> doExpiration() {
+	/**
+	 * Check and collect all values which have expired.
+	 *
+	 * @return a {@link Set} of expired values
+	 */
+	public Set<V> doExpiration() {
 
-		Set<K> keys = new HashSet<>();
+		Set<V> values = new HashSet<>();
 
-		ConcurrentNavigableMap<Long, Collection<K>> headMap = multiMap.headMap(System.currentTimeMillis(), true);
+		ConcurrentNavigableMap<Long, Collection<V>> headMap = multiMap.headMap(System.currentTimeMillis(), true);
 
-		for (Collection<K> collection : headMap.values()) {
-			keys.addAll(collection);
+		for (Collection<V> collection : headMap.values()) {
+			values.addAll(collection);
 		}
 
 		headMap.clear();
 
-		for (K key :  keys) {
+		for (V key :  values) {
 			inverse.remove(key);
 		}
 
-		return keys;
+		return values;
 	}
 
-	public void add(K key) {
+	/**
+	 * Adds or updates a value's expiration.
+	 *
+	 * @param value the value to add
+	 */
+	public void add(V value) {
 		Long timestamp = System.currentTimeMillis() + durationMillis;
-		Long replacedTimestamp = inverse.replace(key, timestamp);
+		Long replacedTimestamp = inverse.replace(value, timestamp);
 
 		if (replacedTimestamp != null) {
 			// Key was already set to expire. Remove old expiration entry.
 			multiMap.computeIfPresent(replacedTimestamp, (oldTimestamp, collection) -> {
-				collection.remove(key);
+				collection.remove(value);
 				return collection.isEmpty() ? null : collection;
 			});
 		}
@@ -58,25 +68,39 @@ public class ExpirationMap<K> {
 			if (collection == null) {
 				collection = new HashSet<>();
 			}
-			collection.add(key);
+			collection.add(value);
 			return collection;
 		});
 	}
 
-	public void remove(K key) {
-		Long removedTimestamp = inverse.remove(key);
+	/**
+	 * Removes a mapped value.
+	 *
+	 * @param value the value to remove
+	 */
+	public void remove(V value) {
+		Long removedTimestamp = inverse.remove(value);
 		if (removedTimestamp != null) {
 			multiMap.computeIfPresent(removedTimestamp, (oldTimestamp, collection) -> {
-				collection.remove(key);
+				collection.remove(value);
 				return collection.isEmpty() ? null : collection;
 			});
 		}
 	}
 
-	public boolean contains(K key) {
-		return inverse.containsKey(key);
+	/**
+	 * Checks if the specified value is currently mapped.
+	 *
+	 * @param value the value to check for
+	 * @return true if the value is present
+	 */
+	public boolean contains(V value) {
+		return inverse.containsKey(value);
 	}
 
+	/**
+	 * Clears all mapped values.
+	 */
 	public void clear() {
 		multiMap.clear();
 		inverse.clear();

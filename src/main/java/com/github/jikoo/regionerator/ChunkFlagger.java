@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Storing time stamps for chunks made easy.
+ * Utility for storing and loading chunk visit timestamps.
  *
  * @author Jikoo
  */
@@ -120,7 +120,7 @@ public class ChunkFlagger {
 					try (PreparedStatement upsert = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=?");
 							PreparedStatement delete = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
 						for (FlagData data : expiredData) {
-							if (data.getLastVisit() == -1) {
+							if (data.getLastVisit() == Config.getFlagDefault()) {
 								delete.setString(1, data.getChunkId());
 								delete.addBatch();
 							} else {
@@ -149,6 +149,9 @@ public class ChunkFlagger {
 		Bukkit.getScheduler().runTaskTimer(plugin, flagCache::lazyExpireAll, 20 * 60 * 3, 20 * 60 * 3);
 	}
 
+	/**
+	 * Converts old flags file to SQLite.
+	 */
 	private void convertOldFlagsFile() {
 		File oldFlagsFile = new File(this.plugin.getDataFolder(), "flags.yml");
 		if (!oldFlagsFile.exists()) {
@@ -201,6 +204,9 @@ public class ChunkFlagger {
 		}
 	}
 
+	/**
+	 * Converts old per-region flag files to SQLite.
+	 */
 	private void convertOldPerWorldFlagFiles() {
 		File oldFlagsFolder = new File(this.plugin.getDataFolder(), "flags");
 		if (!oldFlagsFolder.exists() || !oldFlagsFolder.isDirectory()) {
@@ -250,6 +256,13 @@ public class ChunkFlagger {
 		}
 	}
 
+	/**
+	 * Flags chunks in a radius around the specified chunk according to configured settings.
+	 *
+	 * @param world the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 */
 	public void flagChunksInRadius(@NotNull String world, int chunkX, int chunkZ) {
 		flagChunksInRadius(world, chunkX, chunkZ, this.plugin.config().getFlaggingRadius(), this.plugin.config().getFlagVisit());
 	}
@@ -262,9 +275,17 @@ public class ChunkFlagger {
 		}
 	}
 
+	/**
+	 * Flags a chunk until the specified time.
+	 *
+	 * @param world the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 * @param flagTil the flag timestamp
+	 */
 	public void flagChunk(@NotNull String world, int chunkX, int chunkZ, long flagTil) {
 		String flagDbId = this.getFlagDbId(world, chunkX, chunkZ);
-		FlagData flagData = this.flagCache.getIfPresent(flagDbId);
+		FlagData flagData = this.flagCache.getIfPresent(flagDbId); //TODO need to change call to not wipe eternal flag in this case
 		if (flagData != null) {
 			long current = flagData.getLastVisit();
 			if (current == Config.getFlagEternal()) {
@@ -278,6 +299,13 @@ public class ChunkFlagger {
 		flagData.dirty = true;
 	}
 
+	/**
+	 * Unflags an entire region.
+	 *
+	 * @param world the world name
+	 * @param regionLowestChunkX the lowest chunk X coordinate in the region
+	 * @param regionLowestChunkZ the lowest chunk Z coordinate in the region
+	 */
 	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
 		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
 			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
@@ -286,6 +314,13 @@ public class ChunkFlagger {
 		}
 	}
 
+	/**
+	 * Unflags a chunk.
+	 *
+	 * @param world the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 */
 	public void unflagChunk(@NotNull String world, int chunkX, int chunkZ) {
 		String flagDBId = getFlagDbId(world, chunkX, chunkZ);
 		FlagData flagData = new FlagData(flagDBId, -1);
@@ -306,28 +341,65 @@ public class ChunkFlagger {
 		}
 	}
 
+	/**
+	 * Gets the number of entries loaded in the flag cache.
+	 *
+	 * @return the flag cache size
+	 */
 	public int getCached() {
 		return flagCache.getCached();
 	}
 
+	/**
+	 * Gets the number of entries queued to be removed from the flag cache.
+	 *
+	 * @return the flag cache deletion queue size
+	 */
 	public int getQueued() {
 		return flagCache.getQueued();
 	}
 
+	/**
+	 * Gets a {@link CompletableFuture} providing a chunk's {@link FlagData} from the database.
+	 *
+	 * @param world the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 * @return a CompletableFuture supplying a FlagData
+	 */
 	public CompletableFuture<FlagData> getChunkFlag(@NotNull World world, int chunkX, int chunkZ) {
 		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ));
 	}
 
+	/**
+	 * Gets a {@link CompletableFuture} providing a chunk's {@link FlagData} as of last delete from the database.
+	 *
+	 * @param world the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 * @return a {@link CompletableFuture<FlagData>}
+	 */
 	public CompletableFuture<FlagData> getChunkFlagOnDelete(@NotNull World world, int chunkX, int chunkZ) {
 		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ) + "_old");
 	}
 
+	 /**
+	 * Gets a unique identifier for a chunk for use in the database.
+	 *
+	 * @param worldName the world name
+	 * @param chunkX the chunk X coordinate
+	 * @param chunkZ the chunk Z coordinate
+	 * @return the ID of the chunk for database use
+	 */
 	@NotNull
 	@Contract(pure = true)
 	private String getFlagDbId(@NotNull String worldName, int chunkX, int chunkZ) {
 		return worldName + "_" + chunkX + '_' + chunkZ;
 	}
 
+	/**
+	 * A container for a chunk's visit time.
+	 */
 	public static class FlagData {
 
 		private String chunkId;
@@ -339,15 +411,30 @@ public class ChunkFlagger {
 			this.lastVisit = lastVisit;
 		}
 
+		/**
+		 * Gets the chunk's database identifier.
+		 *
+		 * @return the chunk's database identifier
+		 */
 		@NotNull
 		public String getChunkId() {
 			return chunkId;
 		}
 
+		/**
+		 * Gets the chunk's last visit timestamp.
+		 *
+		 * @return the chunk's last visit timestamp.
+		 */
 		public long getLastVisit() {
 			return lastVisit;
 		}
 
+		/**
+		 * Gets whether or not the chunk data needs to be saved to the database.
+		 *
+		 * @return true if the chunk data has not been saved
+		 */
 		boolean isDirty() {
 			return dirty;
 		}

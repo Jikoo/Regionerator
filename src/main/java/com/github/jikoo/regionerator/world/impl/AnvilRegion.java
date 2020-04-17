@@ -22,10 +22,16 @@ import org.jetbrains.annotations.NotNull;
 
 public class AnvilRegion extends RegionInfo {
 
+	private final File regionFile;
 	private byte[] header;
 
 	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) throws IOException {
-		super(world, regionFile, lowestChunkX, lowestChunkZ);
+		super(world, lowestChunkX, lowestChunkZ);
+		this.regionFile = regionFile;
+	}
+
+	public File getRegionFile() {
+		return regionFile;
 	}
 
 	@Override
@@ -74,6 +80,11 @@ public class AnvilRegion extends RegionInfo {
 	@Override
 	public AnvilWorld getWorldInfo() {
 		return (AnvilWorld) super.getWorldInfo();
+	}
+
+	@Override
+	public boolean exists() {
+		return getRegionFile().exists();
 	}
 
 	@NotNull

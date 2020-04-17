@@ -8,6 +8,11 @@ import java.util.stream.Stream;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A container used to generate {@link RegionInfo} for a {@link World}.
+ *
+ * @author Jikoo
+ */
 public abstract class WorldInfo {
 
 	protected final Regionerator plugin;
@@ -20,20 +25,30 @@ public abstract class WorldInfo {
 		regions = new ConcurrentHashMap<>();
 	}
 
+	/**
+	 * Gets the {@link World} the WorldInfo represents.
+	 *
+	 * @return
+	 */
 	public World getWorld() {
 		return world;
 	}
 
 	/**
-	 * Gets RegionInfo for the specified region coordinates. Note that the region may not exist.
+	 * Gets {@link RegionInfo} for the specified region coordinates. Note that the region may not exist - check {@link RegionInfo#exists()}.
 	 *
 	 * @param regionX the region's X coordinate
 	 * @param regionZ the region's Z coordinate
-	 * @return the RegionInfo
+	 * @return the {@link RegionInfo}
 	 */
 	@NotNull
 	public abstract RegionInfo getRegion(int regionX, int regionZ) throws IOException;
 
+	/**
+	 * Gets a {@link Stream<RegionInfo>} requesting every {@link RegionInfo} contained by the WorldInfo.
+	 *
+	 * @return a {@link Stream<RegionInfo>}
+	 */
 	public abstract Stream<RegionInfo> getRegions();
 
 }

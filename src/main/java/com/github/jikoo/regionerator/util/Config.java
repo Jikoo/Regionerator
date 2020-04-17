@@ -16,6 +16,11 @@ public class Config {
 	private long flagDuration, ticksPerFlag, ticksPerFlagAutosave, millisBetweenCycles, deletionInterval;
 	private int flaggingRadius, deletionChunkCount;
 
+	/**
+	 * Reload the Regionerator's configuration.
+	 *
+	 * @param plugin the Regionerator instance
+	 */
 	public void reload(Regionerator plugin) {
 
 		List<String> worldList = plugin.getConfig().getStringList("worlds");
@@ -47,6 +52,7 @@ public class Config {
 				}
 			}
 		}
+
 		// Immutable list, this should not be changed during run by myself or another plugin
 		worlds = ImmutableList.copyOf(worlds);
 		if (dirtyConfig) {

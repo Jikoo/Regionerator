@@ -25,6 +25,11 @@ public class HookListener implements Listener {
 		this.plugin = plugin;
 	}
 
+	/**
+	 * Dynamically enable {@link PluginHook}s if they are configured to be used.
+	 *
+	 * @param event the {@link PluginEnableEvent}
+	 */
 	@EventHandler
 	public void onPluginEnable(PluginEnableEvent event) {
 		String pluginName = event.getPlugin().getName();
@@ -54,6 +59,11 @@ public class HookListener implements Listener {
 		}
 	}
 
+	/**
+	 * Dynamically disable {@link PluginHook}s if they are in use.
+	 *
+	 * @param event the {@link PluginDisableEvent}
+	 */
 	@EventHandler
 	public void onPluginDisable(PluginDisableEvent event) {
 		String pluginName = event.getPlugin().getName();

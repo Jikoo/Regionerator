@@ -19,9 +19,8 @@ public class FlaggingListener implements Listener {
 	}
 
 	/**
-	 * Deleting freshly generated chunks is not worth it. Regionerator periodically spends a sizable
-	 * amount of time deleting untouched area, causing unnecessary load. To combat this a little,
-	 * freshly generated chunks are automatically flagged.
+	 * Regionerator periodically spends a sizable amount of time deleting untouched area, causing unnecessary load.
+	 * To combat this a little, freshly generated chunks are automatically flagged.
 	 * 
 	 * @param event the ChunkPopulateEvent
 	 */

@@ -20,6 +20,11 @@ public class SupplierCache<T> {
 		cacheDuration = TimeUnit.MILLISECONDS.convert(duration, timeUnit);
 	}
 
+	/**
+	 * Returns the cached value, refreshing as required.
+	 *
+	 * @return the cached value
+	 */
 	public T get() {
 		if (value == null || lastUpdate <= System.currentTimeMillis() - cacheDuration) {
 			value = supplier.get();

@@ -30,11 +30,27 @@ public class BatchExpirationLoadingCache<K, V> {
 	private final int maxBatchSize;
 	private final long batchDelay;
 
+	/**
+	 * Constructs a new BatchExpirationLoadingCache using the default max batch size and delay.
+	 *
+	 * @param retention the cache retention duration
+	 * @param load the {@link Function} used to load values into the cache
+	 * @param expirationConsumer the {@link Consumer} accepting batches of expired values
+	 */
 	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
 		@NotNull final Consumer<Collection<V>> expirationConsumer) {
 		this(retention, load, expirationConsumer, 1024, 5000);
 	}
 
+	/**
+	 * Constructs a new BatchExpirationLoadingCache.
+	 *
+	 * @param retention the cache retention duration
+	 * @param load the {@link Function} used to load values into the cache
+	 * @param expirationConsumer the {@link Consumer} accepting batches of expired values
+	 * @param maxBatchSize the maximum batch size to expire simultaneously
+	 * @param batchDelay the delay to await a full batch for expiration
+	 */
 	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
 			@NotNull final Consumer<Collection<V>> expirationConsumer, int maxBatchSize, long batchDelay) {
 		expirationMap = new ExpirationMap<>(retention);
@@ -58,6 +74,12 @@ public class BatchExpirationLoadingCache<K, V> {
 		this.batchDelay = batchDelay;
 	}
 
+	/**
+	 * Gets a {@link CompletableFuture} which either gets or loads a value for the specified key as necessary.
+	 *
+	 * @param key the key
+	 * @return a {@link CompletableFuture} providing the requested value
+	 */
 	@NotNull
 	public CompletableFuture<V> get(@NotNull K key) {
 		if (internal.containsKey(key)) {
@@ -66,6 +88,12 @@ public class BatchExpirationLoadingCache<K, V> {
 		return CompletableFuture.supplyAsync(() -> load.apply(key));
 	}
 
+	/**
+	 * Gets a value for the specified key or {@code null} if it is not present in the cache.
+	 *
+	 * @param key the key
+	 * @return the loaded value or {@code null}
+	 */
 	@Nullable
 	public V getIfPresent(@NotNull K key) {
 		V value = internal.get(key);
@@ -145,11 +173,17 @@ public class BatchExpirationLoadingCache<K, V> {
 		).start();
 	}
 
+	/**
+	 * Mark all keys for removal using the internal expiration system.
+	 */
 	public void lazyExpireAll() {
 		expired.addAll(internal.keySet());
 		checkExpiration();
 	}
 
+	/**
+	 * Expire all keys immediately.
+	 */
 	public void expireAll() {
 		expired.clear();
 		if (internal.size() <= maxBatchSize) {
@@ -175,10 +209,20 @@ public class BatchExpirationLoadingCache<K, V> {
 		expirationMap.clear();
 	}
 
+	/**
+	 * Get the current number of values in the cache.
+	 *
+	 * @return the cache size
+	 */
 	public int getCached() {
 		return internal.size();
 	}
 
+	/**
+	 * Get the current number of values in the process of being expired.
+	 *
+	 * @return the expiration queue size
+	 */
 	public int getQueued() {
 		return expired.size();
 	}

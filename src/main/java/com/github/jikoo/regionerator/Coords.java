@@ -1,7 +1,5 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.util.Pair;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -77,25 +75,6 @@ public class Coords {
 	 */
 	public static int blockToChunk(int block) {
 		return block >> 4;
-	}
-
-	/**
-	 * Gets the lowest chunk coordinates of a region.
-	 * 
-	 * @param regionFileName the name of the region file in r.X.Z.mca format
-	 * 
-	 * @return a Pair containing the X and Z coordinates of the lowest chunk in the region
-	 * 
-	 * @throws IllegalArgumentException if the region file name is not in the correct format
-	 */
-	public static Pair<Integer, Integer> getRegionChunkCoords(String regionFileName) {
-		Matcher matcher = REGION_FILE.matcher(regionFileName);
-		if (!matcher.find()) {
-			throw new IllegalArgumentException(regionFileName + " does not match the region file name format!");
-		}
-
-		return new Pair<>(regionToChunk(Integer.parseInt(matcher.group(1))),
-				regionToChunk(Integer.parseInt(matcher.group(2))));
 	}
 
 }

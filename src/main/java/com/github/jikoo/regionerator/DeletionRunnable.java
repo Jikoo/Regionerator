@@ -42,7 +42,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	private void handleRegion(RegionInfo region) {
 		regionCount.incrementAndGet();
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
-				world.getWorld().getName(), region.getRegionFile().getName(), regionCount.get()));
+				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
 		// Collect potentially eligible chunks
 		List<ChunkInfo> chunks = region.getChunks().filter(this::filterChunk).collect(Collectors.toList());

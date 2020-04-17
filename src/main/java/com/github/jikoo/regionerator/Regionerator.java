@@ -234,7 +234,7 @@ public class Regionerator extends JavaPlugin {
 			}
 
 			// Region not yet saved, cannot obtain chunk detail data
-			if (regionInfo == null || !regionInfo.getRegionFile().exists()) {
+			if (regionInfo == null || !regionInfo.exists()) {
 				long visit = chunkFlagger.getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
 				if (visit == Config.getFlagDefault()) {
 					player.sendMessage("Chunk has not been visited.");
@@ -289,6 +289,9 @@ public class Regionerator extends JavaPlugin {
 		return worldManager;
 	}
 
+	/**
+	 * Attempts to activate {@link DeletionRunnable}s for any configured worlds.
+	 */
 	public void attemptDeletionActivation() {
 		deletionRunnables.values().removeIf(value -> value.getNextRun() < System.currentTimeMillis());
 

@@ -1,18 +1,14 @@
 package com.github.jikoo.regionerator.commands;
 
-import com.github.jikoo.regionerator.util.Config;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.github.jikoo.regionerator.Coords;
 import com.github.jikoo.regionerator.Regionerator;
-import com.github.jikoo.regionerator.util.Triple;
-
+import com.github.jikoo.regionerator.util.Config;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.regions.Region;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -32,7 +28,7 @@ public class CommandFlag {
 	}
 
 	public void handleFlags(CommandSender sender, String[] args, boolean flag) {
-		List<Triple<String, Integer, Integer>> chunks = getSelectedArea(sender, args);
+		List<ChunkPosition> chunks = getSelectedArea(sender, args);
 		if (chunks == null) {
 			// More descriptive errors are handled when selecting chunks
 			return;
@@ -43,9 +39,9 @@ public class CommandFlag {
 			return;
 		}
 
-		String worldName = chunks.get(0).getLeft();
+		String worldName = chunks.get(0).getName();
 		boolean invalid = true;
-		for (String world : plugin.getActiveWorlds()) {
+		for (String world : plugin.config().getWorlds()) {
 			if (world.equalsIgnoreCase(worldName)) {
 				invalid = false;
 				// Re-assign so case will match when editing values
@@ -58,18 +54,18 @@ public class CommandFlag {
 			return;
 		}
 
-		for (Triple<String, Integer, Integer> chunk : chunks) {
+		for (ChunkPosition chunk : chunks) {
 			if (flag) {
-				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getMiddle(), chunk.getRight(), 0, Config.getFlagEternal());
+				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getChunkX(), chunk.getChunkZ(), 0, Config.getFlagEternal());
 			} else {
-				plugin.getFlagger().unflagChunk(worldName, chunk.getMiddle(), chunk.getRight());
+				plugin.getFlagger().unflagChunk(worldName, chunk.getChunkX(), chunk.getChunkZ());
 			}
 		}
 
 		sender.sendMessage("Edited flags successfully!");
 	}
 
-	private List<Triple<String, Integer, Integer>> getSelectedArea(CommandSender sender, String[] args) {
+	private List<ChunkPosition> getSelectedArea(CommandSender sender, String[] args) {
 		if (args.length < 3 && !(sender instanceof Player)) {
 			sender.sendMessage("Console usage: /regionerator (un)flag <world> <chunk X> <chunk Z>");
 			sender.sendMessage("Chunk coordinates = regular coordinates / 16");
@@ -100,7 +96,7 @@ public class CommandFlag {
 				return null;
 			}
 			// This looks silly, but it's necessary to make the compiler happy
-			return Collections.singletonList(new Triple<>(worldName, chunkX, chunkZ));
+			return Collections.singletonList(new ChunkPosition(worldName, chunkX, chunkZ));
 		}
 
 		// Safe cast: prior 2 blocks remove all non-players.
@@ -109,7 +105,7 @@ public class CommandFlag {
 		// Flag current chunk
 		if (args.length < 2) {
 			Location location = player.getLocation();
-			return Collections.singletonList(new Triple<>(
+			return Collections.singletonList(new ChunkPosition(
 					player.getWorld().getName(),
 					Coords.blockToChunk(location.getBlockX()),
 					Coords.blockToChunk(location.getBlockZ())));
@@ -157,7 +153,7 @@ public class CommandFlag {
 			return null;
 		}
 
-		ArrayList<Triple<String, Integer, Integer>> chunks = new ArrayList<>();
+		ArrayList<ChunkPosition> chunks = new ArrayList<>();
 		String worldName = session.getSelectionWorld().getName();
 		int maxChunkX = Coords.blockToChunk(selection.getMaximumPoint().getBlockX());
 		int maxChunkZ = Coords.blockToChunk(selection.getMaximumPoint().getBlockZ());
@@ -166,7 +162,7 @@ public class CommandFlag {
 			minChunkX <= maxChunkX; minChunkX++) {
 			for (int minChunkZ = Coords.blockToChunk(selection.getMinimumPoint().getBlockZ());
 				minChunkZ <= maxChunkZ; minChunkZ++) {
-				chunks.add(new Triple<>(worldName, minChunkX, minChunkZ));
+				chunks.add(new ChunkPosition(worldName, minChunkX, minChunkZ));
 			}
 		}
 
@@ -185,4 +181,28 @@ public class CommandFlag {
 			return null;
 		}
 	}
+
+	private static class ChunkPosition {
+		private final String name;
+		private final int chunkX, chunkZ;
+
+		private ChunkPosition(String name, int chunkX, int chunkZ) {
+			this.name = name;
+			this.chunkX = chunkX;
+			this.chunkZ = chunkZ;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public int getChunkX() {
+			return chunkX;
+		}
+
+		public int getChunkZ() {
+			return chunkZ;
+		}
+	}
+
 }
