@@ -1,14 +1,11 @@
 package com.github.jikoo.regionerator;
 
 import com.github.jikoo.regionerator.commands.CommandFlag;
-import com.github.jikoo.regionerator.event.RegioneratorChunkDeleteEvent;
-import com.github.jikoo.regionerator.event.RegioneratorDeleteEvent;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.Config;
-import com.github.jikoo.regionerator.util.SimpleListener;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import java.io.IOException;
@@ -29,7 +26,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -139,16 +135,6 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("delete-new-unvisited-chunks", true);
 		}
 
-		RegioneratorDeleteEvent.getHandlerList().register(new SimpleListener<>(RegioneratorDeleteEvent.class, event -> {
-			if (RegioneratorChunkDeleteEvent.getHandlerList().getRegisteredListeners().length == 0) {
-				return;
-			}
-			PluginManager pluginManager = getServer().getPluginManager();
-			for (ChunkInfo chunk : event.getChunks()) {
-				pluginManager.callEvent(new RegioneratorChunkDeleteEvent(chunk.getWorld(), chunk.getChunkX(), chunk.getChunkZ()));
-			}
-		}, this));
-
 		debug(DebugLevel.LOW, () -> onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(getCommand("regionerator")), "regionerator", new String[0]));
 	}
 
@@ -228,7 +214,7 @@ public class Regionerator extends JavaPlugin {
 		if (sender instanceof Player && args[0].equals("check")) {
 			Player player = (Player) sender;
 
-			if (!getActiveWorlds().contains(player.getWorld().getName())) {
+			if (!config.getWorlds().contains(player.getWorld().getName())) {
 				player.sendMessage("World is not configured for deletion.");
 			}
 
@@ -340,10 +326,6 @@ public class Regionerator extends JavaPlugin {
 			debug(DebugLevel.LOW, () -> "Deletion run scheduled for " + world.getName());
 			return;
 		}
-	}
-
-	public List<String> getActiveWorlds() {
-		return config.getWorlds();
 	}
 
 	public List<Hook> getProtectionHooks() {

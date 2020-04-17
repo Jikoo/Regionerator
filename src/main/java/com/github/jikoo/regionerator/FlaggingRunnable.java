@@ -37,7 +37,7 @@ public class FlaggingRunnable extends BukkitRunnable {
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			// Skip spectators - if you can't touch it, you can't really visit it.
 			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR
-					|| !plugin.getActiveWorlds().contains(player.getWorld().getName())) {
+					|| !plugin.config().getWorlds().contains(player.getWorld().getName())) {
 				continue;
 			}
 
