@@ -19,11 +19,11 @@ import org.bukkit.entity.Player;
  * 
  * @author Jikoo
  */
-public class CommandFlag {
+public class FlagHandler {
 
 	private final Regionerator plugin;
 
-	public CommandFlag(Regionerator plugin) {
+	public FlagHandler(Regionerator plugin) {
 		this.plugin = plugin;
 	}
 

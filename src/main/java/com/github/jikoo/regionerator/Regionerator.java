@@ -1,18 +1,13 @@
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.commands.CommandFlag;
+import com.github.jikoo.regionerator.commands.RegioneratorExecutor;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.Config;
-import com.github.jikoo.regionerator.world.ChunkInfo;
-import com.github.jikoo.regionerator.world.RegionInfo;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,15 +15,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -38,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class Regionerator extends JavaPlugin {
 
-	private final CommandFlag commandFlag = new CommandFlag(this);
 	private HashMap<String, DeletionRunnable> deletionRunnables;
 	private ChunkFlagger chunkFlagger;
 	private List<Hook> protectionHooks;
@@ -135,150 +125,26 @@ public class Regionerator extends JavaPlugin {
 			getConfig().set("delete-new-unvisited-chunks", true);
 		}
 
-		debug(DebugLevel.LOW, () -> onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(getCommand("regionerator")), "regionerator", new String[0]));
-	}
-
-	@Override
-	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-		// TODO tab completion
-
-		attemptDeletionActivation();
-
-		if (args.length < 1) {
-			if (config.getWorlds().isEmpty()) {
-				sender.sendMessage("No worlds are configured. Edit your config and use /regionerator reload.");
-				return true;
-			}
-
-			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
-
-			for (String worldName : config.getWorlds()) {
-				long activeAt = getConfig().getLong("delete-this-to-reset-plugin." + worldName);
-				if (activeAt > System.currentTimeMillis()) {
-					// Not time yet.
-					sender.sendMessage(worldName + ": Gathering data, deletion starts " + format.format(new Date(activeAt)));
-					continue;
-				}
-
-				if (deletionRunnables.containsKey(worldName)) {
-					DeletionRunnable runnable = deletionRunnables.get(worldName);
-					sender.sendMessage(runnable.getRunStats());
-					if (runnable.getNextRun() < Long.MAX_VALUE) {
-						sender.sendMessage(" - Next run: " + format.format(runnable.getNextRun()));
-					}
-				} else {
-					sender.sendMessage("Cycle for " + worldName + " is ready to start.");
-				}
-			}
-
-			if (paused) {
-				sender.sendMessage("Regionerator is paused. Use \"/regionerator resume\" to continue.");
-			}
-			return true;
+		PluginCommand command = getCommand("regionerator");
+		if (command == null) {
+			return;
 		}
 
-		args[0] = args[0].toLowerCase();
-		if (args[0].equals("reload")) {
-			reloadConfig();
-			config.reload(this);
-			sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
-			return true;
-		}
+		command.setExecutor(new RegioneratorExecutor(this, deletionRunnables));
 
-		if (args[0].equals("pause") || args[0].equals("stop") ) {
-			paused = true;
-			sender.sendMessage("Paused Regionerator. Use /regionerator resume to resume.");
-			return true;
-		}
-		if (args[0].equals("resume") || args[0].equals("unpause") || args[0].equals("start")) {
-			paused = false;
-			sender.sendMessage("Resumed Regionerator. Use /regionerator pause to pause.");
-			return true;
-		}
-
-		if (args[0].equals("flag")) {
-			commandFlag.handleFlags(sender, args, true);
-			return true;
-		}
-		if (args[0].equals("unflag")) {
-			commandFlag.handleFlags(sender, args, false);
-			return true;
-		}
-
-		if (args[0].equals("cache")) {
-			sender.sendMessage("Cached chunk values: " + getFlagger().getCached());
-			sender.sendMessage("Queued saves: " + getFlagger().getQueued());
-			return true;
-		}
-
-		if (sender instanceof Player && args[0].equals("check")) {
-			Player player = (Player) sender;
-
-			if (!config.getWorlds().contains(player.getWorld().getName())) {
-				player.sendMessage("World is not configured for deletion.");
-			}
-
-			Chunk chunk = player.getLocation().getChunk();
-
-			for (Hook hook : protectionHooks) {
-				player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
-			}
-
-			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM yyyy");
-			RegionInfo regionInfo = null;
-			try {
-				regionInfo = getWorldManager().getWorld(player.getWorld()).getRegion(Coords.chunkToRegion(chunk.getX()), Coords.chunkToRegion(chunk.getZ()));
-			} catch (IOException e) {
-				player.sendMessage("Caught IOException reading region data from disk. Please check console!");
-				e.printStackTrace();
-			}
-
-			// Region not yet saved, cannot obtain chunk detail data
-			if (regionInfo == null || !regionInfo.exists()) {
-				long visit = chunkFlagger.getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-				if (visit == Config.getFlagDefault()) {
-					player.sendMessage("Chunk has not been visited.");
-				} else if (visit == config.getFlagGenerated()) {
-					player.sendMessage("Chunk has not been visited since generation.");
-				} else if (visit == Config.getFlagEternal()) {
-					player.sendMessage("Chunk is eternally flagged.");
-				} else {
-					player.sendMessage("Chunk visited until: " + format.format(new Date(visit)));
-				}
-				visit = chunkFlagger.getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-				if (visit != Config.getFlagDefault()) {
-					player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
-				}
-				player.sendMessage("Region not available from disk! Cannot check details.");
-				return true;
-			}
-
-			ChunkInfo chunkInfo = regionInfo.getChunk(chunk.getX(), chunk.getZ());
-			player.sendMessage("Chunk visited until: " + format.format(new Date(chunkInfo.getLastVisit())));
-			player.sendMessage("Chunk last modified: " + format.format(new Date(chunkInfo.getLastModified())));
-			player.sendMessage("Chunk VisitStatus: " + chunkInfo.getVisitStatus().name());
-			long visit = chunkFlagger.getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-			if (visit != Config.getFlagDefault()) {
-				player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
-			}
-			if (chunkInfo.isOrphaned()) {
-				player.sendMessage("Chunk is marked as orphaned. VisitStatus should be GENERATED or UNKNOWN.");
-			}
-			return true;
-		}
-
-		return false;
+		debug(DebugLevel.LOW, () -> onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
 	}
 
 	@Override
 	public void onDisable() {
+		// Manually cancel deletion runnables - Bukkit does not do a good job of informing tasks they can't continue.
+		deletionRunnables.values().forEach(BukkitRunnable::cancel);
+		getServer().getScheduler().cancelTasks(this);
+
 		if (chunkFlagger != null) {
 			getLogger().info("Shutting down flagger - currently holds " + chunkFlagger.getCached() + " flags.");
 			chunkFlagger.shutdown();
 		}
-
-		// Manually cancel deletion runnables - Bukkit does not do a good job of informing tasks they can't continue.
-		deletionRunnables.values().forEach(BukkitRunnable::cancel);
 	}
 
 	public Config config() {
@@ -374,6 +240,10 @@ public class Regionerator extends JavaPlugin {
 
 	public boolean isPaused() {
 		return paused;
+	}
+
+	public void setPaused(boolean paused) {
+		this.paused = paused;
 	}
 
 	public boolean debug(DebugLevel level) {
