@@ -44,10 +44,7 @@ public class AnvilRegion extends RegionInfo {
 
 		if (!getRegionFile().exists()) {
 			Arrays.fill(header, (byte) 0);
-		}
-
-		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
-			throw new IOException("Unable to write file " + getRegionFile().getPath());
+			return;
 		}
 
 		// Chunk pointers are the first 4096 bytes, last modification is the second set
