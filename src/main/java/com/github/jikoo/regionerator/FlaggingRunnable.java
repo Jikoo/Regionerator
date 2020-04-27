@@ -16,18 +16,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class FlaggingRunnable extends BukkitRunnable {
 
 	private final Regionerator plugin;
-	private final boolean spectateExists;
 
 	FlaggingRunnable(Regionerator plugin) {
 		this.plugin = plugin;
-		boolean spectate;
-		try {
-			GameMode.valueOf("SPECTATOR");
-			spectate = true;
-		} catch (IllegalArgumentException e) {
-			spectate = false;
-		}
-		this.spectateExists = spectate;
 	}
 
 	@Override
@@ -36,7 +27,7 @@ public class FlaggingRunnable extends BukkitRunnable {
 
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			// Skip spectators - if you can't touch it, you can't really visit it.
-			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR
+			if (player.getGameMode() == GameMode.SPECTATOR
 					|| !plugin.config().getWorlds().contains(player.getWorld().getName())) {
 				continue;
 			}
