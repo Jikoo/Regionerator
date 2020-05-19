@@ -4,6 +4,7 @@ import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.Config;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,17 +41,29 @@ public class ChunkFlagger {
 			this.database = DriverManager.getConnection("jdbc:sqlite://" + plugin.getDataFolder().getAbsolutePath() + "/data.db");
 			try (Statement st = database.createStatement()) {
 				st.executeUpdate("CREATE TABLE IF NOT EXISTS `chunkdata`(`chunk_id` TEXT NOT NULL UNIQUE, `time` BIGINT NOT NULL)");
-				st.executeUpdate(
-						"CREATE TRIGGER IF NOT EXISTS chunkdataold\n" +
-						"AFTER DELETE ON chunkdata\n" +
-						"WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'"+
-						"BEGIN\n" +
-						"INSERT INTO chunkdata (chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;\n" +
-						"END");
 			}
 			this.database.setAutoCommit(false);
 		} catch (Exception e) {
 			throw new RuntimeException("An error occurred while setting up the database", e);
+		}
+
+		try (Statement st = database.createStatement()) {
+			st.executeUpdate(
+					"CREATE TRIGGER IF NOT EXISTS chunkdataold\n" +
+							"AFTER DELETE ON chunkdata\n" +
+							"WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'\n" +
+							"BEGIN\n" +
+							"INSERT INTO chunkdata (chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;\n" +
+							"END");
+			this.database.commit();
+		} catch (SQLException e) {
+			plugin.getLogger().warning("Caught an exception setting up database trigger! Last visit before delete will not be available.");
+			plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+			try {
+				DatabaseMetaData metaData = this.database.getMetaData();
+				plugin.getLogger().warning(String.format("SQLite driver: %s %s", metaData.getDriverName(), metaData.getDriverVersion()));
+				plugin.getLogger().warning(String.format("SQLite database: %s %s", metaData.getDatabaseProductName(), metaData.getDatabaseProductVersion()));
+			} catch (SQLException ignored) {}
 		}
 
 		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(300000, plugin.config().getMillisBetweenFlagSave()), key -> {
