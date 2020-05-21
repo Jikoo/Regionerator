@@ -1,15 +1,9 @@
 package com.github.jikoo.regionerator;
 
+import com.github.jikoo.regionerator.database.DatabaseAdapter;
 import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.Config;
 import java.io.File;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -29,66 +23,25 @@ import org.jetbrains.annotations.NotNull;
 public class ChunkFlagger {
 
 	private final Regionerator plugin;
-	private final Connection database;
+	private final DatabaseAdapter adapter;
 	private final BatchExpirationLoadingCache<String, FlagData> flagCache;
 
-	ChunkFlagger(Regionerator plugin) {
+	ChunkFlagger(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
 
 		try {
-			// Set up SQLite database
-			Class.forName("org.sqlite.JDBC");
-			this.database = DriverManager.getConnection("jdbc:sqlite://" + plugin.getDataFolder().getAbsolutePath() + "/data.db");
-			try (Statement st = database.createStatement()) {
-				st.executeUpdate("CREATE TABLE IF NOT EXISTS `chunkdata`(`chunk_id` TEXT NOT NULL UNIQUE, `time` BIGINT NOT NULL)");
-			}
-			this.database.setAutoCommit(false);
+			// Set up database adapter
+			adapter = DatabaseAdapter.getAdapter(plugin);
 		} catch (Exception e) {
 			throw new RuntimeException("An error occurred while setting up the database", e);
 		}
 
-		try (Statement st = database.createStatement()) {
-			st.executeUpdate(
-					"CREATE TRIGGER IF NOT EXISTS chunkdataold\n" +
-							"AFTER DELETE ON chunkdata\n" +
-							"WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'\n" +
-							"BEGIN\n" +
-							"INSERT INTO chunkdata (chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;\n" +
-							"END");
-			this.database.commit();
-		} catch (SQLException e) {
-			plugin.getLogger().warning("Caught an exception setting up database trigger! Last visit before delete will not be available.");
-			plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
-			try {
-				DatabaseMetaData metaData = this.database.getMetaData();
-				plugin.getLogger().warning(String.format("SQLite driver: %s %s", metaData.getDriverName(), metaData.getDriverVersion()));
-				plugin.getLogger().warning(String.format("SQLite database: %s %s", metaData.getDatabaseProductName(), metaData.getDatabaseProductVersion()));
-			} catch (SQLException ignored) {}
-		}
-
 		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(300000, plugin.config().getMillisBetweenFlagSave()), key -> {
-			synchronized (database) {
-				try {
-					if (database.isClosed()) {
-						return new FlagData(key, Config.getFlagEternal());
-					}
-				} catch (SQLException e) {
-					plugin.getLogger().log(Level.WARNING, "Exception checking if connection is open", e);
-					return new FlagData(key, Config.getFlagEternal());
-				}
-				try (PreparedStatement st = database.prepareStatement("SELECT time FROM chunkdata WHERE chunk_id=?")) {
-					st.setString(1, key);
-					try (ResultSet rs = st.executeQuery()) {
-						if (rs.next()) {
-							return new FlagData(key, rs.getLong(1));
-						} else {
-							return new FlagData(key, Config.getFlagDefault());
-						}
-					}
-				} catch (SQLException e) {
-					plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
-					return new FlagData(key, Config.getFlagEternal());
-				}
+			try {
+				return new FlagData(key, adapter.get(key));
+			} catch (Exception e) {
+				plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
+				return new FlagData(key, Config.getFlagEternal());
 			}
 		}, expiredData -> {
 			// Only attempt to save if dirty to minimize write time
@@ -98,29 +51,13 @@ public class ChunkFlagger {
 				return;
 			}
 
-			synchronized (database) {
-				try (PreparedStatement upsert = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=?");
-						PreparedStatement delete = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
-					for (FlagData data : expiredData) {
-						if (data.getLastVisit() == Config.getFlagDefault()) {
-							delete.setString(1, data.getChunkId());
-							delete.addBatch();
-						} else {
-							upsert.setString(1, data.getChunkId());
-							upsert.setLong(2, data.getLastVisit());
-							upsert.setLong(3, data.getLastVisit());
-							upsert.addBatch();
-						}
-					}
-					delete.executeBatch();
-					upsert.executeBatch();
-					this.database.commit();
+			try {
+				adapter.update(expiredData);
 
-					// Flag as no longer dirty to reduce saves if data is still in use
-					expiredData.forEach(flagData -> flagData.dirty = false);
-				} catch (SQLException e) {
-					plugin.getLogger().log(Level.SEVERE, "Exception updating chunk flags", e);
-				}
+				// Flag as no longer dirty to reduce saves if data is still in use
+				expiredData.forEach(flagData -> flagData.dirty = false);
+			} catch (Exception e) {
+				plugin.getLogger().log(Level.SEVERE, "Exception updating chunk flags", e);
 			}
 		});
 
@@ -133,14 +70,14 @@ public class ChunkFlagger {
 	}
 
 	/**
-	 * Converts old flags file to SQLite.
+	 * Converts old flags file.
 	 */
 	private void convertOldFlagsFile() {
 		File oldFlagsFile = new File(this.plugin.getDataFolder(), "flags.yml");
 		if (!oldFlagsFile.exists()) {
 			return;
 		}
-		this.plugin.getLogger().info("Beginning converting flags.yml into SQLite.");
+		this.plugin.getLogger().info("Beginning converting flags.yml");
 		YamlConfiguration oldFlags = YamlConfiguration.loadConfiguration(oldFlagsFile);
 		for (String world : oldFlags.getKeys(false)) {
 			if (!oldFlags.isConfigurationSection(world)) {
@@ -188,14 +125,14 @@ public class ChunkFlagger {
 	}
 
 	/**
-	 * Converts old per-region flag files to SQLite.
+	 * Converts old per-region flag files.
 	 */
 	private void convertOldPerWorldFlagFiles() {
 		File oldFlagsFolder = new File(this.plugin.getDataFolder(), "flags");
 		if (!oldFlagsFolder.exists() || !oldFlagsFolder.isDirectory()) {
 			return;
 		}
-		this.plugin.getLogger().info("Beginning converting flags folder into SQLite.");
+		this.plugin.getLogger().info("Beginning converting flags folder.");
 
 		Pattern chunkCoordsSplitter = Pattern.compile("_");
 
@@ -268,7 +205,7 @@ public class ChunkFlagger {
 	 */
 	public void flagChunk(@NotNull String world, int chunkX, int chunkZ, long flagTil) {
 		String flagDbId = this.getFlagDbId(world, chunkX, chunkZ);
-		FlagData flagData = this.flagCache.getIfPresent(flagDbId); //TODO need to change call to not wipe eternal flag in this case
+		FlagData flagData = this.flagCache.getIfPresent(flagDbId);
 		if (flagData != null) {
 			long current = flagData.getLastVisit();
 			if (current == Config.getFlagEternal()) {
@@ -316,14 +253,7 @@ public class ChunkFlagger {
 	 */
 	void shutdown() {
 		flagCache.expireAll();
-		synchronized (database) {
-			try {
-				database.commit();
-				database.close();
-			} catch (SQLException e) {
-				plugin.getLogger().log(Level.SEVERE, "Exception committing to and closing DB connection", e);
-			}
-		}
+		adapter.close();
 	}
 
 	/**
@@ -387,7 +317,7 @@ public class ChunkFlagger {
 	 */
 	public static class FlagData {
 
-		private String chunkId;
+		private final String chunkId;
 		private long lastVisit;
 		private boolean dirty = false;
 
