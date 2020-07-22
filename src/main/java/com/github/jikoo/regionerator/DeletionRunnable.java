@@ -36,7 +36,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		world.getRegions().filter(Objects::nonNull).forEach(this::handleRegion);
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 		nextRun = System.currentTimeMillis() + plugin.config().getMillisBetweenCycles();
-		if (!plugin.config().isResetCyclesOnLoad()) {
+		if (plugin.config().isRememberCycleDelay()) {
 			plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
 		}
 	}

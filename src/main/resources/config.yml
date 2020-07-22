@@ -28,8 +28,8 @@
 # # Hours between deletion cycles
 # hours-between-cycles: 12
 #
-# # Whether or not to reset cycles on plugin load
-# reset-cycles-on-load: true
+# # Whether or not to remember time until next cycle on plugin load
+# remember-next-cycle-time: false
 #
 # # Allow deletion cycles for separate worlds to run simultaneously
 # # Only enable this option if your server hardware is quite good.
@@ -96,8 +96,8 @@ chunks-per-deletion: 128
 # Hours between deletion cycles
 hours-between-cycles: 12
 
-# Whether or not to reset cycles on plugin load
-reset-cycles-on-load: true
+# Whether or not to remember time for next cycle on plugin load
+remember-next-cycle-time: false
 
 # Worlds the plugin is able to delete regions in
 # If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.

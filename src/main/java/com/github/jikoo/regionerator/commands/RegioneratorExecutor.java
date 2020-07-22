@@ -55,7 +55,7 @@ public class RegioneratorExecutor implements TabExecutor {
 				if (activeAt > System.currentTimeMillis()) {
 					// Not time yet.
 					String message;
-					if (!plugin.config().isResetCyclesOnLoad() && activeAt >= System.currentTimeMillis() - millisBetweenCycles) {
+					if (plugin.config().isRememberCycleDelay() && activeAt >= System.currentTimeMillis() - millisBetweenCycles) {
 						message = worldName + ": Next run at " + format.format(new Date(activeAt));
 					} else {
 						message = worldName + ": Gathering data, deletion starts " + format.format(new Date(activeAt));

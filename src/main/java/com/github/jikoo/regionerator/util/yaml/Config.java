@@ -12,7 +12,7 @@ public class Config extends ConfigYamlData {
 
 	private DebugLevel debugLevel;
 	private List<String> worlds;
-	private long flagDuration, ticksPerFlag, millisBetweenFlagAutosave, millisBetweenCycles, deletionInterval;
+	private long flagDuration, ticksPerFlag, millisBetweenCycles, deletionInterval;
 	private int flaggingRadius, deletionChunkCount;
 
 	public Config(Plugin plugin) {
@@ -114,8 +114,8 @@ public class Config extends ConfigYamlData {
 		return millisBetweenCycles;
 	}
 
-	public boolean isResetCyclesOnLoad() {
-		return getBoolean("reset-cycles-on-load");
+	public boolean isRememberCycleDelay() {
+		return getBoolean("remember-next-cycle-time");
 	}
 
 	public boolean isDeleteFreshChunks() {
