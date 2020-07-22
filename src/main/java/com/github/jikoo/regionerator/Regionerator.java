@@ -5,7 +5,9 @@ import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
-import com.github.jikoo.regionerator.util.Config;
+import com.github.jikoo.regionerator.util.yaml.Config;
+import com.github.jikoo.regionerator.util.yaml.MiscData;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ public class Regionerator extends JavaPlugin {
 	private ChunkFlagger chunkFlagger;
 	private List<Hook> protectionHooks;
 	private Config config;
+	private MiscData miscData;
 	private WorldManager worldManager;
 	private boolean paused = false;
 
@@ -40,8 +43,24 @@ public class Regionerator extends JavaPlugin {
 	public void onEnable() {
 
 		saveDefaultConfig();
-		config = new Config();
-		config.reload(this);
+		config = new Config(this);
+
+		miscData = new MiscData(this, new File(getDataFolder(), "data.yml"));
+
+		boolean migrated = false;
+		for (String worldName : config.getWorlds()) {
+			if (getConfig().isLong("delete-this-to-reset-plugin." + worldName)) {
+				// Migrate existing settings
+				miscData.setNextCycle(worldName, getConfig().getLong("delete-this-to-reset-plugin." + worldName));
+				migrated = true;
+			} else if (miscData.getNextCycle(worldName) == 0) {
+				miscData.setNextCycle(worldName, System.currentTimeMillis() + config.getFlagDuration());
+			}
+		}
+		if (migrated) {
+			getConfig().set("delete-this-to-reset-plugin", null);
+			saveConfig();
+		}
 
 		deletionRunnables = new HashMap<>();
 		chunkFlagger = new ChunkFlagger(this);
@@ -120,9 +139,6 @@ public class Regionerator extends JavaPlugin {
 					attemptDeletionActivation();
 				}
 			}.runTaskTimer(this, 0L, 1200L);
-
-			// Additionally, since flagging will not be editing values, flagging untouched chunks is not an option
-			getConfig().set("delete-new-unvisited-chunks", true);
 		}
 
 		PluginCommand command = getCommand("regionerator");
@@ -147,12 +163,27 @@ public class Regionerator extends JavaPlugin {
 		}
 	}
 
+	@Override
+	public void reloadConfig() {
+		super.reloadConfig();
+		this.config.reload();
+		this.miscData.reload();
+	}
+
 	public Config config() {
 		return config;
 	}
 
+	public MiscData getMiscData() {
+		return miscData;
+	}
+
 	public WorldManager getWorldManager() {
 		return worldManager;
+	}
+
+	void finishCycle(DeletionRunnable runnable) {
+		miscData.setNextCycle(runnable.getWorld(), runnable.getNextRun());
 	}
 
 	/**
@@ -166,14 +197,14 @@ public class Regionerator extends JavaPlugin {
 		}
 
 		for (String worldName : config.getWorlds()) {
-			if (getConfig().getLong("delete-this-to-reset-plugin." + worldName) > System.currentTimeMillis()) {
+			if (miscData.getNextCycle(worldName) > System.currentTimeMillis()) {
 				// Not time yet.
 				continue;
 			}
 			DeletionRunnable runnable = deletionRunnables.get(worldName);
 			if (runnable != null) {
-				// Deletion is ongoing for world.
 				if (runnable.getNextRun() == Long.MAX_VALUE) {
+					// Deletion is ongoing for world.
 					return;
 				}
 				// Deletion is complete for world.

@@ -36,6 +36,9 @@ public class DeletionRunnable extends BukkitRunnable {
 		world.getRegions().filter(Objects::nonNull).forEach(this::handleRegion);
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 		nextRun = System.currentTimeMillis() + plugin.config().getMillisBetweenCycles();
+		if (!plugin.config().isResetCyclesOnLoad()) {
+			plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
+		}
 	}
 
 	private void handleRegion(RegionInfo region) {
@@ -129,6 +132,10 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	public String getRunStats() {
 		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount.get(), regionsDeleted, chunksDeleted);
+	}
+
+	public String getWorld() {
+		return world.getWorld().getName();
 	}
 
 	public long getNextRun() {

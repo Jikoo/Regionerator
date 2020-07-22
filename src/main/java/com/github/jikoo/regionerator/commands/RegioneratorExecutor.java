@@ -4,7 +4,7 @@ import com.github.jikoo.regionerator.Coords;
 import com.github.jikoo.regionerator.DeletionRunnable;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.hooks.Hook;
-import com.github.jikoo.regionerator.util.Config;
+import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import java.io.IOException;
@@ -48,12 +48,19 @@ public class RegioneratorExecutor implements TabExecutor {
 			}
 
 			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
+			long millisBetweenCycles = plugin.config().getMillisBetweenCycles();
 
 			for (String worldName : plugin.config().getWorlds()) {
-				long activeAt = plugin.getConfig().getLong("delete-this-to-reset-plugin." + worldName);
+				long activeAt = plugin.getMiscData().getNextCycle(worldName);
 				if (activeAt > System.currentTimeMillis()) {
 					// Not time yet.
-					sender.sendMessage(worldName + ": Gathering data, deletion starts " + format.format(new Date(activeAt)));
+					String message;
+					if (!plugin.config().isResetCyclesOnLoad() && activeAt >= System.currentTimeMillis() - millisBetweenCycles) {
+						message = worldName + ": Next run at " + format.format(new Date(activeAt));
+					} else {
+						message = worldName + ": Gathering data, deletion starts " + format.format(new Date(activeAt));
+					}
+					sender.sendMessage(message);
 					continue;
 				}
 
@@ -77,8 +84,7 @@ public class RegioneratorExecutor implements TabExecutor {
 		args[0] = args[0].toLowerCase();
 		if (args[0].equals("reload")) {
 			plugin.reloadConfig();
-			plugin.config().reload(plugin);
-			sender.sendMessage("Regionerator configuration reloaded, all tasks restarted!");
+			sender.sendMessage("Regionerator configuration reloaded!");
 			return true;
 		}
 

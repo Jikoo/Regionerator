@@ -2,7 +2,7 @@ package com.github.jikoo.regionerator;
 
 import com.github.jikoo.regionerator.database.DatabaseAdapter;
 import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
-import com.github.jikoo.regionerator.util.Config;
+import com.github.jikoo.regionerator.util.yaml.Config;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

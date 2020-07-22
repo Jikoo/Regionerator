@@ -2,7 +2,7 @@ package com.github.jikoo.regionerator.database;
 
 import com.github.jikoo.regionerator.ChunkFlagger;
 import com.github.jikoo.regionerator.Regionerator;
-import com.github.jikoo.regionerator.util.Config;
+import com.github.jikoo.regionerator.util.yaml.Config;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;

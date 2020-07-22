@@ -28,7 +28,7 @@ public abstract class WorldInfo {
 	/**
 	 * Gets the {@link World} the WorldInfo represents.
 	 *
-	 * @return
+	 * @return the Bukkit world
 	 */
 	public World getWorld() {
 		return world;
