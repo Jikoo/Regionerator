@@ -114,6 +114,12 @@ public class Regionerator extends JavaPlugin {
 			}
 		}
 
+		PluginCommand command = getCommand("regionerator");
+		RegioneratorExecutor executor = new RegioneratorExecutor(this, deletionRunnables);
+		if (command != null) {
+			command.setExecutor(executor);
+		}
+
 		// Don't register listeners if there are no worlds configured
 		if (config.getWorlds().isEmpty()) {
 			getLogger().severe("No worlds are enabled. There's nothing to do!");
@@ -141,14 +147,7 @@ public class Regionerator extends JavaPlugin {
 			}.runTaskTimer(this, 0L, 1200L);
 		}
 
-		PluginCommand command = getCommand("regionerator");
-		if (command == null) {
-			return;
-		}
-
-		command.setExecutor(new RegioneratorExecutor(this, deletionRunnables));
-
-		debug(DebugLevel.LOW, () -> onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
+		debug(DebugLevel.LOW, () -> executor.onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
 	}
 
 	@Override
