@@ -8,20 +8,21 @@ import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -33,11 +34,12 @@ public class Regionerator extends JavaPlugin {
 
 	private HashMap<String, DeletionRunnable> deletionRunnables;
 	private ChunkFlagger chunkFlagger;
-	private List<Hook> protectionHooks;
+	private Set<Hook> protectionHooks;
 	private Config config;
 	private MiscData miscData;
 	private WorldManager worldManager;
 	private boolean paused = false;
+	private BukkitTask flagging;
 
 	@Override
 	public void onEnable() {
@@ -64,55 +66,8 @@ public class Regionerator extends JavaPlugin {
 
 		deletionRunnables = new HashMap<>();
 		chunkFlagger = new ChunkFlagger(this);
-		protectionHooks = new ArrayList<>();
+		protectionHooks = Collections.newSetFromMap(new ConcurrentHashMap<>());
 		worldManager = new WorldManager(this);
-
-		boolean hasHooks = false;
-		Set<String> hookNames = Objects.requireNonNull(Objects.requireNonNull(getConfig().getDefaults()).getConfigurationSection("hooks")).getKeys(false);
-		ConfigurationSection hookSection = getConfig().getConfigurationSection("hooks");
-		if (hookSection != null) {
-			hookNames.addAll(hookSection.getKeys(false));
-		}
-		for (String hookName : hookNames) {
-			// Default true - hooks should likely be enabled unless explicitly disabled
-			if (!getConfig().getBoolean("hooks." + hookName, true)) {
-				continue;
-			}
-			try {
-				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + hookName + "Hook");
-				if (!Hook.class.isAssignableFrom(clazz)) {
-					// What.
-					continue;
-				}
-				Hook hook = (Hook) clazz.getDeclaredConstructor().newInstance();
-				if (!hook.areDependenciesPresent()) {
-					debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
-					continue;
-				}
-				if (!hook.isReadyOnEnable()) {
-					debug(DebugLevel.LOW, () -> String.format("Protection hook for %s is available but not yet ready.", hookName));
-					hook.readyLater(this);
-					continue;
-				}
-				if (hook.isHookUsable()) {
-					protectionHooks.add(hook);
-					hasHooks = true;
-					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
-				} else {
-					getLogger().info("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
-					paused = true;
-				}
-			} catch (ClassNotFoundException e) {
-				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
-			} catch (ReflectiveOperationException e) {
-				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
-				paused = true;
-				e.printStackTrace();
-			} catch (NoClassDefFoundError e) {
-				debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
-				debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
-			}
-		}
 
 		PluginCommand command = getCommand("regionerator");
 		RegioneratorExecutor executor = new RegioneratorExecutor(this, deletionRunnables);
@@ -126,26 +81,7 @@ public class Regionerator extends JavaPlugin {
 			return;
 		}
 
-		// Only enable hook listener if there are actually any hooks enabled
-		if (hasHooks) {
-			getServer().getPluginManager().registerEvents(new HookListener(this), this);
-		}
-
-		if (config.getFlagDuration() > 0) {
-			// Flag duration is set, start flagging
-
-			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
-
-			new FlaggingRunnable(this).runTaskTimer(this, 0, config.getFlaggingInterval());
-		} else {
-			// Flagging runnable is not scheduled, schedule a task to start deletion
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					attemptDeletionActivation();
-				}
-			}.runTaskTimer(this, 0L, 1200L);
-		}
+		reloadFeatures();
 
 		debug(DebugLevel.LOW, () -> executor.onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
 	}
@@ -167,6 +103,74 @@ public class Regionerator extends JavaPlugin {
 		super.reloadConfig();
 		this.config.reload();
 		this.miscData.reload();
+	}
+
+	public void reloadFeatures() {
+		// Remove all existing features
+		HandlerList.unregisterAll(this);
+		if (flagging != null) {
+			flagging.cancel();
+		}
+		protectionHooks.clear();
+
+		// Always enable hook listener in case someone else adds hooks.
+		getServer().getPluginManager().registerEvents(new HookListener(this), this);
+
+		Set<String> hookNames = Objects.requireNonNull(Objects.requireNonNull(getConfig().getDefaults()).getConfigurationSection("hooks")).getKeys(false);
+		ConfigurationSection hookSection = getConfig().getConfigurationSection("hooks");
+		if (hookSection != null) {
+			hookNames.addAll(hookSection.getKeys(false));
+		}
+		for (String hookName : hookNames) {
+			// Default true - hooks should likely be enabled unless explicitly disabled
+			if (!getConfig().getBoolean("hooks." + hookName, true)) {
+				continue;
+			}
+			try {
+				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + hookName + "Hook");
+				if (!Hook.class.isAssignableFrom(clazz)) {
+					// What.
+					continue;
+				}
+				Hook hook = (Hook) clazz.getDeclaredConstructor().newInstance();
+				if (!hook.areDependenciesPresent()) {
+					debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
+					continue;
+				}
+				if (hook.isHookUsable()) {
+					protectionHooks.add(hook);
+					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
+				} else {
+					getLogger().info("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
+					paused = true;
+				}
+			} catch (ClassNotFoundException e) {
+				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
+			} catch (ReflectiveOperationException e) {
+				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
+				paused = true;
+				e.printStackTrace();
+			} catch (NoClassDefFoundError e) {
+				debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
+				debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+			}
+		}
+
+		if (config.getFlagDuration() > 0) {
+			// Flag duration is set, start flagging
+
+			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
+
+			flagging = new FlaggingRunnable(this).runTaskTimer(this, 0, config.getFlaggingInterval());
+		} else {
+			// Flagging runnable is not scheduled, schedule a task to start deletion
+			flagging = new BukkitRunnable() {
+				@Override
+				public void run() {
+					attemptDeletionActivation();
+				}
+			}.runTaskTimer(this, 0L, 1200L);
+		}
 	}
 
 	public Config config() {
@@ -227,8 +231,8 @@ public class Regionerator extends JavaPlugin {
 		}
 	}
 
-	public List<Hook> getProtectionHooks() {
-		return Collections.unmodifiableList(this.protectionHooks);
+	public Set<Hook> getProtectionHooks() {
+		return Collections.unmodifiableSet(this.protectionHooks);
 	}
 
 	public void addHook(PluginHook hook) {

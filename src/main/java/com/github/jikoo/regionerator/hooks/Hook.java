@@ -1,6 +1,5 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Regionerator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -53,24 +52,6 @@ public abstract class Hook {
 
 		return true;
 	}
-
-	/**
-	 * Returns whether or not a Hook is ready when Regionerator enables.
-	 * <p>
-	 * Some hooks may require server boot to complete before being prepared to be checked.
-	 *
-	 * @return true if the Hook is ready immediately
-	 */
-	public boolean isReadyOnEnable() {
-		return true;
-	}
-
-	/**
-	 * Performs operations required to prepare the Hook after server boot.
-	 *
-	 * @param plugin the Regionerator instance loading the Hook
-	 */
-	public void readyLater(Regionerator plugin) {}
 
 	/**
 	 * Returns whether or not the Hook is capable of being used from other threads.

@@ -1,12 +1,9 @@
 package com.github.jikoo.regionerator.listeners;
 
-import java.util.Iterator;
-
 import com.github.jikoo.regionerator.DebugLevel;
+import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
-import com.github.jikoo.regionerator.Regionerator;
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
@@ -67,9 +64,7 @@ public class HookListener implements Listener {
 	@EventHandler
 	public void onPluginDisable(PluginDisableEvent event) {
 		String pluginName = event.getPlugin().getName();
-		Iterator<Hook> iterator = this.plugin.getProtectionHooks().iterator();
-		while (iterator.hasNext()) {
-			Hook hook = iterator.next();
+		for (Hook hook : this.plugin.getProtectionHooks()) {
 			if (!(hook instanceof PluginHook)) {
 				continue;
 			}

@@ -70,7 +70,7 @@ public class Config extends ConfigYamlData {
 			set("chunk-flag-radius", 4);
 		}
 
-		flaggingRadius = getInt("chunk-flag-radius");
+		flaggingRadius = Math.max(0, getInt("chunk-flag-radius"));
 
 		if (getInt("seconds-per-flag") < 1) {
 			set("seconds-per-flag", 10);
