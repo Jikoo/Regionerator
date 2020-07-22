@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -16,18 +15,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class FlaggingRunnable extends BukkitRunnable {
 
 	private final Regionerator plugin;
-	private final boolean spectateExists;
 
 	FlaggingRunnable(Regionerator plugin) {
 		this.plugin = plugin;
-		boolean spectate;
-		try {
-			GameMode.valueOf("SPECTATOR");
-			spectate = true;
-		} catch (IllegalArgumentException e) {
-			spectate = false;
-		}
-		this.spectateExists = spectate;
 	}
 
 	@Override
@@ -36,7 +26,8 @@ public class FlaggingRunnable extends BukkitRunnable {
 
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			// Skip spectators - if you can't touch it, you can't really visit it.
-			if (spectateExists && player.getGameMode() == GameMode.SPECTATOR
+			// Compatibility: check gamemode name instead of direct comparison
+			if (player.getGameMode().name().equals("SPECTATOR")
 					|| !plugin.config().getWorlds().contains(player.getWorld().getName())) {
 				continue;
 			}
