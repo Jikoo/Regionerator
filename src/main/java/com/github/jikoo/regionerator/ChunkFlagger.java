@@ -36,7 +36,7 @@ public class ChunkFlagger {
 			throw new RuntimeException("An error occurred while setting up the database", e);
 		}
 
-		this.flagCache = new BatchExpirationLoadingCache<>(Math.max(300000, plugin.config().getMillisBetweenFlagSave()), key -> {
+		this.flagCache = new BatchExpirationLoadingCache<>(180000, key -> {
 			try {
 				return new FlagData(key, adapter.get(key));
 			} catch (Exception e) {
@@ -66,7 +66,7 @@ public class ChunkFlagger {
 		flagCache.lazyExpireAll();
 
 		// Even if cache is stagnant, save every 3 minutes
-		Bukkit.getScheduler().runTaskTimer(plugin, flagCache::lazyExpireAll, 20 * 60 * 3, 20 * 60 * 3);
+		Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, flagCache::lazyExpireAll, 3600, 3600);
 	}
 
 	/**

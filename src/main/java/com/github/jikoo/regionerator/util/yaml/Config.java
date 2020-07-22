@@ -78,12 +78,6 @@ public class Config extends ConfigYamlData {
 		// 20 ticks per second
 		ticksPerFlag = getInt("seconds-per-flag") * 20L;
 
-		if (getInt("minutes-per-flag-autosave") < 1) {
-			set("minutes-per-flag-autosave", 1);
-		}
-		// 60 seconds per minute, 1000 millis per second
-		millisBetweenFlagAutosave = getInt("minutes-per-flag-autosave") * 60000L;
-
 		if (getLong("ticks-per-deletion") < 1) {
 			set("ticks-per-deletion", 20L);
 		}
@@ -154,10 +148,6 @@ public class Config extends ConfigYamlData {
 
 	public int getFlaggingRadius() {
 		return flaggingRadius;
-	}
-
-	public long getMillisBetweenFlagSave() {
-		return millisBetweenFlagAutosave;
 	}
 
 	public List<String> getWorlds() {

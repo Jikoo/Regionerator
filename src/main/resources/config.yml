@@ -7,9 +7,6 @@
 # # Every x seconds, chunks around each player online are flagged.
 # seconds-per-flag: 10
 #
-# # Flags are saved every x minutes.
-# minutes-per-flag-autosave: 5
-#
 # # Flags older than x days can be ignored and the region deleted.
 # # To disable flagging, set this to 0.
 # # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
@@ -77,9 +74,6 @@ chunk-flag-radius: 4
 
 # Every x seconds, chunks around each player online are flagged.
 seconds-per-flag: 10
-
-# Flags are saved every x minutes.
-minutes-per-flag-autosave: 5
 
 # Flags older than x days can be ignored and the region deleted.
 # To disable flagging, set this to 0.
