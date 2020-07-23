@@ -1,74 +1,3 @@
-# Regionerator configuration
-#
-#
-# # Square around each player's current chunk to flag.
-# chunk-flag-radius: 4
-#
-# # Every x seconds, chunks around each player online are flagged.
-# seconds-per-flag: 10
-#
-# # Flags older than x days can be ignored and the region deleted.
-# # To disable flagging, set this to 0.
-# # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
-# days-till-flag-expires: 7
-#
-# # Chunks generated after the plugin is installed are automatically flagged.
-# # If false, these chunks will be permanently flagged until visited.
-# # Setting this value to false will allow you to pre-generate your maps for reduced load from exploration.
-# # It will also reduce the amount of time wasted deleting untouched areas.
-# delete-new-unvisited-chunks: false
-#
-# # Time in between deleting regions in ticks (20 ticks = 1 second)
-# ticks-per-deletion: 5
-#
-# # Chunks checked for deletion per interval. Default (128) handles an entire region every 9 intervals.
-# # If this value is 1024 or lower (1 or fewer regions per cycle) an entire run cycle is dedicated to deletion to prevent lag.
-# chunks-per-deletion: 128
-#
-# # Hours between deletion cycles
-# hours-between-cycles: 12
-#
-# # Whether or not to remember time until next cycle on plugin load
-# remember-next-cycle-time: false
-#
-# # Allow deletion cycles for separate worlds to run simultaneously
-# # Only enable this option if your server hardware is quite good.
-# allow-concurrent-cycles: false
-#
-# # Worlds the plugin is able to delete regions in
-# # If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
-# worlds:
-# - MySurvivalWorld1
-# - MySurvivalWorld1_nether
-#
-# # Hooks to attempt to check for protections from.
-# # If your protection plugin of choice isn't here, ask!
-# hooks:
-#   ASkyBlock: true
-#   Civs: true
-#   Factions: true
-#   Feudal: true
-#   GriefDefender: true
-#   GriefPrevention: true
-#   Kingdoms: true
-#   Landlord: true
-#   Lands: true
-#   PreciousStones: true
-#   RedProtect: true
-#   Residence: true
-#   Towny: true
-#   WorldGuard: true
-#   UltimateClaims: true
-#   VanillaSpawnProtection: true
-#
-# # Debug-level enables more and more verbose logging of actions as increased.
-# # OFF - no debug messages
-# # LOW - Minimal debug messages, periodic deletion reports
-# # MEDIUM - More debug messages. Spammy, not recommended.
-# # HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
-# debug-level: LOW
-#
-
 # Square around each player's current chunk to flag.
 chunk-flag-radius: 4
 
@@ -100,7 +29,6 @@ hours-between-cycles: 12
 remember-next-cycle-time: false
 
 # Worlds the plugin is able to delete regions in
-# If you change this list, be sure to delete the field "delete-this-to-reset-plugin" so that areas in use are not deleted by accident.
 worlds: []
 
 # Hooks to attempt to check for protections from.

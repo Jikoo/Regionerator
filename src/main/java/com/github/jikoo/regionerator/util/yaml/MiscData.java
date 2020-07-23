@@ -1,13 +1,40 @@
 package com.github.jikoo.regionerator.util.yaml;
 
+import com.github.jikoo.regionerator.Regionerator;
 import java.io.File;
-import org.bukkit.plugin.Plugin;
+import java.util.List;
+import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
 public class MiscData extends FileYamlData {
 
-	public MiscData(@NotNull Plugin plugin, @NotNull File file) {
+	private final Regionerator plugin;
+
+	public MiscData(@NotNull Regionerator plugin, @NotNull File file) {
 		super(plugin, file);
+		this.plugin = plugin;
+	}
+
+	@Override
+	public void reload() {
+		super.reload();
+		checkWorldValidity();
+	}
+
+	public void checkWorldValidity() {
+		if (plugin == null || plugin.config() == null) {
+			return;
+		}
+		ConfigurationSection worlds = raw().getConfigurationSection("next-cycle");
+		if (worlds == null) {
+			return;
+		}
+		List<String> enabledWorlds = plugin.config().getStringList("worlds");
+		for (String worldName : worlds.getKeys(false)) {
+			if (!enabledWorlds.contains(worldName) && enabledWorlds.stream().noneMatch(worldName::equalsIgnoreCase)) {
+				set("next-cycle." + worldName, null);
+			}
+		}
 	}
 
 	public void setNextCycle(@NotNull String worldName, long timestamp) {
@@ -15,7 +42,12 @@ public class MiscData extends FileYamlData {
 	}
 
 	public long getNextCycle(@NotNull String worldName) {
-		return getLong("next-cycle." + worldName);
+		long nextCycle = getLong("next-cycle." + worldName);
+		if (nextCycle == 0) {
+			nextCycle = plugin.config().getFlagVisit();
+			setNextCycle(worldName, nextCycle);
+		}
+		return nextCycle;
 	}
 
 }

@@ -49,7 +49,6 @@ public class Regionerator extends JavaPlugin {
 
 		saveDefaultConfig();
 		config = new Config(this);
-
 		miscData = new MiscData(this, new File(getDataFolder(), "data.yml"));
 
 		boolean migrated = false;
@@ -58,14 +57,14 @@ public class Regionerator extends JavaPlugin {
 				// Migrate existing settings
 				miscData.setNextCycle(worldName, getConfig().getLong("delete-this-to-reset-plugin." + worldName));
 				migrated = true;
-			} else if (miscData.getNextCycle(worldName) == 0) {
-				miscData.setNextCycle(worldName, System.currentTimeMillis() + config.getFlagDuration());
 			}
 		}
 		if (migrated) {
 			getConfig().set("delete-this-to-reset-plugin", null);
 			saveConfig();
 		}
+
+		miscData.checkWorldValidity();
 
 		chunkFlagger = new ChunkFlagger(this);
 
@@ -97,14 +96,19 @@ public class Regionerator extends JavaPlugin {
 			getLogger().info("Shutting down flagger - currently holds " + chunkFlagger.getCached() + " flags.");
 			chunkFlagger.shutdown();
 		}
+
 		protectionHooks.clear();
 	}
 
 	@Override
 	public void reloadConfig() {
 		super.reloadConfig();
-		this.config.reload();
-		this.miscData.reload();
+		if (this.config != null) {
+			this.config.reload();
+		}
+		if (this.miscData != null) {
+			this.miscData.reload();
+		}
 	}
 
 	public void reloadFeatures() {
@@ -143,7 +147,7 @@ public class Regionerator extends JavaPlugin {
 					protectionHooks.add(hook);
 					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
 				} else {
-					getLogger().info("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
+					getLogger().warning("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
 					setPaused(true);
 				}
 			} catch (ClassNotFoundException e) {

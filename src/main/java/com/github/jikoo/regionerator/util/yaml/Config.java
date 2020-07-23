@@ -24,6 +24,7 @@ public class Config extends ConfigYamlData {
 
 	public Config(Plugin plugin) {
 		super(plugin);
+		reload();
 	}
 
 	@Override

@@ -30,7 +30,7 @@ public abstract class YamlData {
 		this.plugin = plugin;
 		this.loadSupplier = loadSupplier;
 		this.saveConsumer = saveConsumer;
-		reload();
+		this.storage = loadSupplier.get();
 	}
 
 	public void reload() {
