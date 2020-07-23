@@ -54,9 +54,9 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		if (phaser.getRegisteredParties() != 0) {
 			// Arrive so registering party is alerted that we're done cycling
-			phaser.arrive();
+			int expectedPhase = phaser.arrive() + 1;
 			// Await registering party
-			phaser.awaitAdvance(phaser.getPhase() + 1);
+			phaser.awaitAdvance(expectedPhase);
 		}
 
 		regionCount.incrementAndGet();
