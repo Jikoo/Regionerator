@@ -6,7 +6,9 @@ import com.github.jikoo.regionerator.world.WorldInfo;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -21,13 +23,15 @@ public class DeletionRunnable extends BukkitRunnable {
 	private static final String STATS_FORMAT = "%s: checked %s, deleted %s regions & %s chunks";
 
 	private final Regionerator plugin;
+	private final Phaser phaser;
 	private final WorldInfo world;
-	private long nextRun = Long.MAX_VALUE;
-	AtomicInteger regionCount = new AtomicInteger(), chunkCount = new AtomicInteger(),
+	private final AtomicLong nextRun = new AtomicLong(Long.MAX_VALUE);
+	private final AtomicInteger regionCount = new AtomicInteger(), chunkCount = new AtomicInteger(),
 			regionsDeleted = new AtomicInteger(), chunksDeleted = new AtomicInteger();
 
 	DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
+		this.phaser = new Phaser();
 		this.world = plugin.getWorldManager().getWorld(world);
 	}
 
@@ -35,15 +39,24 @@ public class DeletionRunnable extends BukkitRunnable {
 	public void run() {
 		world.getRegions().filter(Objects::nonNull).forEach(this::handleRegion);
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
-		nextRun = System.currentTimeMillis() + plugin.config().getMillisBetweenCycles();
+		nextRun.set(System.currentTimeMillis() + plugin.config().getMillisBetweenCycles());
 		if (plugin.config().isRememberCycleDelay()) {
 			plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
 		}
+		// Arrive on completion in case safe reload was attempted during completion of final region
+		phaser.arrive();
 	}
 
 	private void handleRegion(RegionInfo region) {
 		if (isCancelled()) {
 			return;
+		}
+
+		if (phaser.getRegisteredParties() != 0) {
+			// Arrive so registering party is alerted that we're done cycling
+			phaser.arrive();
+			// Await registering party
+			phaser.awaitAdvance(phaser.getPhase() + 1);
 		}
 
 		regionCount.incrementAndGet();
@@ -139,7 +152,11 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	public long getNextRun() {
-		return nextRun;
+		return nextRun.get();
+	}
+
+	Phaser getPhaser() {
+		return phaser;
 	}
 
 }

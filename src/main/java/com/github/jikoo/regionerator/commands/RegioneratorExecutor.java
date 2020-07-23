@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
@@ -26,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
 public class RegioneratorExecutor implements TabExecutor {
 
 	private final Regionerator plugin;
-	private final HashMap<String, DeletionRunnable> deletionRunnables;
+	private final Map<String, DeletionRunnable> deletionRunnables;
 	private final FlagHandler flagHandler;
 
 	public RegioneratorExecutor(Regionerator plugin,
-			HashMap<String, DeletionRunnable> deletionRunnables) {
+			Map<String, DeletionRunnable> deletionRunnables) {
 		this.plugin = plugin;
 		this.deletionRunnables = deletionRunnables;
 		flagHandler = new FlagHandler(plugin);
@@ -83,9 +83,8 @@ public class RegioneratorExecutor implements TabExecutor {
 
 		args[0] = args[0].toLowerCase();
 		if (args[0].equals("reload")) {
-			plugin.reloadConfig();
-			plugin.reloadFeatures();
-			sender.sendMessage("Regionerator configuration reloaded!");
+			plugin.reloadSafe();
+			sender.sendMessage("Executing safe reload.");
 			return true;
 		}
 

@@ -8,12 +8,17 @@ import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -32,13 +37,13 @@ import org.bukkit.scheduler.BukkitTask;
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class Regionerator extends JavaPlugin {
 
-	private HashMap<String, DeletionRunnable> deletionRunnables;
+	private final Map<String, DeletionRunnable> deletionRunnables = new ConcurrentHashMap<>();
+	private final Set<Hook> protectionHooks = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	private final WorldManager worldManager = new WorldManager(this);
+	private final AtomicBoolean paused = new AtomicBoolean();
 	private ChunkFlagger chunkFlagger;
-	private Set<Hook> protectionHooks;
 	private Config config;
 	private MiscData miscData;
-	private WorldManager worldManager;
-	private boolean paused = false;
 	private BukkitTask flagging;
 
 	@Override
@@ -64,10 +69,7 @@ public class Regionerator extends JavaPlugin {
 			saveConfig();
 		}
 
-		deletionRunnables = new HashMap<>();
 		chunkFlagger = new ChunkFlagger(this);
-		protectionHooks = Collections.newSetFromMap(new ConcurrentHashMap<>());
-		worldManager = new WorldManager(this);
 
 		PluginCommand command = getCommand("regionerator");
 		RegioneratorExecutor executor = new RegioneratorExecutor(this, deletionRunnables);
@@ -90,22 +92,28 @@ public class Regionerator extends JavaPlugin {
 	public void onDisable() {
 		// Manually cancel deletion runnables - Bukkit does not do a good job of informing tasks they can't continue.
 		deletionRunnables.values().forEach(BukkitRunnable::cancel);
+		deletionRunnables.clear();
 		getServer().getScheduler().cancelTasks(this);
 
 		if (chunkFlagger != null) {
 			getLogger().info("Shutting down flagger - currently holds " + chunkFlagger.getCached() + " flags.");
 			chunkFlagger.shutdown();
 		}
+		protectionHooks.clear();
 	}
 
 	@Override
 	public void reloadConfig() {
+		if (this.isEnabled() && !this.isPaused()) {
+			throw new IllegalStateException("Cannot reload configurations when plugin is not paused!");
+		}
+
 		super.reloadConfig();
 		this.config.reload();
 		this.miscData.reload();
 	}
 
-	public void reloadFeatures() {
+	private void reloadFeatures() {
 		// Remove all existing features
 		HandlerList.unregisterAll(this);
 		if (flagging != null) {
@@ -142,13 +150,13 @@ public class Regionerator extends JavaPlugin {
 					debug(DebugLevel.LOW, () -> "Enabled protection hook for " + hookName);
 				} else {
 					getLogger().info("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
-					paused = true;
+					setPaused(true);
 				}
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (ReflectiveOperationException e) {
 				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
-				paused = true;
+				setPaused(true);
 				e.printStackTrace();
 			} catch (NoClassDefFoundError e) {
 				debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
@@ -269,15 +277,55 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public ChunkFlagger getFlagger() {
-		return chunkFlagger;
+		return this.chunkFlagger;
 	}
 
 	public boolean isPaused() {
-		return paused;
+		return this.paused.get();
 	}
 
 	public void setPaused(boolean paused) {
-		this.paused = paused;
+		boolean wasPaused = this.paused.getAndSet(paused);
+
+		if (paused == wasPaused) {
+			return;
+		}
+
+		Consumer<Phaser> phaserConsumer = paused ? Phaser::register : Phaser::arriveAndDeregister;
+		deletionRunnables.values().stream().map(DeletionRunnable::getPhaser).forEach(phaserConsumer);
+	}
+
+	public void reloadSafe() {
+		if (isPaused()) {
+			// TODO if we're paused already, need a way to check if regions are completed.
+			reloadConfig();
+			reloadFeatures();
+			return;
+		}
+
+		getServer().getScheduler().runTaskAsynchronously(this, () -> {
+			List<Phaser> phasers = new ArrayList<>();
+			for (DeletionRunnable runnable : deletionRunnables.values()) {
+				if (runnable.getNextRun() < Long.MAX_VALUE) {
+					// Runnable is running, we need to lock and wait
+					Phaser phaser = runnable.getPhaser();
+					phasers.add(phaser);
+					phaser.register();
+					// Await phaser hitting advance at start of next region check
+					phaser.awaitAdvance(phaser.getPhase() + 1);
+				}
+			}
+
+			getServer().getScheduler().runTask(this, () -> {
+				boolean wasPaused = paused.getAndSet(true);
+				reloadConfig();
+				reloadFeatures();
+				paused.set(wasPaused);
+				for (Phaser phaser : phasers) {
+					phaser.arriveAndDeregister();
+				}
+			});
+		});
 	}
 
 	public boolean debug(DebugLevel level) {
