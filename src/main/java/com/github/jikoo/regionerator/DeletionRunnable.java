@@ -31,7 +31,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	DeletionRunnable(Regionerator plugin, World world) {
 		this.plugin = plugin;
-		this.phaser = new Phaser();
+		this.phaser = new Phaser(1);
 		this.world = plugin.getWorldManager().getWorld(world);
 	}
 
@@ -43,8 +43,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (plugin.config().isRememberCycleDelay()) {
 			plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
 		}
-		// Arrive on completion in case safe reload was attempted during completion of final region
-		phaser.arrive();
+		phaser.arriveAndDeregister();
 	}
 
 	private void handleRegion(RegionInfo region) {
@@ -52,12 +51,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			return;
 		}
 
-		if (phaser.getRegisteredParties() != 0) {
-			// Arrive so registering party is alerted that we're done cycling
-			int expectedPhase = phaser.arrive() + 1;
-			// Await registering party
-			phaser.awaitAdvance(expectedPhase);
-		}
+		phaser.arriveAndAwaitAdvance();
 
 		regionCount.incrementAndGet();
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
