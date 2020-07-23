@@ -4,16 +4,23 @@ import com.github.jikoo.regionerator.DebugLevel;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 
 public class Config extends ConfigYamlData {
 
+	private final Object lock = new Object();
 	private DebugLevel debugLevel;
 	private List<String> worlds;
-	private long flagDuration, ticksPerFlag, millisBetweenCycles, deletionInterval;
-	private int flaggingRadius, deletionChunkCount;
+	private final AtomicLong flagDuration = new AtomicLong(), ticksPerFlag = new AtomicLong(),
+			millisBetweenCycles = new AtomicLong(), deletionRecovery = new AtomicLong();
+	private final AtomicInteger flaggingRadius = new AtomicInteger(), deletionChunkCount = new AtomicInteger();
+	private final AtomicBoolean rememberCycleDelay = new AtomicBoolean(), deleteFreshChunks = new AtomicBoolean();
 
 	public Config(Plugin plugin) {
 		super(plugin);
@@ -23,107 +30,99 @@ public class Config extends ConfigYamlData {
 	public void reload() {
 		super.reload();
 
-		List<String> worldList = getStringList("worlds");
-
-		try {
-			String debugConfigVal = getString("debug-level");
-			if (debugConfigVal == null) {
-				debugConfigVal = "OFF";
-			}
-			debugLevel = DebugLevel.valueOf(debugConfigVal.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			debugLevel = DebugLevel.OFF;
-			set("debug-level", "OFF");
-		}
-
-		boolean correctedWorldNames = false;
-		worlds = new ArrayList<>();
+		List<String> worldConfigList = getStringList("worlds");
+		List<String> worldCorrectCaseList = new ArrayList<>();
 		for (World world : Bukkit.getWorlds()) {
-			if (worldList.contains(world.getName())) {
-				worlds.add(world.getName());
+			if (worldConfigList.contains(world.getName())) {
+				worldCorrectCaseList.add(world.getName());
 				continue;
 			}
-			for (String name : worldList) {
+			for (String name : worldConfigList) {
 				if (world.getName().equalsIgnoreCase(name)) {
-					worlds.add(world.getName());
-					correctedWorldNames = true;
+					worldCorrectCaseList.add(world.getName());
 					break;
 				}
 			}
 		}
 
-		// Immutable list, this should not be changed during run by myself or another plugin
-		worlds = ImmutableList.copyOf(worlds);
-		if (correctedWorldNames) {
-			set("worlds", worlds);
+		synchronized (lock) {
+			// Immutable list, this should not be changed during run by myself or another plugin
+			this.worlds = ImmutableList.copyOf(worldCorrectCaseList);
+
+			try {
+				String debugConfigVal = getString("debug-level");
+				if (debugConfigVal == null) {
+					debugConfigVal = "OFF";
+				}
+				debugLevel = DebugLevel.valueOf(debugConfigVal.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				debugLevel = DebugLevel.OFF;
+			}
 		}
 
-		// 86,400,000 = 24 hours * 60 minutes * 60 seconds * 1000 milliseconds
-		flagDuration = 86400000L * getInt("days-till-flag-expires");
+		long newMilliValue = TimeUnit.DAYS.toMillis(getInt("days-till-flag-expires"));
+		flagDuration.set(Math.max(0, newMilliValue));
 
-		if (flagDuration <= 0) {
-			// Flagging will not be editing values, flagging untouched chunks is not an option
-			set("delete-new-unvisited-chunks", true);
+		// If flagging will not be editing values, flagging untouched chunks is not an option
+		deleteFreshChunks.set(newMilliValue <= 0 || getBoolean("delete-new-unvisited-chunks"));
+
+		flaggingRadius.set(Math.max(0, getInt("chunk-flag-radius")));
+
+		int secondsPerFlag = getInt("seconds-per-flag");
+		if (secondsPerFlag < 1) {
+			ticksPerFlag.set(10);
+		} else {
+			ticksPerFlag.set(20 * secondsPerFlag);
 		}
 
-		if (getInt("chunk-flag-radius") < 0) {
-			set("chunk-flag-radius", 4);
+		long ticksPerDeletion = getLong("ticks-per-deletion");
+		if (ticksPerDeletion < 1) {
+			deletionRecovery.set(0);
+		} else {
+			deletionRecovery.set(ticksPerDeletion * 50);
 		}
 
-		flaggingRadius = Math.max(0, getInt("chunk-flag-radius"));
-
-		if (getInt("seconds-per-flag") < 1) {
-			set("seconds-per-flag", 10);
-		}
-		// 20 ticks per second
-		ticksPerFlag = getInt("seconds-per-flag") * 20L;
-
-		if (getLong("ticks-per-deletion") < 1) {
-			set("ticks-per-deletion", 20L);
+		int chunksPerDelete = getInt("chunks-per-deletion");
+		if (chunksPerDelete < 1) {
+			deletionChunkCount.set(32);
+		} else {
+			deletionChunkCount.set(chunksPerDelete);
 		}
 
-		deletionInterval = getLong("ticks-per-deletion") * 50;
+		millisBetweenCycles.set(TimeUnit.HOURS.toMillis(Math.max(0, getInt("hours-between-cycles"))));
 
-		if (getInt("chunks-per-deletion") < 1) {
-			set("chunks-per-deletion", 20);
-		}
-
-		deletionChunkCount = getInt("chunks-per-deletion");
-
-		if (getInt("hours-between-cycles") < 0) {
-			set("hours-between-cycles", 0);
-		}
-		// 60 minutes per hour, 60 seconds per minute, 1000 milliseconds per second
-		millisBetweenCycles = getInt("hours-between-cycles") * 3600000L;
+		rememberCycleDelay.set(getBoolean("remember-next-cycle-time"));
 
 	}
 
 	public DebugLevel getDebugLevel() {
-		return debugLevel;
+		synchronized (lock) {
+			return debugLevel;
+		}
 	}
 
 	public int getDeletionChunkCount() {
-		return deletionChunkCount;
+		return deletionChunkCount.get();
 	}
 
 	public long getDeletionRecoveryMillis() {
-		return deletionInterval;
+		return deletionRecovery.get();
 	}
 
 	public long getMillisBetweenCycles() {
-		return millisBetweenCycles;
+		return millisBetweenCycles.get();
 	}
 
 	public boolean isRememberCycleDelay() {
-		return getBoolean("remember-next-cycle-time");
+		return rememberCycleDelay.get();
 	}
 
 	public boolean isDeleteFreshChunks() {
-		return getBoolean("delete-new-unvisited-chunks");
+		return deleteFreshChunks.get();
 	}
 
 	public long getFlagDuration() {
-		return flagDuration;
+		return flagDuration.get();
 	}
 
 	public long getFlagGenerated() {
@@ -143,15 +142,17 @@ public class Config extends ConfigYamlData {
 	}
 
 	public long getFlaggingInterval() {
-		return ticksPerFlag;
+		return ticksPerFlag.get();
 	}
 
 	public int getFlaggingRadius() {
-		return flaggingRadius;
+		return flaggingRadius.get();
 	}
 
 	public List<String> getWorlds() {
-		return worlds;
+		synchronized (lock) {
+			return worlds;
+		}
 	}
 
 }

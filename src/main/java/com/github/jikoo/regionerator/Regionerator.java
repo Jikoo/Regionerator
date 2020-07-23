@@ -8,10 +8,8 @@ import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -104,16 +102,12 @@ public class Regionerator extends JavaPlugin {
 
 	@Override
 	public void reloadConfig() {
-		if (this.isEnabled() && !this.isPaused()) {
-			throw new IllegalStateException("Cannot reload configurations when plugin is not paused!");
-		}
-
 		super.reloadConfig();
 		this.config.reload();
 		this.miscData.reload();
 	}
 
-	private void reloadFeatures() {
+	public void reloadFeatures() {
 		// Remove all existing features
 		HandlerList.unregisterAll(this);
 		if (flagging != null) {
@@ -293,39 +287,6 @@ public class Regionerator extends JavaPlugin {
 
 		Consumer<Phaser> phaserConsumer = paused ? Phaser::register : Phaser::arriveAndDeregister;
 		deletionRunnables.values().stream().map(DeletionRunnable::getPhaser).forEach(phaserConsumer);
-	}
-
-	public void reloadSafe() {
-		if (isPaused()) {
-			// TODO if we're paused already, need a way to check if regions are completed.
-			reloadConfig();
-			reloadFeatures();
-			return;
-		}
-
-		getServer().getScheduler().runTaskAsynchronously(this, () -> {
-			List<Phaser> phasers = new ArrayList<>();
-			for (DeletionRunnable runnable : deletionRunnables.values()) {
-				if (runnable.getNextRun() < Long.MAX_VALUE) {
-					// Runnable is running, we need to lock and wait
-					Phaser phaser = runnable.getPhaser();
-					phasers.add(phaser);
-					phaser.register();
-					// Await phaser hitting advance at start of next region check
-					phaser.awaitAdvance(phaser.getPhase() + 1);
-				}
-			}
-
-			getServer().getScheduler().runTask(this, () -> {
-				boolean wasPaused = paused.getAndSet(true);
-				reloadConfig();
-				reloadFeatures();
-				paused.set(wasPaused);
-				for (Phaser phaser : phasers) {
-					phaser.arriveAndDeregister();
-				}
-			});
-		});
 	}
 
 	public boolean debug(DebugLevel level) {

@@ -83,8 +83,9 @@ public class RegioneratorExecutor implements TabExecutor {
 
 		args[0] = args[0].toLowerCase();
 		if (args[0].equals("reload")) {
-			plugin.reloadSafe();
-			sender.sendMessage("Executing safe reload.");
+			plugin.reloadConfig();
+			plugin.reloadFeatures();
+			sender.sendMessage("Regionerator configuration reloaded!");
 			return true;
 		}
 
