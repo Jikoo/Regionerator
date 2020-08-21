@@ -11,29 +11,26 @@ import org.bukkit.World;
  */
 public class LandsHook extends PluginHook {
 
-	private LandsIntegration landsAPI;
+    private LandsIntegration landsAPI;
 
-	public LandsHook() {
-		super("Lands");
-	}
+    public LandsHook() {
+        super("Lands");
+    }
 
-	@Override
-	public boolean isHookUsable() {
-		return super.isHookUsable();
-	}
+    @Override
+    public boolean isHookUsable() {
+        return super.isHookUsable();
+    }
 
     @Override
     public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
         return landsAPI.isClaimed(chunkWorld, chunkX, chunkZ);
     }
 
-		try {
-			return landsAPI.isClaimed(chunkWorld.getName(), chunkX, chunkZ).get();
-		} catch (InterruptedException | ExecutionException | ClassCastException e) {
-			e.printStackTrace();
-			return true;
-		}
-	}
+    @Override
+    public boolean isAsyncCapable() {
+        return true;
+    }
 
     private LandsIntegration getLandsAPI() {
         if (landsAPI == null) {
