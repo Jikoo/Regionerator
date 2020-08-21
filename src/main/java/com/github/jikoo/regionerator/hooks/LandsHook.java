@@ -24,7 +24,7 @@ public class LandsHook extends PluginHook {
 
     @Override
     public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-        return landsAPI.isClaimed(chunkWorld, chunkX, chunkZ);
+        return getLandsAPI().isClaimed(chunkWorld, chunkX, chunkZ);
     }
 
     @Override
