@@ -12,6 +12,7 @@ import com.github.jikoo.regionerator.world.RegionInfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,8 +72,12 @@ public class AnvilRegion extends RegionInfo {
 				return true;
 			}
 		}
+
 		// Header contains no content, delete region
-		return getRegionFile().exists() && getRegionFile().delete();
+		Files.deleteIfExists(getRegionFile().toPath());
+
+		// Return true even if file already did not exist; end goal was still accomplished
+		return true;
 	}
 
 	@NotNull
