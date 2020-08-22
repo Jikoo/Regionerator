@@ -12,34 +12,34 @@ import org.jetbrains.annotations.NotNull;
  */
 public class LandsHook extends PluginHook {
 
-    private LandsIntegration landsAPI;
+	private LandsIntegration landsAPI;
 
-    public LandsHook() {
-        super("Lands");
-    }
+	public LandsHook() {
+		super("Lands");
+	}
 
-    @Override
-    public boolean isHookUsable() {
-        return super.isHookUsable();
-    }
+	@Override
+	public boolean isHookUsable() {
+		return super.isHookUsable();
+	}
 
-    @Override
-    public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-        return getLandsAPI().isClaimed(chunkWorld, chunkX, chunkZ);
-    }
+	@Override
+	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+		return getLandsAPI().isClaimed(chunkWorld, chunkX, chunkZ);
+	}
 
-    @Override
-    public boolean isAsyncCapable() {
-        return true;
-    }
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
 
-    @NotNull
-    private LandsIntegration getLandsAPI() {
-        if (landsAPI == null) {
-            landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class));
-        }
+	@NotNull
+	private LandsIntegration getLandsAPI() {
+		if (landsAPI == null) {
+			landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class));
+		}
 
-        return landsAPI;
-    }
+		return landsAPI;
+	}
 
 }
