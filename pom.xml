@@ -144,11 +144,10 @@
       <systemPath>${project.basedir}/premium/Residence.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>me.angeschossen</groupId>
-      <artifactId>Lands</artifactId>
-      <version>4.3.1.2</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/premium/Lands.jar</systemPath>
+      <groupId>com.github.angeschossen</groupId>
+      <artifactId>LandsAPI</artifactId>
+      <version>4.9.3</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.songoda</groupId>
