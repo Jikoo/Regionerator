@@ -47,7 +47,7 @@ public class RedProtectHook extends PluginHook {
 			return RedProtect.get().getAPI().getChunkRegions(new DummyChunk(chunkWorld, chunkX, chunkZ)).size() > 0;
 		}
 
-		for (Region region : RedProtect.get().rm.getRegionsByWorld(chunkWorld.getName())) {
+		for (Region region : RedProtect.get().getRegionManager().getRegionsByWorld(chunkWorld.getName())) {
 			Location min = region.getMinLocation();
 			Location max = region.getMaxLocation();
 			if (Coords.blockToChunk(min.getBlockX()) > chunkX

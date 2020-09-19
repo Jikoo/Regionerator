@@ -13,7 +13,7 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>19.0.0</version>
+      <version>20.1.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -25,19 +25,19 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.15.2-R0.1-SNAPSHOT</version>
+      <version>1.16.3-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.sk89q.worldedit</groupId>
       <artifactId>worldedit-bukkit</artifactId>
-      <version>7.0.0-SNAPSHOT</version>
+      <version>7.2.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.sk89q.worldguard</groupId>
-      <artifactId>worldguard-legacy</artifactId>
-      <version>7.0.0-SNAPSHOT</version>
+      <artifactId>worldguard-bukkit</artifactId>
+      <version>7.0.4-SNAPSHOT</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>com.github.TechFortress</groupId>
       <artifactId>GriefPrevention</artifactId>
-      <version>16.13.0</version>
+      <version>16.15.0</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -71,19 +71,19 @@
     <dependency>
       <groupId>br.net.fabiozumbi12.RedProtect</groupId>
       <artifactId>RedProtect-Core</artifactId>
-      <version>7.6.2</version>
+      <version>7.7.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>br.net.fabiozumbi12.RedProtect</groupId>
       <artifactId>RedProtect-Spigot</artifactId>
-      <version>7.6.2</version>
+      <version>7.7.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.github.bloodmc</groupId>
       <artifactId>GriefDefenderAPI</artifactId>
-      <version>b956577866</version>
+      <version>33bd795ad4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -146,7 +146,7 @@
     <dependency>
       <groupId>com.github.angeschossen</groupId>
       <artifactId>LandsAPI</artifactId>
-      <version>4.9.3</version>
+      <version>4.9.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -165,7 +165,7 @@
     </repository>
     <repository>
       <id>sk89q-repo</id>
-      <url>http://maven.sk89q.com/repo/</url>
+      <url>https://maven.enginehub.org/repo/</url>
     </repository>
     <repository>
       <id>jitpack.io</id>
