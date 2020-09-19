@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.bukkit.World;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
@@ -41,7 +42,11 @@ public class DeletionRunnable extends BukkitRunnable {
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 		nextRun.set(System.currentTimeMillis() + plugin.config().getMillisBetweenCycles());
 		if (plugin.config().isRememberCycleDelay()) {
-			plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
+			try {
+				plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
+			} catch (IllegalPluginAccessException e) {
+				// Plugin disabling, odds are on that we were mid-cycle. Don't update finish time.
+			}
 		}
 		phaser.arriveAndDeregister();
 	}
