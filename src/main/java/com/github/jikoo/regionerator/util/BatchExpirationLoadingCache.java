@@ -82,8 +82,9 @@ public class BatchExpirationLoadingCache<K, V> {
 	 */
 	@NotNull
 	public CompletableFuture<V> get(@NotNull K key) {
-		if (internal.containsKey(key)) {
-			return CompletableFuture.completedFuture(getIfPresent(key));
+		V value = getIfPresent(key);
+		if (value != null) {
+			return CompletableFuture.completedFuture(value);
 		}
 		return CompletableFuture.supplyAsync(() -> load.apply(key));
 	}
@@ -101,6 +102,22 @@ public class BatchExpirationLoadingCache<K, V> {
 			expirationMap.add(key);
 		}
 		checkExpiration();
+		return value;
+	}
+
+	/**
+	 * Gets a value for the specified key or computes it and adds it to the cache if not present.
+	 *
+	 * @param key the key
+	 * @return the loaded value or {@code null}
+	 */
+	public @NotNull V computeIfAbsent(@NotNull K key, Function<K, V> supplier) {
+		V value = getIfPresent(key);
+		if (value != null) {
+			return value;
+		}
+		value = supplier.apply(key);
+		put(key, value);
 		return value;
 	}
 

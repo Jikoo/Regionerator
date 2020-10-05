@@ -14,6 +14,13 @@ import org.bukkit.plugin.Plugin;
 
 public class Config extends ConfigYamlData {
 
+	/** Constant representing the default flag timestamp. */
+	public static final long FLAG_DEFAULT = -1;
+	/** Constant representing a flag that will never expire. */
+	public static final long FLAG_ETERNAL = Long.MAX_VALUE - 1;
+	/** Constant representing a failure to load data. */
+	public static final long FLAG_OH_NO = Long.MAX_VALUE - 2;
+
 	private final Object lock = new Object();
 	private DebugLevel debugLevel;
 	private List<String> worlds;
@@ -134,12 +141,14 @@ public class Config extends ConfigYamlData {
 		return System.currentTimeMillis() + getFlagDuration();
 	}
 
+	@Deprecated
 	public static long getFlagEternal() {
-		return Long.MAX_VALUE - 1;
+		return FLAG_ETERNAL;
 	}
 
+	@Deprecated
 	public static long getFlagDefault() {
-		return -1;
+		return FLAG_DEFAULT;
 	}
 
 	public long getFlaggingInterval() {

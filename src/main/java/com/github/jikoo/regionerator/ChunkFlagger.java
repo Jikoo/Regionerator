@@ -5,7 +5,10 @@ import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
@@ -38,14 +41,21 @@ public class ChunkFlagger {
 
 		this.flagCache = new BatchExpirationLoadingCache<>(180000, key -> {
 			try {
-				return new FlagData(key, adapter.get(key));
+				FlagData flagData = new FlagData(key, adapter.get(key));
+
+				// Ensure changing config value allows deleting fresh chunks.
+				if (flagData.getLastVisit() == Long.MAX_VALUE && plugin.config().isDeleteFreshChunks()) {
+					flagData.setLastVisit(Config.FLAG_DEFAULT);
+				}
+
+				return flagData;
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
-				return new FlagData(key, Config.getFlagEternal());
+				return new FlagData(key, Config.FLAG_OH_NO);
 			}
 		}, expiredData -> {
 			// Only attempt to save if dirty to minimize write time
-			expiredData.removeIf(next -> !next.isDirty());
+			expiredData.removeIf(next -> !next.isDirty() || next.getLastVisit() == Config.FLAG_OH_NO);
 
 			if (expiredData.isEmpty()) {
 				return;
@@ -55,7 +65,7 @@ public class ChunkFlagger {
 				adapter.update(expiredData);
 
 				// Flag as no longer dirty to reduce saves if data is still in use
-				expiredData.forEach(flagData -> flagData.dirty = false);
+				expiredData.forEach(FlagData::wash);
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.SEVERE, "Exception updating chunk flags", e);
 			}
@@ -111,9 +121,8 @@ public class ChunkFlagger {
 					continue;
 				}
 
-				FlagData flagData = new FlagData(this.getFlagDbId(world, chunkX, chunkZ), worldSection.getLong(chunkPath));
-				flagData.dirty = true;
-				flagCache.put(flagData.getChunkId(), flagData);
+				flagCache.get(this.getFlagDbId(world, chunkX, chunkZ))
+						.thenAccept(flagData -> flagData.importOldValue(worldSection.getLong(chunkPath)));
 			}
 		}
 		// Rename old flag file
@@ -162,9 +171,8 @@ public class ChunkFlagger {
 					int chunkX = Integer.parseInt(args[0]);
 					int chunkZ = Integer.parseInt(args[1]);
 
-					FlagData flagData = new FlagData(this.getFlagDbId(worldName, chunkX, chunkZ), (Long) entry.getValue());
-					flagData.dirty = true;
-					flagCache.put(flagData.getChunkId(), flagData);
+					flagCache.get(this.getFlagDbId(worldName, chunkX, chunkZ))
+							.thenAccept(flagData -> flagData.importOldValue((long) entry.getValue()));
 				}
 			}
 		}
@@ -208,29 +216,43 @@ public class ChunkFlagger {
 		FlagData flagData = this.flagCache.getIfPresent(flagDbId);
 		if (flagData != null) {
 			long current = flagData.getLastVisit();
-			if (current == Config.getFlagEternal()) {
+			if (current == Config.FLAG_ETERNAL) {
 				return;
 			}
-			flagData.lastVisit = flagTil;
+			flagData.setLastVisit(flagTil);
 		} else {
-			flagData = new FlagData(flagDbId, flagTil);
+			flagData = new FlagData(flagDbId, flagTil, true);
 			flagCache.put(flagDbId, flagData);
 		}
-		flagData.dirty = true;
 	}
 
 	/**
-	 * Unflags a chunk.
+	 * @deprecated Just un-flag each chunk, odds are on that you already have a collection of chunk data to iterate over
+	 * Unflags an entire region.
+	 *
+	 * @param world the world name
+	 * @param regionLowestChunkX the lowest chunk X coordinate in the region
+	 * @param regionLowestChunkZ the lowest chunk Z coordinate in the region
+	 */
+	@Deprecated
+	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
+		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
+			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
+				unflagChunk(world, chunkX, chunkZ);
+			}
+		}
+	}
+
+	/**
+	 * Removes flags from a chunk.
 	 *
 	 * @param world the world name
 	 * @param chunkX the chunk X coordinate
 	 * @param chunkZ the chunk Z coordinate
 	 */
 	public void unflagChunk(@NotNull String world, int chunkX, int chunkZ) {
-		String flagDBId = getFlagDbId(world, chunkX, chunkZ);
-		FlagData flagData = new FlagData(flagDBId, -1);
-		flagData.dirty = true;
-		flagCache.put(flagDBId, flagData);
+		flagCache.computeIfAbsent(getFlagDbId(world, chunkX, chunkZ), key -> new FlagData(key, Config.FLAG_DEFAULT, true))
+				.setLastVisit(Config.FLAG_DEFAULT);
 	}
 
 	/**
@@ -303,12 +325,17 @@ public class ChunkFlagger {
 	public static class FlagData {
 
 		private final String chunkId;
-		private long lastVisit;
-		private boolean dirty = false;
+		private final AtomicLong lastVisit;
+		private final AtomicBoolean dirty;
 
-		FlagData(@NotNull String chunkId, long lastVisit) {
+		private FlagData(@NotNull String chunkId, long lastVisit) {
+			this(chunkId, lastVisit, false);
+		}
+
+		private FlagData(@NotNull String chunkId, long lastVisit, boolean dirty) {
 			this.chunkId = chunkId;
-			this.lastVisit = lastVisit;
+			this.lastVisit = new AtomicLong(lastVisit);
+			this.dirty = new AtomicBoolean(dirty);
 		}
 
 		/**
@@ -324,10 +351,45 @@ public class ChunkFlagger {
 		/**
 		 * Gets the chunk's last visit timestamp.
 		 *
-		 * @return the chunk's last visit timestamp.
+		 * @return the chunk's last visit timestamp
 		 */
 		public long getLastVisit() {
-			return lastVisit;
+			return lastVisit.get();
+		}
+
+		/**
+		 * Sets the chunk's last visit timestamp.
+		 *
+		 * @param lastVisit the chunk's last visit timestamp
+		 */
+		private void setLastVisit(long lastVisit) {
+			if (this.lastVisit.getAndSet(lastVisit) != lastVisit) {
+				this.dirty.set(true);
+			}
+		}
+
+		/**
+		 * Imports an old value. For use in data conversion.
+		 *
+		 * @param oldValue the imported old value
+		 */
+		private void importOldValue(long oldValue) {
+			// Ignore default values.
+			if (oldValue == Config.FLAG_DEFAULT) {
+				return;
+			}
+
+			if (oldValue == Long.MAX_VALUE) {
+				// Only set fresh generated flag if current value is default.
+				if (this.lastVisit.compareAndSet(Config.FLAG_DEFAULT, oldValue)) {
+					this.dirty.set(true);
+				}
+				return;
+			}
+
+			if (this.lastVisit.updateAndGet(currentValue -> Math.max(currentValue, oldValue)) == oldValue) {
+				this.dirty.set(true);
+			}
 		}
 
 		/**
@@ -335,18 +397,28 @@ public class ChunkFlagger {
 		 *
 		 * @return true if the chunk data has not been saved
 		 */
-		boolean isDirty() {
-			return dirty;
+		private boolean isDirty() {
+			return dirty.get();
+		}
+
+		/**
+		 * Hello yes this is Joseph King how can I help you?
+		 */
+		private void wash() {
+			dirty.set(false);
 		}
 
 		@Override
 		public int hashCode() {
-			return chunkId.hashCode();
+			return Objects.hash(chunkId, lastVisit, dirty);
 		}
 
 		@Override
 		public boolean equals(Object obj) {
-			return obj != null && getClass().equals(obj.getClass()) && ((FlagData) obj).chunkId.equals(chunkId);
+			if (this == obj) return true;
+			if (obj == null || getClass() != obj.getClass()) return false;
+			FlagData other = (FlagData) obj;
+			return lastVisit.equals(other.lastVisit) && dirty.equals(other.dirty) && chunkId.equals(other.chunkId);
 		}
 	}
 

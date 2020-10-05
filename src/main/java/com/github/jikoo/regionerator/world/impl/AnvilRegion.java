@@ -83,12 +83,12 @@ public class AnvilRegion extends RegionInfo {
 	@NotNull
 	@Override
 	protected ChunkInfo getChunkInternal(int localChunkX, int localChunkZ) {
-		return new AnvilChunkInfo(localChunkX, localChunkZ);
+		return new AnvilChunk(localChunkX, localChunkZ);
 	}
 
-	private class AnvilChunkInfo extends ChunkInfo {
+	private class AnvilChunk extends ChunkInfo {
 
-		public AnvilChunkInfo(int localChunkX, int localChunkZ) {
+		public AnvilChunk(int localChunkX, int localChunkZ) {
 			super(AnvilRegion.this, localChunkX, localChunkZ);
 		}
 

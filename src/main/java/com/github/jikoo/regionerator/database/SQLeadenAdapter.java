@@ -50,7 +50,7 @@ public class SQLeadenAdapter implements DatabaseAdapter {
 			try (PreparedStatement boyIWishThisWasAnUpsert = database.prepareStatement("INSERT OR REPLACE INTO chunkdata(chunk_id,time) VALUES (?, MAX(COALESCE((SELECT time FROM chunkdata WHERE chunk_id=?),0),?))");
 				PreparedStatement deleteForeverBecauseReplaceEqualsDeleteThenInsertFrownyFace = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
 				for (ChunkFlagger.FlagData data : flags) {
-					if (data.getLastVisit() == Config.getFlagDefault()) {
+					if (data.getLastVisit() == Config.FLAG_DEFAULT) {
 						deleteForeverBecauseReplaceEqualsDeleteThenInsertFrownyFace.setString(1, data.getChunkId());
 						deleteForeverBecauseReplaceEqualsDeleteThenInsertFrownyFace.addBatch();
 					} else {
@@ -71,7 +71,7 @@ public class SQLeadenAdapter implements DatabaseAdapter {
 	public long get(@NotNull String identifier) throws SQLException {
 		synchronized (database) {
 			if (database.isClosed()) {
-				return Config.getFlagEternal();
+				return Config.FLAG_OH_NO;
 			}
 
 			try (PreparedStatement st = database.prepareStatement("SELECT time FROM chunkdata WHERE chunk_id=?")) {
@@ -80,7 +80,7 @@ public class SQLeadenAdapter implements DatabaseAdapter {
 					if (rs.next()) {
 						return rs.getLong(1);
 					} else {
-						return Config.getFlagDefault();
+						return Config.FLAG_DEFAULT;
 					}
 				}
 			}

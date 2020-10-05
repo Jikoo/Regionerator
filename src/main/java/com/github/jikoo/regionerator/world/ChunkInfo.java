@@ -42,8 +42,11 @@ public abstract class ChunkInfo {
 		if (lastVisit != Long.MAX_VALUE && lastVisit > now) {
 			plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " is flagged.");
 
-			if (lastVisit == Config.getFlagEternal()) {
+			if (lastVisit == Config.FLAG_ETERNAL) {
 				return VisitStatus.PERMANENTLY_FLAGGED;
+			}
+			if (lastVisit == Config.FLAG_OH_NO) {
+				return VisitStatus.UNKNOWN;
 			}
 
 			return VisitStatus.VISITED;

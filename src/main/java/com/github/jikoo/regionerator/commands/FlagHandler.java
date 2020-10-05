@@ -56,7 +56,7 @@ public class FlagHandler {
 
 		for (ChunkPosition chunk : chunks) {
 			if (flag) {
-				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getChunkX(), chunk.getChunkZ(), 0, Config.getFlagEternal());
+				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getChunkX(), chunk.getChunkZ(), 0, Config.FLAG_ETERNAL);
 			} else {
 				plugin.getFlagger().unflagChunk(worldName, chunk.getChunkX(), chunk.getChunkZ());
 			}

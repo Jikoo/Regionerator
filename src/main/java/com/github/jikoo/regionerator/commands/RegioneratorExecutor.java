@@ -141,17 +141,17 @@ public class RegioneratorExecutor implements TabExecutor {
 			// Region not yet saved, cannot obtain chunk detail data
 			if (!regionInfo.exists()) {
 				long visit = plugin.getFlagger().getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-				if (visit == Config.getFlagDefault()) {
+				if (visit == Config.FLAG_DEFAULT) {
 					player.sendMessage("Chunk has not been visited.");
 				} else if (!plugin.config().isDeleteFreshChunks() && visit == plugin.config().getFlagGenerated()) {
 					player.sendMessage("Chunk has not been visited since generation.");
-				} else if (visit == Config.getFlagEternal()) {
+				} else if (visit == Config.FLAG_ETERNAL) {
 					player.sendMessage("Chunk is eternally flagged.");
 				} else {
 					player.sendMessage("Chunk visited until: " + format.format(new Date(visit)));
 				}
 				visit = plugin.getFlagger().getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-				if (visit != Config.getFlagDefault()) {
+				if (visit != Config.FLAG_DEFAULT) {
 					player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
 				}
 				player.sendMessage("Region not available from disk! Cannot check details.");
@@ -163,7 +163,7 @@ public class RegioneratorExecutor implements TabExecutor {
 			player.sendMessage("Chunk last modified: " + format.format(new Date(chunkInfo.getLastModified())));
 			player.sendMessage("Chunk VisitStatus: " + chunkInfo.getVisitStatus().name());
 			long visit = plugin.getFlagger().getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
-			if (visit != Config.getFlagDefault()) {
+			if (visit != Config.FLAG_DEFAULT) {
 				player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
 			}
 			if (chunkInfo.isOrphaned()) {

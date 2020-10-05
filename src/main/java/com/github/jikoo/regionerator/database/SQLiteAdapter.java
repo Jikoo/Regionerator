@@ -47,7 +47,7 @@ public class SQLiteAdapter extends SQLeadenAdapter {
 			try (PreparedStatement upsert = database.prepareStatement("INSERT INTO chunkdata(chunk_id,time) VALUES (?,?) ON CONFLICT(chunk_id) DO UPDATE SET time=excluded.time WHERE excluded.time>chunkdata.time");
 				PreparedStatement delete = database.prepareStatement("DELETE FROM chunkdata WHERE chunk_id=?")) {
 				for (ChunkFlagger.FlagData data : flags) {
-					if (data.getLastVisit() == Config.getFlagDefault()) {
+					if (data.getLastVisit() == Config.FLAG_DEFAULT) {
 						delete.setString(1, data.getChunkId());
 						delete.addBatch();
 					} else {
