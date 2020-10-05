@@ -62,6 +62,13 @@ public class DeletionRunnable extends BukkitRunnable {
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
 				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
+		try {
+			region.read();
+		} catch (IOException e) {
+			plugin.getLogger().log(Level.WARNING, "Unable to read region!", e);
+			return;
+		}
+
 		// Collect potentially eligible chunks
 		List<ChunkInfo> chunks = region.getChunks().filter(this::isDeleteEligible).collect(Collectors.toList());
 
