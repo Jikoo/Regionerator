@@ -18,6 +18,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
@@ -32,7 +33,7 @@ import org.bukkit.scheduler.BukkitTask;
  *
  * @author Jikoo
  */
-@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
+@SuppressWarnings({"WeakerAccess"})
 public class Regionerator extends JavaPlugin {
 
 	private final Map<String, DeletionRunnable> deletionRunnables = new ConcurrentHashMap<>();
@@ -153,12 +154,10 @@ public class Regionerator extends JavaPlugin {
 			} catch (ClassNotFoundException e) {
 				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (ReflectiveOperationException e) {
-				getLogger().severe("Unable to enable hook for " + hookName + "! Deletion is paused.");
+				getLogger().log(Level.SEVERE, "Unable to enable hook for " + hookName + "! Deletion is paused.", e);
 				setPaused(true);
-				e.printStackTrace();
 			} catch (NoClassDefFoundError e) {
-				debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
-				debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+				debug(() -> String.format("Dependencies not found for %s hook, skipping.", hookName), e);
 			}
 		}
 
@@ -298,7 +297,7 @@ public class Regionerator extends JavaPlugin {
 	}
 
 	public void debug(DebugLevel level, Supplier<String> message) {
-		if (Regionerator.this.debug(level)) {
+		if (debug(level)) {
 			getLogger().info(message.get());
 		}
 	}
@@ -306,6 +305,14 @@ public class Regionerator extends JavaPlugin {
 	public void debug(DebugLevel level, Runnable runnable) {
 		if (debug(level)) {
 			runnable.run();
+		}
+	}
+
+	public void debug(Supplier<String> message, Throwable throwable) {
+		if (debug(DebugLevel.MEDIUM)) {
+			getLogger().log(Level.WARNING, message.get(), throwable);
+		} else if (debug(DebugLevel.LOW)) {
+			getLogger().log(Level.WARNING, message.get());
 		}
 	}
 

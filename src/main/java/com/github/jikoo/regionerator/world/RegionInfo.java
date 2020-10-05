@@ -1,6 +1,7 @@
 package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.regionerator.Coords;
+import com.github.jikoo.regionerator.Regionerator;
 import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,9 +25,8 @@ public abstract class RegionInfo {
 	 * @param world the {@link WorldInfo} containing the RegionInfo
 	 * @param lowestChunkX the lowest chunk X coordinate contained within the region
 	 * @param lowestChunkZ the lowest chunk Z coordinate contained within the region
-	 * @throws IOException if there is an error reading the RegionInfo
 	 */
-	protected RegionInfo(@NotNull WorldInfo world, int lowestChunkX, int lowestChunkZ) throws IOException {
+	protected RegionInfo(@NotNull WorldInfo world, int lowestChunkX, int lowestChunkZ) {
 		this.world = world;
 		this.lowestChunkX = lowestChunkX;
 		this.lowestChunkZ = lowestChunkZ;
@@ -151,6 +151,15 @@ public abstract class RegionInfo {
 			int localChunkZ = localIndex / 32;
 			return getLocalChunk(localChunkX, localChunkZ);
 		}).limit(1024);
+	}
+
+	/**
+	 * Gets the instance of Regionerator loading the RegionInfo.
+	 *
+	 * @return the Regionerator instance
+	 */
+	protected Regionerator getPlugin() {
+		return getWorldInfo().getPlugin();
 	}
 
 }

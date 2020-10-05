@@ -5,10 +5,10 @@ import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.bukkit.World;
 import org.bukkit.plugin.IllegalPluginAccessException;
@@ -38,7 +38,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	@Override
 	public void run() {
-		world.getRegions().filter(Objects::nonNull).forEach(this::handleRegion);
+		world.getRegions().forEach(this::handleRegion);
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
 		nextRun.set(System.currentTimeMillis() + plugin.config().getMillisBetweenCycles());
 		if (plugin.config().isRememberCycleDelay()) {
@@ -81,17 +81,15 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		try {
 			region.write();
+			chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
 			if (chunks.size() == 1024) {
-				plugin.getFlagger().unflagRegionByLowestChunk(world.getWorld().getName(), region.getLowestChunkX(), region.getLowestChunkZ());
 				regionsDeleted.incrementAndGet();
 			} else {
-				chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
 				chunksDeleted.addAndGet(chunks.size());
 			}
 		} catch (IOException e) {
-			plugin.debug(DebugLevel.LOW, () -> String.format(
-					"Caught an IOException attempting to populate chunk data: %s", e.getMessage()));
-			plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+			plugin.debug(() -> String.format(
+					"Caught an IOException attempting to populate chunk data: %s", e.getMessage()), e);
 		}
 
 		if (regionCount.get() % 20 == 0) {
@@ -108,17 +106,31 @@ public class DeletionRunnable extends BukkitRunnable {
 	private boolean isDeleteEligible(ChunkInfo chunkInfo) {
 		if (isCancelled()) {
 			// If task is cancelled, report all chunks ineligible for deletion
+			plugin.debug(DebugLevel.HIGH, () -> "Deletion task is cancelled, chunks are ineligible for delete.");
 			return false;
 		}
 
 		if (chunkInfo.isOrphaned()) {
 			// Chunk already deleted
+			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is already orphaned.",
+					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkX()));
 			return true;
 		}
 
 		long now = System.currentTimeMillis();
-		if (now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified() || now <= chunkInfo.getLastVisit()) {
+		long lastVisit = chunkInfo.getLastVisit();
+		boolean isFresh = !plugin.config().isDeleteFreshChunks() && lastVisit == plugin.config().getFlagGenerated();
+
+		if (!isFresh && now <= lastVisit) {
 			// Chunk is visited
+			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is visited until %s",
+					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), lastVisit));
+			return false;
+		}
+
+		if (!isFresh && now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified()) {
+			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is modified until %s",
+					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), chunkInfo.getLastModified()));
 			return false;
 		}
 
@@ -134,8 +146,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		} catch (RuntimeException e) {
 			if (!this.isCancelled() && plugin.isEnabled()) {
 				// Interruption is not due to plugin shutdown, log.
-				plugin.debug(DebugLevel.LOW, () -> String.format("Caught an exception getting VisitStatus: %s", e.getMessage()));
-				plugin.debug(DebugLevel.MEDIUM, (Runnable) e::printStackTrace);
+				plugin.debug(() -> String.format("Caught an exception getting VisitStatus: %s", e.getMessage()), e);
 			}
 			// If an exception occurred, do not delete chunk.
 			return false;

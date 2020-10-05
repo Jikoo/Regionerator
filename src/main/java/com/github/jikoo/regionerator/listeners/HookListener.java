@@ -4,6 +4,7 @@ import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
+import java.util.logging.Level;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
@@ -51,8 +52,7 @@ public class HookListener implements Listener {
 		} catch (ClassNotFoundException e) {
 			plugin.getLogger().severe("No hook found for " + pluginName + "! Please request compatibility!");
 		} catch (ReflectiveOperationException e) {
-			plugin.getLogger().severe("Unable to enable hook for " + pluginName + "!");
-			e.printStackTrace();
+			plugin.getLogger().log(Level.SEVERE, "Unable to enable hook for " + pluginName + "!", e);
 		}
 	}
 

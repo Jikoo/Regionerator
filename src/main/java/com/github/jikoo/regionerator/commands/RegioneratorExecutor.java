@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 import org.bukkit.Chunk;
 import org.bukkit.command.Command;
@@ -138,11 +139,11 @@ public class RegioneratorExecutor implements TabExecutor {
 			}
 
 			// Region not yet saved, cannot obtain chunk detail data
-			if (regionInfo == null || !regionInfo.exists()) {
+			if (!regionInfo.exists()) {
 				long visit = plugin.getFlagger().getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
 				if (visit == Config.getFlagDefault()) {
 					player.sendMessage("Chunk has not been visited.");
-				} else if (visit == plugin.config().getFlagGenerated()) {
+				} else if (!plugin.config().isDeleteFreshChunks() && visit == plugin.config().getFlagGenerated()) {
 					player.sendMessage("Chunk has not been visited since generation.");
 				} else if (visit == Config.getFlagEternal()) {
 					player.sendMessage("Chunk is eternally flagged.");

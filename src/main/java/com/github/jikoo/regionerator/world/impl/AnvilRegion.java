@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator.world.impl;
 
+import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import java.io.File;
@@ -14,7 +15,7 @@ public class AnvilRegion extends RegionInfo {
 	private final File regionFile;
 	private byte[] header;
 
-	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) throws IOException {
+	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) {
 		super(world, lowestChunkX, lowestChunkZ);
 		this.regionFile = regionFile;
 
@@ -57,12 +58,14 @@ public class AnvilRegion extends RegionInfo {
 				try (RandomAccessFile regionRandomAccess = new RandomAccessFile(getRegionFile(), "rwd")) {
 					regionRandomAccess.write(header, 0, 4096);
 				}
+				getPlugin().debug(DebugLevel.HIGH, () -> String.format("Rewrote header of region %s", getIdentifier()));
 				return true;
 			}
 		}
 
 		// Header contains no content, delete region
 		Files.deleteIfExists(getRegionFile().toPath());
+		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s with empty header", getIdentifier()));
 
 		// Return true even if file already did not exist; end goal was still accomplished
 		return true;

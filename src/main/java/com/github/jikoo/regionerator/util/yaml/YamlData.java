@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -132,7 +133,7 @@ public abstract class YamlData {
 			this.saveConsumer.accept(this.storage);
 			this.dirty = false;
 		} catch (RuntimeException e) {
-			e.printStackTrace();
+			plugin.getLogger().log(Level.WARNING, "Error saving yaml data", e);
 		}
 	}
 

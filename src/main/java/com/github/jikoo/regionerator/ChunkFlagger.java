@@ -220,21 +220,6 @@ public class ChunkFlagger {
 	}
 
 	/**
-	 * Unflags an entire region.
-	 *
-	 * @param world the world name
-	 * @param regionLowestChunkX the lowest chunk X coordinate in the region
-	 * @param regionLowestChunkZ the lowest chunk Z coordinate in the region
-	 */
-	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
-		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
-			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
-				unflagChunk(world, chunkX, chunkZ);
-			}
-		}
-	}
-
-	/**
 	 * Unflags a chunk.
 	 *
 	 * @param world the world name

@@ -5,7 +5,7 @@ import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
 import java.io.File;
-import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,10 +25,10 @@ public class AnvilWorld extends WorldInfo {
 
 	@NotNull
 	@Override
-	public RegionInfo getRegion(int regionX, int regionZ) throws IOException {
+	public RegionInfo getRegion(int regionX, int regionZ) {
 		File regionFolder = findRegionFolder(getWorld());
 		File regionFile = new File(regionFolder, "r." + regionX + "." + regionZ + ".mca");
-		return parseRegion(regionFile);
+		return new AnvilRegion(this, regionFile, Coords.regionToChunk(regionX), Coords.regionToChunk(regionZ));
 	}
 
 	@Nullable
@@ -40,14 +40,7 @@ public class AnvilWorld extends WorldInfo {
 		if (regionFiles == null) {
 			return null;
 		}
-		return Stream.generate(() -> {
-			try {
-				return parseRegion(regionFiles[index.getAndIncrement()]);
-			} catch (IOException e) {
-				e.printStackTrace();
-				return null;
-			}
-		}).limit(regionFiles.length);
+		return Stream.generate(() -> parseRegion(regionFiles[index.getAndIncrement()])).limit(regionFiles.length).filter(Objects::nonNull);
 	}
 
 	private File findRegionFolder(@NotNull World world) {
@@ -62,10 +55,10 @@ public class AnvilWorld extends WorldInfo {
 		}
 	}
 
-	private RegionInfo parseRegion(@NotNull File regionFile) throws IOException {
+	private @Nullable RegionInfo parseRegion(@NotNull File regionFile) {
 		Matcher matcher = ANVIL_REGION.matcher(regionFile.getName());
 		if (!matcher.matches()) {
-			throw new IllegalArgumentException("File " + regionFile.getPath() + " does not match Anvil naming convention!");
+			return null;
 		}
 		return new AnvilRegion(this, regionFile, Coords.regionToChunk(Integer.parseInt(matcher.group(1))),
 				Coords.regionToChunk(Integer.parseInt(matcher.group(2))));
