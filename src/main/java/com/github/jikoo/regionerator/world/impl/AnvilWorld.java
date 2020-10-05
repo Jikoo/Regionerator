@@ -23,10 +23,6 @@ public class AnvilWorld extends WorldInfo {
 		super(plugin, world);
 	}
 
-	protected Regionerator getPlugin() {
-		return plugin;
-	}
-
 	@NotNull
 	@Override
 	public RegionInfo getRegion(int regionX, int regionZ) throws IOException {
