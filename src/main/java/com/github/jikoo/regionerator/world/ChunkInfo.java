@@ -1,18 +1,11 @@
 package com.github.jikoo.regionerator.world;
 
-import com.github.jikoo.regionerator.ChunkFlagger;
-import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.VisitStatus;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.SupplierCache;
-import com.github.jikoo.regionerator.util.yaml.Config;
+import com.github.jikoo.regionerator.util.VisitStatusCache;
 import com.google.common.base.Preconditions;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 /**
@@ -24,82 +17,7 @@ public abstract class ChunkInfo {
 
 	private final RegionInfo regionInfo;
 	private final int localChunkX, localChunkZ;
-	private final SupplierCache<VisitStatus> visitStatusSupplier = new SupplierCache<>(() -> {
-		if (isOrphaned()) {
-			return VisitStatus.ORPHANED;
-		}
-
-		long now = System.currentTimeMillis();
-		Regionerator plugin = getPlugin();
-		if (now - plugin.config().getFlagDuration() <= getLastModified()) {
-			return VisitStatus.VISITED;
-		}
-
-		ChunkFlagger.FlagData flagData = plugin.getFlagger().getChunkFlag(getWorld(), getChunkX(), getChunkZ()).join();
-
-		long lastVisit = flagData.getLastVisit();
-
-		if (lastVisit != Long.MAX_VALUE && lastVisit > now) {
-			plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " is flagged.");
-
-			if (lastVisit == Config.FLAG_ETERNAL) {
-				return VisitStatus.PERMANENTLY_FLAGGED;
-			}
-			if (lastVisit == Config.FLAG_OH_NO) {
-				return VisitStatus.UNKNOWN;
-			}
-
-			return VisitStatus.VISITED;
-		}
-
-		Collection<Hook> syncHooks = Bukkit.isPrimaryThread() ? null : new ArrayList<>();
-		WorldInfo world = getRegionInfo().getWorldInfo();
-		int chunkX = getChunkX();
-		int chunkZ = getChunkZ();
-
-		for (Hook hook : plugin.getProtectionHooks()) {
-			if (syncHooks != null && !hook.isAsyncCapable()) {
-				syncHooks.add(hook);
-				continue;
-			}
-			if (hook.isChunkProtected(world.getWorld(), chunkX, chunkZ)) {
-				plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
-				return VisitStatus.PROTECTED;
-			}
-		}
-
-		if (syncHooks != null) {
-
-			if (!plugin.isEnabled()) {
-				// Cannot return to main thread to check hooks requiring synchronization
-				return VisitStatus.UNKNOWN;
-			}
-
-			try {
-				VisitStatus visitStatus = Bukkit.getScheduler().callSyncMethod(plugin, () -> {
-					for (Hook hook : syncHooks) {
-						if (hook.isChunkProtected(world.getWorld(), chunkX, chunkZ)) {
-							plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " contains protections by " + hook.getProtectionName());
-							return VisitStatus.PROTECTED;
-						}
-					}
-					return VisitStatus.UNKNOWN;
-				}).get();
-				if (visitStatus == VisitStatus.PROTECTED) {
-					return VisitStatus.PROTECTED;
-				}
-			} catch (InterruptedException | ExecutionException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		if (lastVisit == Long.MAX_VALUE) {
-			plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " has not been visited since it was generated.");
-			return VisitStatus.GENERATED;
-		}
-
-		return VisitStatus.UNVISITED;
-	}, calcCacheDuration(), TimeUnit.MINUTES);
+	private final SupplierCache<VisitStatus> visitStatusSupplier;
 
 	/**
 	 * Constructs a new ChunkInfo instance.
@@ -114,6 +32,7 @@ public abstract class ChunkInfo {
 		this.regionInfo = regionInfo;
 		this.localChunkX = localChunkX;
 		this.localChunkZ = localChunkZ;
+		this.visitStatusSupplier = new VisitStatusCache(getPlugin(), this);
 	}
 
 	/**
@@ -211,16 +130,6 @@ public abstract class ChunkInfo {
 	 */
 	public VisitStatus getVisitStatus() {
 		return  visitStatusSupplier.get();
-	}
-
-	/**
-	 * Calculates the duration to cache VisitStatus values to prevent excess load.
-	 *
-	 * @return the value calculated
-	 */
-	private int calcCacheDuration() {
-		Config config = getPlugin().config();
-		return (int) Math.ceil(1024D / config.getDeletionChunkCount() * config.getDeletionRecoveryMillis() / 60000);
 	}
 
 	/**
