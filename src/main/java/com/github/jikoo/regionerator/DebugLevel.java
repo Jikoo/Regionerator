@@ -10,6 +10,7 @@ public enum DebugLevel {
 	OFF,
 	LOW,
 	MEDIUM,
-	HIGH
+	HIGH,
+	EXTREME
 
 }

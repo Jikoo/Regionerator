@@ -148,16 +148,30 @@ public class DeletionRunnable extends BukkitRunnable {
 			} catch (InterruptedException ignored) {}
 		}
 
+		if (plugin.debug(DebugLevel.HIGH)) {
+			plugin.getDebugListener().monitorChunk(chunkInfo.getChunkX(), chunkInfo.getChunkZ());
+		}
+
+		VisitStatus visitStatus;
 		try {
-			return chunkInfo.getVisitStatus().ordinal() < VisitStatus.VISITED.ordinal();
+			// Calculate VisitStatus including protection hooks.
+			visitStatus = chunkInfo.getVisitStatus();
 		} catch (RuntimeException e) {
+			// Interruption is not due to plugin shutdown, log.
 			if (!this.isCancelled() && plugin.isEnabled()) {
-				// Interruption is not due to plugin shutdown, log.
 				plugin.debug(() -> String.format("Caught an exception getting VisitStatus: %s", e.getMessage()), e);
 			}
+
 			// If an exception occurred, do not delete chunk.
-			return false;
+			visitStatus = VisitStatus.UNKNOWN;
 		}
+
+		if (plugin.debug(DebugLevel.HIGH)) {
+			plugin.getDebugListener().ignoreChunk(chunkInfo.getChunkX(), chunkInfo.getChunkZ());
+		}
+
+		return visitStatus.ordinal() < VisitStatus.VISITED.ordinal();
+
 	}
 
 	public String getRunStats() {

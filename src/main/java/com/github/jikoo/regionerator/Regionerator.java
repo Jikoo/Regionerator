@@ -3,6 +3,7 @@ package com.github.jikoo.regionerator;
 import com.github.jikoo.regionerator.commands.RegioneratorExecutor;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.hooks.PluginHook;
+import com.github.jikoo.regionerator.listeners.DebugListener;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
@@ -44,6 +45,7 @@ public class Regionerator extends JavaPlugin {
 	private Config config;
 	private MiscData miscData;
 	private BukkitTask flagging;
+	private DebugListener debugListener;
 
 	@Override
 	public void onEnable() {
@@ -68,6 +70,7 @@ public class Regionerator extends JavaPlugin {
 		miscData.checkWorldValidity();
 
 		chunkFlagger = new ChunkFlagger(this);
+		debugListener = new DebugListener(this);
 
 		PluginCommand command = getCommand("regionerator");
 		RegioneratorExecutor executor = new RegioneratorExecutor(this, deletionRunnables);
@@ -176,6 +179,10 @@ public class Regionerator extends JavaPlugin {
 				}
 			}.runTaskTimer(this, 0L, 1200L);
 		}
+
+		if (debug(DebugLevel.HIGH)) {
+			getServer().getPluginManager().registerEvents(debugListener, this);
+		}
 	}
 
 	public Config config() {
@@ -275,6 +282,10 @@ public class Regionerator extends JavaPlugin {
 
 	public ChunkFlagger getFlagger() {
 		return this.chunkFlagger;
+	}
+
+	DebugListener getDebugListener() {
+		return debugListener;
 	}
 
 	public boolean isPaused() {
