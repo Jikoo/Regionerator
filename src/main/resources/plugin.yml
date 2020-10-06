@@ -6,11 +6,8 @@ author: Jikoo
 softdepend:
 - Civs
 - Factions
-- Feudal
 - GriefDefender
 - GriefPrevention
-- Kingdoms
-- Landlord
 - Lands
 - PreciousStones
 - Multiverse-Core
@@ -18,7 +15,6 @@ softdepend:
 - Residence
 - Towny
 - WorldGuard
-- UltimateClaims
 
 commands:
  regionerator:

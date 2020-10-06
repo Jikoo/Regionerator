@@ -36,18 +36,14 @@ worlds: []
 hooks:
   Civs: true
   Factions: true
-  Feudal: true
   GriefDefender: true
   GriefPrevention: true
-  Kingdoms: true
-  Landlord: true
   Lands: true
   PreciousStones: true
   RedProtect: true
   Residence: true
   Towny: true
   WorldGuard: true
-  UltimateClaims: true
   VanillaSpawnProtection: true
 
 # Debug-level enables more and more verbose logging of actions as increased.

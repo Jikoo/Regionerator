@@ -136,12 +136,19 @@ public class Regionerator extends JavaPlugin {
 			if (!getConfig().getBoolean("hooks." + hookName, true)) {
 				continue;
 			}
+			Class<?> clazz;
 			try {
-				Class<?> clazz = Class.forName("com.github.jikoo.regionerator.hooks." + hookName + "Hook");
+				clazz = Class.forName("com.github.jikoo.regionerator.hooks." + hookName + "Hook");
 				if (!Hook.class.isAssignableFrom(clazz)) {
 					// What.
 					continue;
 				}
+			} catch (ClassNotFoundException e) {
+				// No hook by the name specified.
+				continue;
+			}
+
+			try {
 				Hook hook = (Hook) clazz.getDeclaredConstructor().newInstance();
 				if (!hook.areDependenciesPresent()) {
 					debug(DebugLevel.LOW, () -> String.format("Dependencies not found for %s hook, skipping.", hookName));
@@ -154,8 +161,6 @@ public class Regionerator extends JavaPlugin {
 					getLogger().warning("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
 					setPaused(true);
 				}
-			} catch (ClassNotFoundException e) {
-				getLogger().severe("No hook found for " + hookName + "! Please request compatibility!");
 			} catch (ReflectiveOperationException e) {
 				getLogger().log(Level.SEVERE, "Unable to enable hook for " + hookName + "! Deletion is paused.", e);
 				setPaused(true);

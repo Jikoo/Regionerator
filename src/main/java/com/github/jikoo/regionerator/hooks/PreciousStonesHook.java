@@ -6,7 +6,7 @@ import net.sacredlabyrinth.Phaed.PreciousStones.field.FieldFlag;
 import org.bukkit.World;
 
 /**
- * PluginHook for <a href=https://github.com/marcelo-mason/PreciousStones/>PreciousStones</a>.
+ * PluginHook for <a href=https://github.com/elBukkit/PreciousStones/>PreciousStones</a>.
  *
  * @author Jikoo
  */

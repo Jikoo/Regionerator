@@ -1,13 +1,7 @@
 package com.github.jikoo.regionerator.hooks;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
-import com.massivecraft.factions.entity.BoardColl;
-import com.massivecraft.factions.entity.Faction;
-import com.massivecraft.massivecore.ps.PS;
-
 import org.bukkit.World;
 
 /**
@@ -18,51 +12,56 @@ import org.bukkit.World;
  */
 public class FactionsHook extends PluginHook {
 
-	private boolean isFactionsUUID;
-	private Object board;
-	private Constructor<?> factionLocationConstructor;
-	private Method boardGetFaction, factionIsWilderness;
+	private Method boardSingleton, boardGetFaction, factionIsWilderness;
+	private Constructor<?> locationConstructor = null;
+	private Method locationValueOf = null;
 
-	public FactionsHook() {
+	public FactionsHook() throws ReflectiveOperationException {
 		super("Factions");
+
+		// Set up FactionsUUID.
 		try {
 			Class<?> boardClazz = Class.forName("com.massivecraft.factions.Board");
-			Method boardSingleton = boardClazz.getMethod("getInstance");
-			this.board = boardSingleton.invoke(null);
+			boardSingleton = boardClazz.getMethod("getInstance");
 			Class<?> factionLocationClazz = Class.forName("com.massivecraft.factions.FLocation");
-			this.boardGetFaction = boardClazz.getMethod("getFactionAt", factionLocationClazz);
-			this.factionLocationConstructor = factionLocationClazz.getConstructor(String.class, int.class, int.class);
+			boardGetFaction = boardClazz.getMethod("getFactionAt", factionLocationClazz);
+			locationConstructor = factionLocationClazz.getConstructor(String.class, int.class, int.class);
 			Class<?> factionClazz = Class.forName("com.massivecraft.factions.Faction");
-			this.factionIsWilderness = factionClazz.getMethod("isWilderness");
-			this.isFactionsUUID = true;
-		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException
-				| IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			this.isFactionsUUID = false;
+			factionIsWilderness = factionClazz.getMethod("isWilderness");
+
+			// FactionsUUID set up successfully, we're done.
+			return;
+		} catch (ReflectiveOperationException e) {
+			// Eat first reflection error - throw on second.
 		}
+
+		// MassiveCraft's (discontinued) Factions
+		Class<?> massiveBoard = Class.forName("com.massivecraft.factions.entity.BoardColl");
+		boardSingleton = massiveBoard.getDeclaredMethod("get");
+		Class<?> massivePS = Class.forName("com.massivecraft.massivecore.ps.PS");
+		boardGetFaction = massiveBoard.getDeclaredMethod("getFactionAt", massivePS);
+		locationValueOf = massivePS.getDeclaredMethod("valueOf", String.class, int.class, int.class);
+		Class<?> massiveFaction = Class.forName("com.massivecraft.factions.entity.Faction");
+		factionIsWilderness = massiveFaction.getDeclaredMethod("isNone");
+
 	}
 
 	@Override
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
-		if (isFactionsUUID) {
-			return isFactionsUUIDProtected(chunkWorld, chunkX, chunkZ);
-		}
-		return isFactionsProtected(chunkWorld, chunkX, chunkZ);
-	}
-
-	private boolean isFactionsProtected(World chunkWorld, int chunkX, int chunkZ) {
-		Faction faction = BoardColl.get().getFactionAt(PS.valueOf(chunkWorld.getName(), chunkX, chunkZ));
-		return faction != null && !faction.isNone();
-	}
-
-	private boolean isFactionsUUIDProtected(World chunkWorld, int chunkX, int chunkZ) {
 		try {
-			Object factionLocation = factionLocationConstructor.newInstance(chunkWorld.getName(), chunkX, chunkZ);
-			Object faction = boardGetFaction.invoke(board, factionLocation);
+			Object faction = boardGetFaction.invoke(boardSingleton.invoke(null),
+					getFactionLocation(chunkWorld.getName(), chunkX, chunkZ));
 			return faction != null && !(boolean) factionIsWilderness.invoke(faction);
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e) {
-			return false;
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException(e);
 		}
+	}
+
+	private Object getFactionLocation(String worldName, int chunkX, int chunkZ) throws ReflectiveOperationException {
+		if (locationConstructor != null) {
+			return locationConstructor.newInstance(worldName, chunkX, chunkZ);
+		}
+		return locationValueOf.invoke(null, worldName, chunkX, chunkZ);
 	}
 
 }
