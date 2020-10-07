@@ -35,6 +35,7 @@ worlds: []
 # If your protection plugin of choice isn't here, ask!
 hooks:
   Civs: true
+  ClaimChunk: true
   Factions: true
   GriefDefender: true
   GriefPrevention: true

@@ -64,27 +64,33 @@
     </dependency>
     <!-- JitPack -->
     <dependency>
+      <groupId>com.github.cjburkey01</groupId>
+      <artifactId>ClaimChunk</artifactId>
+      <version>0.0.22</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.github.angeschossen</groupId>
       <artifactId>LandsAPI</artifactId>
       <version>4.9.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.elBukkit</groupId>
-      <artifactId>PreciousStones</artifactId>
-      <version>-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.github.bloodmc</groupId>
       <artifactId>GriefDefenderAPI</artifactId>
-      <version>-SNAPSHOT</version>
+      <version>33bd795ad4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.github.TechFortress</groupId>
       <artifactId>GriefPrevention</artifactId>
       <version>16.15.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.elBukkit</groupId>
+      <artifactId>PreciousStones</artifactId>
+      <version>acb41652ec</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
