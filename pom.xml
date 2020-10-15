@@ -68,6 +68,12 @@
       <artifactId>ClaimChunk</artifactId>
       <version>0.0.22</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>me.clip</groupId>
+          <artifactId>placeholderapi</artifactId>
+        </exclusion>
+      </exclusions> 
     </dependency>
     <dependency>
       <groupId>com.github.angeschossen</groupId>
