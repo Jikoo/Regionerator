@@ -31,3 +31,7 @@ cache:
 artifacts:
   - path: target\Regionerator.jar
     name: Regionerator
+only_commits:
+  files:
+    - src/**/*
+    - pom.xml
