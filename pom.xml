@@ -137,6 +137,13 @@
           <include>**/*.yml</include>
         </includes>
       </resource>
+      <resource>
+        <directory>src/main/precompiled_hooks</directory>
+        <includes>
+          <include>*Hook.class</include>
+        </includes>
+        <targetPath>com/github/jikoo/regionerator/hooks</targetPath>
+      </resource>
     </resources>
     <plugins>
 
