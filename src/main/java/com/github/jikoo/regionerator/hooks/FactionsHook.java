@@ -1,5 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.regionerator.util.function.ThrowingTriFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import org.bukkit.World;
@@ -13,8 +14,7 @@ import org.bukkit.World;
 public class FactionsHook extends PluginHook {
 
 	private Method boardSingleton, boardGetFaction, factionIsWilderness;
-	private Constructor<?> locationConstructor = null;
-	private Method locationValueOf = null;
+	private ThrowingTriFunction<Object, String, Integer, Integer> getLocation;
 
 	public FactionsHook() throws ReflectiveOperationException {
 		super("Factions");
@@ -25,7 +25,8 @@ public class FactionsHook extends PluginHook {
 			boardSingleton = boardClazz.getMethod("getInstance");
 			Class<?> factionLocationClazz = Class.forName("com.massivecraft.factions.FLocation");
 			boardGetFaction = boardClazz.getMethod("getFactionAt", factionLocationClazz);
-			locationConstructor = factionLocationClazz.getConstructor(String.class, int.class, int.class);
+			Constructor<?> locationConstructor = factionLocationClazz.getConstructor(String.class, int.class, int.class);
+			getLocation = (worldName, chunkX, chunkZ) -> locationConstructor.newInstance(worldName, chunkX, chunkZ);
 			Class<?> factionClazz = Class.forName("com.massivecraft.factions.Faction");
 			factionIsWilderness = factionClazz.getMethod("isWilderness");
 
@@ -40,7 +41,8 @@ public class FactionsHook extends PluginHook {
 		boardSingleton = massiveBoard.getDeclaredMethod("get");
 		Class<?> massivePS = Class.forName("com.massivecraft.massivecore.ps.PS");
 		boardGetFaction = massiveBoard.getDeclaredMethod("getFactionAt", massivePS);
-		locationValueOf = massivePS.getDeclaredMethod("valueOf", String.class, int.class, int.class);
+		Method locationValueOf = massivePS.getDeclaredMethod("valueOf", String.class, int.class, int.class);
+		getLocation = (worldName, chunkX, chunkZ) -> locationValueOf.invoke(null, worldName, chunkX, chunkZ);
 		Class<?> massiveFaction = Class.forName("com.massivecraft.factions.entity.Faction");
 		factionIsWilderness = massiveFaction.getDeclaredMethod("isNone");
 
@@ -50,18 +52,11 @@ public class FactionsHook extends PluginHook {
 	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
 		try {
 			Object faction = boardGetFaction.invoke(boardSingleton.invoke(null),
-					getFactionLocation(chunkWorld.getName(), chunkX, chunkZ));
+					getLocation.apply(chunkWorld.getName(), chunkX, chunkZ));
 			return faction != null && !(boolean) factionIsWilderness.invoke(faction);
-		} catch (ReflectiveOperationException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private Object getFactionLocation(String worldName, int chunkX, int chunkZ) throws ReflectiveOperationException {
-		if (locationConstructor != null) {
-			return locationConstructor.newInstance(worldName, chunkX, chunkZ);
-		}
-		return locationValueOf.invoke(null, worldName, chunkX, chunkZ);
 	}
 
 }
