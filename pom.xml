@@ -96,7 +96,7 @@
     <dependency>
       <groupId>com.github.elBukkit</groupId>
       <artifactId>PreciousStones</artifactId>
-      <version>acb41652ec</version>
+      <version>1.15.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
