@@ -1,0 +1,28 @@
+name: Auto-merge Dependabot PRs
+
+on:
+  pull_request_target
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for build success
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: continuous-integration/appveyor/pr
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: autoapprove
+        if: steps.wait-for-build.outputs.conclusion == 'success' && github.actor == 'dependabot[bot]'
+        uses: hmarr/auto-approve-action@v2.0.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: automerge
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: "pascalgn/automerge-action@v0.12.0"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: "dependencies,automerge"
+          MERGE_METHOD: "squash"
