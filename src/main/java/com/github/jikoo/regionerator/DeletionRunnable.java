@@ -84,6 +84,15 @@ public class DeletionRunnable extends BukkitRunnable {
 
 			// Orphan chunks - N.B. this is called here and not outside of the block because AnvilRegion deletes regions on AnvilRegion#write
 			chunks.forEach(ChunkInfo::setOrphaned);
+		} else if (!plugin.config().isDeleteFreshChunks()
+				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus()== VisitStatus.UNVISITED)) {
+			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
+			return;
+		}
+
+		if (chunks.size() == 0) {
+			// If no chunks are modified, do nothing.
+			return;
 		}
 
 		try {
