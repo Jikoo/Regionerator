@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Class for handling logic related to flag management commands.
@@ -41,7 +42,7 @@ public class FlagHandler {
 
 		String worldName = chunks.get(0).getName();
 		boolean invalid = true;
-		for (String world : plugin.config().getWorlds()) {
+		for (String world : plugin.config().enabledWorlds()) {
 			if (world.equalsIgnoreCase(worldName)) {
 				invalid = false;
 				// Re-assign so case will match when editing values
@@ -65,7 +66,7 @@ public class FlagHandler {
 		sender.sendMessage("Edited flags successfully!");
 	}
 
-	private List<ChunkPosition> getSelectedArea(CommandSender sender, String[] args) {
+	private @Nullable List<ChunkPosition> getSelectedArea(CommandSender sender, String[] args) {
 		if (args.length < 3 && !(sender instanceof Player)) {
 			sender.sendMessage("Console usage: /regionerator (un)flag <world> <chunk X> <chunk Z>");
 			sender.sendMessage("Chunk coordinates = regular coordinates / 16");
@@ -169,17 +170,12 @@ public class FlagHandler {
 		return chunks;
 	}
 
-	private WorldEditPlugin getWE() {
+	private @Nullable WorldEditPlugin getWE() {
 		if (!Bukkit.getPluginManager().isPluginEnabled("WorldEdit")) {
 			return null;
 		}
 
-		try {
-			return (WorldEditPlugin) Bukkit.getPluginManager().getPlugin("WorldEdit");
-		} catch (ClassCastException e) {
-			// Not present, another plugin claims to be WE
-			return null;
-		}
+		return WorldEditPlugin.getPlugin(WorldEditPlugin.class);
 	}
 
 	private static class ChunkPosition {

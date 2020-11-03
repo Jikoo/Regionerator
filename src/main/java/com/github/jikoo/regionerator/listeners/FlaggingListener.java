@@ -1,6 +1,7 @@
 package com.github.jikoo.regionerator.listeners;
 
 import com.github.jikoo.regionerator.Regionerator;
+import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkPopulateEvent;
@@ -26,11 +27,13 @@ public class FlaggingListener implements Listener {
 	 */
 	@EventHandler
 	public void onChunkPopulate(ChunkPopulateEvent event) {
-		if (!plugin.config().getWorlds().contains(event.getWorld().getName())) {
+		World world = event.getWorld();
+
+		if (!plugin.config().isEnabled(world.getName())) {
 			return;
 		}
-		plugin.getFlagger().flagChunksInRadius(event.getWorld().getName(), event.getChunk().getX(),
-				event.getChunk().getZ(), 0, plugin.config().getFlagGenerated());
+
+		plugin.getFlagger().flagChunk(world.getName(), event.getChunk().getX(), event.getChunk().getZ(), plugin.config().getFlagGenerated(world));
 	}
 
 }

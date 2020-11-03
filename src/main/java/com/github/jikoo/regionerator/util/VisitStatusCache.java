@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 
 public class VisitStatusCache extends SupplierCache<VisitStatus> {
 
@@ -24,10 +25,11 @@ public class VisitStatusCache extends SupplierCache<VisitStatus> {
 			}
 
 			long now = System.currentTimeMillis();
+			final World bukkitWorld = chunkInfo.getWorld();
 			ChunkFlagger.FlagData flagData = plugin.getFlagger()
-					.getChunkFlag(chunkInfo.getWorld(), chunkInfo.getChunkX(), chunkInfo.getChunkZ()).join();
+					.getChunkFlag(bukkitWorld, chunkInfo.getChunkX(), chunkInfo.getChunkZ()).join();
 			long lastVisit = flagData.getLastVisit();
-			boolean isFresh = !plugin.config().isDeleteFreshChunks() && lastVisit == plugin.config().getFlagGenerated();
+			boolean isFresh = !plugin.config().isDeleteFreshChunks(bukkitWorld) && lastVisit == plugin.config().getFlagGenerated(bukkitWorld);
 
 			// If chunk is visited, don't waste time processing hooks.
 			if (!isFresh && now <= lastVisit) {
@@ -44,7 +46,7 @@ public class VisitStatusCache extends SupplierCache<VisitStatus> {
 			}
 
 			// If chunk is recently modified, prioritize that over protections for the sake of speed/calculation load.
-			if (!isFresh && now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified()) {
+			if (!isFresh && now - plugin.config().getFlagDuration(bukkitWorld) <= chunkInfo.getLastModified()) {
 				plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk %s is modified until %s", flagData.getChunkId(), lastVisit));
 				return VisitStatus.VISITED;
 			}

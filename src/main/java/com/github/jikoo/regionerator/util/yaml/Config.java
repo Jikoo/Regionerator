@@ -2,14 +2,21 @@ package com.github.jikoo.regionerator.util.yaml;
 
 import com.github.jikoo.regionerator.DebugLevel;
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
+import com.google.common.collect.ImmutableMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
 public class Config extends ConfigYamlData {
@@ -23,8 +30,8 @@ public class Config extends ConfigYamlData {
 
 	private final Object lock = new Object();
 	private DebugLevel debugLevel;
-	private List<String> worlds;
-	private final AtomicLong flagDuration = new AtomicLong(), ticksPerFlag = new AtomicLong(),
+	private Map<String, Long> worlds;
+	private final AtomicLong ticksPerFlag = new AtomicLong(),
 			millisBetweenCycles = new AtomicLong(), deletionRecovery = new AtomicLong();
 	private final AtomicInteger flaggingRadius = new AtomicInteger(), deletionChunkCount = new AtomicInteger();
 	private final AtomicBoolean rememberCycleDelay = new AtomicBoolean(), deleteFreshChunks = new AtomicBoolean();
@@ -38,68 +45,57 @@ public class Config extends ConfigYamlData {
 	public void reload() {
 		super.reload();
 
-		List<String> worldConfigList = getStringList("worlds");
-		List<String> worldCorrectCaseList = new ArrayList<>();
-		for (World world : Bukkit.getWorlds()) {
-			if (worldConfigList.contains(world.getName())) {
-				worldCorrectCaseList.add(world.getName());
-				continue;
-			}
-			for (String name : worldConfigList) {
-				if (world.getName().equalsIgnoreCase(name)) {
-					worldCorrectCaseList.add(world.getName());
-					break;
+		ConfigUpdater.doUpdates(this);
+
+		ConfigurationSection worldsSection = raw().getConfigurationSection("worlds");
+		Map<String, Long> worldFlagDurations = new HashMap<>();
+		if (worldsSection != null) {
+
+			List<String> activeWorlds = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
+
+			for (String key : worldsSection.getKeys(false)) {
+				String validCase;
+				// Attempt to correct case for quick getting later.
+				if (activeWorlds.contains(key)) {
+					validCase = key;
+				} else {
+					// World may still be active, attempt to correct case.
+					Optional<String> match = activeWorlds.stream().filter(key::equalsIgnoreCase).findFirst();
+					validCase = match.orElse(key);
 				}
+
+				ConfigurationSection worldSection = worldsSection.getConfigurationSection(key);
+
+				if (worldSection == null) {
+					continue;
+				}
+
+				int days = worldSection.getInt("days-till-flag-expires", worldsSection.getInt("default.days-till-flag-expires", -1));
+				worldFlagDurations.put(validCase, days < 0 ? -1 : TimeUnit.MILLISECONDS.convert(days, TimeUnit.DAYS));
 			}
 		}
 
 		synchronized (lock) {
-			// Immutable list, this should not be changed during run by myself or another plugin
-			this.worlds = ImmutableList.copyOf(worldCorrectCaseList);
+			// Immutable, this should not be changed during run.
+			this.worlds = ImmutableMap.copyOf(worldFlagDurations);
 
-			try {
-				String debugConfigVal = getString("debug-level");
-				if (debugConfigVal == null) {
-					debugConfigVal = "OFF";
-				}
-				debugLevel = DebugLevel.valueOf(debugConfigVal.toUpperCase());
-			} catch (IllegalArgumentException e) {
-				debugLevel = DebugLevel.OFF;
-			}
+			debugLevel = DebugLevel.of(getString("debug-level"));
 		}
 
-		long newMilliValue = TimeUnit.DAYS.toMillis(getInt("days-till-flag-expires"));
-		flagDuration.set(Math.max(0, newMilliValue));
+		deleteFreshChunks.set(!getBoolean("flagging.flag-generated-chunks-until-visited"));
+		flaggingRadius.set(Math.max(0, getInt("flagging.chunk-flag-radius")));
 
-		// If flagging will not be editing values, flagging untouched chunks is not an option
-		deleteFreshChunks.set(newMilliValue <= 0 || getBoolean("delete-new-unvisited-chunks"));
-
-		flaggingRadius.set(Math.max(0, getInt("chunk-flag-radius")));
-
-		int secondsPerFlag = getInt("seconds-per-flag");
+		int secondsPerFlag = getInt("flagging.seconds-per-flag");
 		if (secondsPerFlag < 1) {
 			ticksPerFlag.set(10);
 		} else {
 			ticksPerFlag.set(20 * secondsPerFlag);
 		}
 
-		long ticksPerDeletion = getLong("ticks-per-deletion");
-		if (ticksPerDeletion < 1) {
-			deletionRecovery.set(0);
-		} else {
-			deletionRecovery.set(ticksPerDeletion * 50);
-		}
-
-		int chunksPerDelete = getInt("chunks-per-deletion");
-		if (chunksPerDelete < 1) {
-			deletionChunkCount.set(32);
-		} else {
-			deletionChunkCount.set(chunksPerDelete);
-		}
-
-		millisBetweenCycles.set(TimeUnit.HOURS.toMillis(Math.max(0, getInt("hours-between-cycles"))));
-
-		rememberCycleDelay.set(getBoolean("remember-next-cycle-time"));
+		deletionRecovery.set(Math.max(0, getLong("deletion.recovery-time")));
+		deletionChunkCount.set(Math.max(1, getInt("deletion.expensive-checks-between-recovery")));
+		millisBetweenCycles.set(TimeUnit.HOURS.toMillis(Math.max(0, getInt("deletion.hours-between-cycles"))));
+		rememberCycleDelay.set(getBoolean("deletion.remember-next-cycle-time"));
 
 	}
 
@@ -117,7 +113,12 @@ public class Config extends ConfigYamlData {
 		return deletionRecovery.get();
 	}
 
+	@Deprecated
 	public long getMillisBetweenCycles() {
+		return millisBetweenCycles.get();
+	}
+
+	public long getCycleDelayMillis() {
 		return millisBetweenCycles.get();
 	}
 
@@ -125,20 +126,52 @@ public class Config extends ConfigYamlData {
 		return rememberCycleDelay.get();
 	}
 
+	@Deprecated
 	public boolean isDeleteFreshChunks() {
-		return deleteFreshChunks.get();
+		return deleteFreshChunks.get() && getFlagDuration() > 0;
 	}
 
+	public boolean isDeleteFreshChunks(World world) {
+		return deleteFreshChunks.get() && getFlagDuration(world) > 0;
+	}
+
+	@Deprecated
 	public long getFlagDuration() {
-		return flagDuration.get();
+		synchronized (lock) {
+			return worlds.getOrDefault("default", -1L);
+		}
 	}
 
+	public long getFlagDuration(World world) {
+		return getFlagDuration(world.getName());
+	}
+
+	public long getFlagDuration(String worldName) {
+		synchronized (lock) {
+			return worlds.getOrDefault(worldName, worlds.getOrDefault("default", -1L));
+		}
+	}
+
+	@Deprecated
 	public long getFlagGenerated() {
 		return isDeleteFreshChunks() ? getFlagVisit() : Long.MAX_VALUE;
 	}
 
+	public long getFlagGenerated(World world) {
+		return isDeleteFreshChunks(world) ? getFlagVisit(world) : Long.MAX_VALUE;
+	}
+
+	@Deprecated
 	public long getFlagVisit() {
 		return System.currentTimeMillis() + getFlagDuration();
+	}
+
+	public long getFlagVisit(World world) {
+		return getFlagVisit(world.getName());
+	}
+
+	public long getFlagVisit(String worldName) {
+		return System.currentTimeMillis() + getFlagDuration(worldName);
 	}
 
 	@Deprecated
@@ -159,10 +192,17 @@ public class Config extends ConfigYamlData {
 		return flaggingRadius.get();
 	}
 
-	public List<String> getWorlds() {
-		synchronized (lock) {
-			return worlds;
-		}
+	public boolean isEnabled(String worldName) {
+		return getFlagDuration(worldName) >= 0;
+	}
+
+	public Collection<String> enabledWorlds() {
+		return Collections.unmodifiableSet(plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toSet()));
+	}
+
+	@Deprecated
+	public Collection<String> getWorlds() {
+		return ImmutableList.copyOf(enabledWorlds());
 	}
 
 }

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"unused", "SameParameterValue"})
 public abstract class YamlData {
 
-	private final Plugin plugin;
+	final Plugin plugin;
 	private final Supplier<FileConfiguration> loadSupplier;
 	private final Consumer<FileConfiguration> saveConsumer;
 	private FileConfiguration storage;

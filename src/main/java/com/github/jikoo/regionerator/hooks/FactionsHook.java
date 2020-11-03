@@ -26,7 +26,7 @@ public class FactionsHook extends PluginHook {
 			Class<?> factionLocationClazz = Class.forName("com.massivecraft.factions.FLocation");
 			boardGetFaction = boardClazz.getMethod("getFactionAt", factionLocationClazz);
 			Constructor<?> locationConstructor = factionLocationClazz.getConstructor(String.class, int.class, int.class);
-			getLocation = (worldName, chunkX, chunkZ) -> locationConstructor.newInstance(worldName, chunkX, chunkZ);
+			getLocation = locationConstructor::newInstance;
 			Class<?> factionClazz = Class.forName("com.massivecraft.factions.Faction");
 			factionIsWilderness = factionClazz.getMethod("isWilderness");
 

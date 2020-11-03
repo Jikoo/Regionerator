@@ -44,7 +44,7 @@ public class MiscData extends FileYamlData {
 	public long getNextCycle(@NotNull String worldName) {
 		long nextCycle = getLong("next-cycle." + worldName);
 		if (nextCycle == 0) {
-			nextCycle = plugin.config().getFlagVisit();
+			nextCycle = plugin.config().getFlagVisit(worldName);
 			setNextCycle(worldName, nextCycle);
 		}
 		return nextCycle;

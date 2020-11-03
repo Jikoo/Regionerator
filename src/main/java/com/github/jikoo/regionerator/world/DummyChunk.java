@@ -22,46 +22,40 @@ public class DummyChunk implements Chunk {
 	private final World world;
 	private final int chunkX, chunkZ;
 
-	public DummyChunk(World world, int chunkX, int chunkZ) {
+	public DummyChunk(@NotNull World world, int chunkX, int chunkZ) {
 		this.world = world;
 		this.chunkX = chunkX;
 		this.chunkZ = chunkZ;
 	}
 
-	@NotNull
 	@Override
-	public Block getBlock(int x, int y, int z) {
+	public @NotNull Block getBlock(int x, int y, int z) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public ChunkSnapshot getChunkSnapshot() {
+	public @NotNull ChunkSnapshot getChunkSnapshot() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome,
+	public @NotNull ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome,
 			boolean includeBiomeTempRain) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public Entity[] getEntities() {
+	public @NotNull Entity[] getEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public BlockState[] getTileEntities() {
+	public @NotNull BlockState[] getTileEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public World getWorld() {
+	public @NotNull World getWorld() {
 		return this.world;
 	}
 

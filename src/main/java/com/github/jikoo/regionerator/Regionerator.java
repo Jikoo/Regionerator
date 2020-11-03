@@ -6,6 +6,7 @@ import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.DebugListener;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
+import com.github.jikoo.regionerator.listeners.WorldListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import java.io.File;
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
@@ -55,10 +57,11 @@ public class Regionerator extends JavaPlugin {
 		miscData = new MiscData(this, new File(getDataFolder(), "data.yml"));
 
 		boolean migrated = false;
-		for (String worldName : config.getWorlds()) {
-			if (getConfig().isLong("delete-this-to-reset-plugin." + worldName)) {
+		Set<String> worlds = getServer().getWorlds().stream().map(World::getName).filter(config::isEnabled).collect(Collectors.toSet());
+		for (String world : worlds) {
+			if (getConfig().isLong("delete-this-to-reset-plugin." + world)) {
 				// Migrate existing settings
-				miscData.setNextCycle(worldName, getConfig().getLong("delete-this-to-reset-plugin." + worldName));
+				miscData.setNextCycle(world, getConfig().getLong("delete-this-to-reset-plugin." + world));
 				migrated = true;
 			}
 		}
@@ -78,8 +81,10 @@ public class Regionerator extends JavaPlugin {
 			command.setExecutor(executor);
 		}
 
+		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
+
 		// Don't register listeners if there are no worlds configured
-		if (config.getWorlds().isEmpty()) {
+		if (config.enabledWorlds().isEmpty()) {
 			getLogger().severe("No worlds are enabled. There's nothing to do!");
 			return;
 		}
@@ -169,7 +174,7 @@ public class Regionerator extends JavaPlugin {
 			}
 		}
 
-		if (config.getFlagDuration() > 0) {
+		if (getServer().getWorlds().stream().anyMatch(world -> config.getFlagDuration(world) > 0)) {
 			// Flag duration is set, start flagging
 
 			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
@@ -216,7 +221,7 @@ public class Regionerator extends JavaPlugin {
 			return;
 		}
 
-		for (String worldName : config.getWorlds()) {
+		for (String worldName : config.enabledWorlds()) {
 			if (miscData.getNextCycle(worldName) > System.currentTimeMillis()) {
 				// Not time yet.
 				continue;

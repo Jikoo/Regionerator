@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import org.bukkit.Chunk;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -43,15 +44,15 @@ public class RegioneratorExecutor implements TabExecutor {
 		plugin.attemptDeletionActivation();
 
 		if (args.length < 1) {
-			if (plugin.config().getWorlds().isEmpty()) {
+			if (plugin.config().enabledWorlds().isEmpty()) {
 				sender.sendMessage("No worlds are configured. Edit your config and use /regionerator reload.");
 				return true;
 			}
 
 			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM");
-			long millisBetweenCycles = plugin.config().getMillisBetweenCycles();
+			long millisBetweenCycles = plugin.config().getCycleDelayMillis();
 
-			for (String worldName : plugin.config().getWorlds()) {
+			for (String worldName : plugin.config().enabledWorlds()) {
 				long activeAt = plugin.getMiscData().getNextCycle(worldName);
 				if (activeAt > System.currentTimeMillis()) {
 					// Not time yet.
@@ -119,14 +120,15 @@ public class RegioneratorExecutor implements TabExecutor {
 		if (sender instanceof Player && args[0].equals("check")) {
 			Player player = (Player) sender;
 
-			if (!plugin.config().getWorlds().contains(player.getWorld().getName())) {
+			if (!plugin.config().isEnabled(player.getWorld().getName())) {
 				player.sendMessage("World is not configured for deletion.");
 			}
 
 			Chunk chunk = player.getLocation().getChunk();
+			World world = chunk.getWorld();
 
 			for (Hook hook : plugin.getProtectionHooks()) {
-				player.sendMessage("Chunk is " + (hook.isChunkProtected(chunk.getWorld(), chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
+				player.sendMessage("Chunk is " + (hook.isChunkProtected(world, chunk.getX(), chunk.getZ()) ? "" : "not ") + "protected by " + hook.getProtectionName());
 			}
 
 			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM yyyy");
@@ -140,17 +142,17 @@ public class RegioneratorExecutor implements TabExecutor {
 
 			// Region not yet saved, cannot obtain chunk detail data
 			if (!regionInfo.exists()) {
-				long visit = plugin.getFlagger().getChunkFlag(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
+				long visit = plugin.getFlagger().getChunkFlag(world, chunk.getX(), chunk.getZ()).join().getLastVisit();
 				if (visit == Config.FLAG_DEFAULT) {
 					player.sendMessage("Chunk has not been visited.");
-				} else if (!plugin.config().isDeleteFreshChunks() && visit == plugin.config().getFlagGenerated()) {
+				} else if (!plugin.config().isDeleteFreshChunks(world) && visit == plugin.config().getFlagGenerated(world)) {
 					player.sendMessage("Chunk has not been visited since generation.");
 				} else if (visit == Config.FLAG_ETERNAL) {
 					player.sendMessage("Chunk is eternally flagged.");
 				} else {
 					player.sendMessage("Chunk visited until: " + format.format(new Date(visit)));
 				}
-				visit = plugin.getFlagger().getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
+				visit = plugin.getFlagger().getChunkFlagOnDelete(world, chunk.getX(), chunk.getZ()).join().getLastVisit();
 				if (visit != Config.FLAG_DEFAULT) {
 					player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
 				}
@@ -162,7 +164,7 @@ public class RegioneratorExecutor implements TabExecutor {
 			player.sendMessage("Chunk visited until: " + format.format(new Date(chunkInfo.getLastVisit())));
 			player.sendMessage("Chunk last modified: " + format.format(new Date(chunkInfo.getLastModified())));
 			player.sendMessage("Chunk VisitStatus: " + chunkInfo.getVisitStatus().name());
-			long visit = plugin.getFlagger().getChunkFlagOnDelete(chunk.getWorld(), chunk.getX(), chunk.getZ()).join().getLastVisit();
+			long visit = plugin.getFlagger().getChunkFlagOnDelete(world, chunk.getX(), chunk.getZ()).join().getLastVisit();
 			if (visit != Config.FLAG_DEFAULT) {
 				player.sendMessage("Visited (last delete): " + format.format(new Date(visit)));
 			}
@@ -195,7 +197,7 @@ public class RegioneratorExecutor implements TabExecutor {
 		if ("flag".equals(args[0]) || "unflag".equals(args[0])) {
 
 			if (args.length == 2) {
-				return TabCompleter.completeString(args[1], Stream.concat(Stream.of("selection"), plugin.config().getWorlds().stream()).toArray(String[]::new));
+				return TabCompleter.completeString(args[1], Stream.concat(Stream.of("selection"), plugin.config().enabledWorlds().stream()).toArray(String[]::new));
 			}
 
 			if (!"selection".equalsIgnoreCase(args[1]) && args.length <= 4) {

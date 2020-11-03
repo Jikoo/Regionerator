@@ -1,35 +1,44 @@
-# Square around each player's current chunk to flag.
-chunk-flag-radius: 4
-
 # Every x seconds, chunks around each player online are flagged.
-seconds-per-flag: 10
+# Flags prevent deletion for a configurable amount of time, allowing
+# players to prevent areas from being deleted simply by being active.
+#
+# Default values cause a 9x9 chunk (144x144 blocks) around players to be
+# flagged every 10 seconds. This means that unless players exceed a travel
+# speed of 14.4 m/s chunks will be continuously flagged as they pass.
+# For more information on travel speeds, please check the Minecraft wiki.
+# https://minecraft.gamepedia.com/Transportation#Methods
+flagging:
+  seconds-per-flag: 10
+  # Square around each player's current chunk to flag. 0 = current chunk only.
+  chunk-flag-radius: 4
+  # Chunks are automatically flagged as visited when generated.
+  # If true, the flag is set to a special value that will be overwritten once
+  # a player actually visits the area. This allows you to reduce load by
+  # pre-generating area for exploration and not deleting unvisited areas.
+  # Note that flagging must be enabled in worlds (days-till-flag-expires > 0).
+  flag-generated-chunks-until-visited: true
 
-# Flags older than x days can be ignored and the region deleted.
-# To disable flagging, set this to 0.
-# days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
-days-till-flag-expires: 7
-
-# Chunks generated after the plugin is installed are automatically flagged.
-# If false, these chunks will be permanently flagged until visited.
-# Setting this value to false will allow you to pre-generate your maps for reduced load from exploration.
-# It will also reduce the amount of time wasted deleting untouched areas.
-delete-new-unvisited-chunks: false
-
-# Time in between deleting regions in ticks (20 ticks = 1 second)
-ticks-per-deletion: 5
-
-# Chunks checked for deletion per interval. Default (128) handles an entire region every 9 intervals.
-# If this value is 1024 or lower (1 or fewer regions per cycle) an entire run cycle is dedicated to deletion to prevent lag.
-chunks-per-deletion: 128
-
-# Hours between deletion cycles
-hours-between-cycles: 12
-
-# Whether or not to remember time for next cycle on plugin load
-remember-next-cycle-time: false
+deletion:
+  # Recovery time in milliseconds between expensive operations.
+  # Recovery time is always waited between region checks.
+  deletion-recovery-time: 250
+  # Number of chunks with expensive checks between recovery delays.
+  # Values >= 1024 cause no additional recovery time.
+  expensive-checks-between-recovery: 128
+  # Hours between deletion cycles
+  hours-between-cycles: 12
+  # Whether or not to remember time for next cycle on plugin load
+  remember-next-cycle-time: false
 
 # Worlds the plugin is able to delete regions in
-worlds: []
+worlds:
+  # "default" applies to all worlds not specified.
+  default:
+    # Flags older than x days can be ignored and the region deleted.
+    # Set to -1 to disable Regionerator in a world.
+    # To disable flagging, set this to 0.
+    # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
+    days-till-flag-expires: -1
 
 # Hooks to attempt to check for protections from.
 # If your protection plugin of choice isn't here, ask!
@@ -53,3 +62,6 @@ hooks:
 # MEDIUM - More debug messages. Spammy, not recommended.
 # HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
 debug-level: LOW
+
+# Please don't mess with this, you may lose settings. Controls automatic updates to config layout.
+config-version: 1

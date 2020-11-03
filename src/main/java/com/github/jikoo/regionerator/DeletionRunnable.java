@@ -40,7 +40,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	public void run() {
 		world.getRegions().forEach(this::handleRegion);
 		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
-		nextRun.set(System.currentTimeMillis() + plugin.config().getMillisBetweenCycles());
+		nextRun.set(System.currentTimeMillis() + plugin.config().getCycleDelayMillis());
 		if (plugin.config().isRememberCycleDelay()) {
 			try {
 				plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
@@ -79,12 +79,12 @@ public class DeletionRunnable extends BukkitRunnable {
 					return true;
 				}
 				VisitStatus visitStatus = chunk.getVisitStatus();
-				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks() && visitStatus == VisitStatus.GENERATED;
+				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
 			});
 
 			// Orphan chunks - N.B. this is called here and not outside of the block because AnvilRegion deletes regions on AnvilRegion#write
 			chunks.forEach(ChunkInfo::setOrphaned);
-		} else if (!plugin.config().isDeleteFreshChunks()
+		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
 				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus()== VisitStatus.UNVISITED)) {
 			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
 			return;
@@ -140,7 +140,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		long now = System.currentTimeMillis();
 		long lastVisit = chunkInfo.getLastVisit();
-		boolean isFresh = !plugin.config().isDeleteFreshChunks() && lastVisit == plugin.config().getFlagGenerated();
+		boolean isFresh = !plugin.config().isDeleteFreshChunks(world.getWorld()) && lastVisit == plugin.config().getFlagGenerated(world.getWorld());
 
 		if (!isFresh && now <= lastVisit) {
 			// Chunk is visited
@@ -149,7 +149,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			return false;
 		}
 
-		if (!isFresh && now - plugin.config().getFlagDuration() <= chunkInfo.getLastModified()) {
+		if (!isFresh && now - plugin.config().getFlagDuration(chunkInfo.getWorld()) <= chunkInfo.getLastModified()) {
 			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is modified until %s",
 					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), chunkInfo.getLastModified()));
 			return false;

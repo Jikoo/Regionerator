@@ -28,7 +28,7 @@ public class FlaggingRunnable extends BukkitRunnable {
 			// Skip spectators - if you can't touch it, you can't really visit it.
 			// Compatibility: check gamemode name instead of direct comparison
 			if (player.getGameMode().name().equals("SPECTATOR")
-					|| !plugin.config().getWorlds().contains(player.getWorld().getName())) {
+					|| !plugin.config().isEnabled(player.getWorld().getName())) {
 				continue;
 			}
 
@@ -36,15 +36,11 @@ public class FlaggingRunnable extends BukkitRunnable {
 		}
 
 		if (!flagged.isEmpty()) {
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					for (ChunkId chunk : flagged) {
-						plugin.getFlagger().flagChunksInRadius(chunk.worldName, chunk.chunkX, chunk.chunkZ);
-					}
-
+			plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+				for (ChunkId chunk : flagged) {
+					plugin.getFlagger().flagChunksInRadius(chunk.worldName, chunk.chunkX, chunk.chunkZ);
 				}
-			}.runTaskAsynchronously(plugin);
+			});
 		}
 
 		plugin.attemptDeletionActivation();

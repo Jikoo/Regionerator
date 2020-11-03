@@ -41,14 +41,7 @@ public class ChunkFlagger {
 
 		this.flagCache = new BatchExpirationLoadingCache<>(180000, key -> {
 			try {
-				FlagData flagData = new FlagData(key, adapter.get(key));
-
-				// Ensure changing config value allows deleting fresh chunks.
-				if (flagData.getLastVisit() == Long.MAX_VALUE && plugin.config().isDeleteFreshChunks()) {
-					flagData.setLastVisit(Config.FLAG_DEFAULT);
-				}
-
-				return flagData;
+				return new FlagData(key, adapter.get(key));
 			} catch (Exception e) {
 				plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
 				return new FlagData(key, Config.FLAG_OH_NO);
@@ -192,7 +185,7 @@ public class ChunkFlagger {
 	 * @param chunkZ the chunk Z coordinate
 	 */
 	public void flagChunksInRadius(@NotNull String world, int chunkX, int chunkZ) {
-		flagChunksInRadius(world, chunkX, chunkZ, this.plugin.config().getFlaggingRadius(), this.plugin.config().getFlagVisit());
+		flagChunksInRadius(world, chunkX, chunkZ, this.plugin.config().getFlaggingRadius(), this.plugin.config().getFlagVisit(world));
 	}
 
 	public void flagChunksInRadius(@NotNull String world, int chunkX, int chunkZ, int radius, long flagTil) {
@@ -290,7 +283,13 @@ public class ChunkFlagger {
 	 * @return a CompletableFuture supplying a FlagData
 	 */
 	public CompletableFuture<FlagData> getChunkFlag(@NotNull World world, int chunkX, int chunkZ) {
-		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ));
+		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ)).thenApply(flagData -> {
+			// Ensure changing config value allows deleting fresh chunks.
+			if (flagData.getLastVisit() == Long.MAX_VALUE && plugin.config().isDeleteFreshChunks(world)) {
+				flagData.setLastVisit(Config.FLAG_DEFAULT);
+			}
+			return flagData;
+		});
 	}
 
 	/**
