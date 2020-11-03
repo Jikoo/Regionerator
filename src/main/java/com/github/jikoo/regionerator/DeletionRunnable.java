@@ -27,7 +27,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final Phaser phaser;
 	private final WorldInfo world;
 	private final AtomicLong nextRun = new AtomicLong(Long.MAX_VALUE);
-	private final AtomicInteger regionCount = new AtomicInteger(), chunkCount = new AtomicInteger(),
+	private final AtomicInteger regionCount = new AtomicInteger(), heavyChecks = new AtomicInteger(),
 			regionsDeleted = new AtomicInteger(), chunksDeleted = new AtomicInteger();
 
 	DeletionRunnable(Regionerator plugin, World world) {
@@ -92,11 +92,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		if (chunks.size() == 0) {
 			// If no chunks are modified, do nothing.
-			try {
-				Thread.sleep(plugin.config().getDeletionRecoveryMillis());
-			} catch (InterruptedException ignored) {}
-			// Reset chunk count after sleep
-			chunkCount.set(0);
+			recover();
 			return;
 		}
 
@@ -117,11 +113,16 @@ public class DeletionRunnable extends BukkitRunnable {
 			plugin.debug(DebugLevel.LOW, this::getRunStats);
 		}
 
+		recover();
+	}
+
+	private void recover() {
 		try {
+			// Allow server to recover for configured time.
 			Thread.sleep(plugin.config().getDeletionRecoveryMillis());
-			// Reset chunk count after sleep
-			chunkCount.set(0);
 		} catch (InterruptedException ignored) {}
+		// Reset chunk count after sleep.
+		heavyChecks.set(0);
 	}
 
 	private boolean isDeleteEligible(ChunkInfo chunkInfo) {
@@ -155,11 +156,9 @@ public class DeletionRunnable extends BukkitRunnable {
 			return false;
 		}
 
-		// Only count heavy checks towards total chunk count for recovery
-		if (chunkCount.incrementAndGet() % plugin.config().getDeletionChunkCount() == 0) {
-			try {
-				Thread.sleep(plugin.config().getDeletionRecoveryMillis());
-			} catch (InterruptedException ignored) {}
+		// Do recovery for heavy checks as required.
+		if (heavyChecks.incrementAndGet() >= plugin.config().getDeletionChunkCount()) {
+			recover();
 		}
 
 		if (plugin.debug(DebugLevel.HIGH)) {
