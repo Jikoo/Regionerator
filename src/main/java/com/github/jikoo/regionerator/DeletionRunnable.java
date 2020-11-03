@@ -92,6 +92,11 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		if (chunks.size() == 0) {
 			// If no chunks are modified, do nothing.
+			try {
+				Thread.sleep(plugin.config().getDeletionRecoveryMillis());
+			} catch (InterruptedException ignored) {}
+			// Reset chunk count after sleep
+			chunkCount.set(0);
 			return;
 		}
 
