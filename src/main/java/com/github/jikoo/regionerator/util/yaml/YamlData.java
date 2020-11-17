@@ -39,7 +39,7 @@ public abstract class YamlData {
 	}
 
 	void set(@NotNull String path, @Nullable Object value) {
-		Object existing = this.storage.get(path);
+		Object existing = this.storage.get(path, null);
 		if (Objects.equals(value, existing)) {
 			return;
 		}

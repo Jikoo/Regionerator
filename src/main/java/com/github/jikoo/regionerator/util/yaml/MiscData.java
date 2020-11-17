@@ -2,7 +2,7 @@ package com.github.jikoo.regionerator.util.yaml;
 
 import com.github.jikoo.regionerator.Regionerator;
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +29,7 @@ public class MiscData extends FileYamlData {
 		if (worlds == null) {
 			return;
 		}
-		List<String> enabledWorlds = plugin.config().getStringList("worlds");
+		Collection<String> enabledWorlds = plugin.config().enabledWorlds();
 		for (String worldName : worlds.getKeys(false)) {
 			if (!enabledWorlds.contains(worldName) && enabledWorlds.stream().noneMatch(worldName::equalsIgnoreCase)) {
 				set("next-cycle." + worldName, null);
