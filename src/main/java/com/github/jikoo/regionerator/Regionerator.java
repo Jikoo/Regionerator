@@ -10,6 +10,7 @@ import com.github.jikoo.regionerator.listeners.WorldListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -166,11 +167,15 @@ public class Regionerator extends JavaPlugin {
 					getLogger().warning("Protection hook for " + hookName + " failed usability check! Deletion is paused.");
 					setPaused(true);
 				}
-			} catch (ReflectiveOperationException e) {
-				getLogger().log(Level.SEVERE, "Unable to enable hook for " + hookName + "! Deletion is paused.", e);
-				setPaused(true);
 			} catch (NoClassDefFoundError e) {
 				debug(() -> String.format("Dependencies not found for %s hook, skipping.", hookName), e);
+			} catch (ReflectiveOperationException e) {
+				if (e instanceof InvocationTargetException && e.getCause() instanceof ClassNotFoundException) {
+					debug(() -> String.format("Dependencies not found for %s hook, skipping.", hookName), e);
+				} else {
+					getLogger().log(Level.SEVERE, "Unable to enable hook for " + hookName + "! Deletion is paused.", e);
+					setPaused(true);
+				}
 			}
 		}
 
