@@ -152,6 +152,10 @@ public class Regionerator extends JavaPlugin {
 			} catch (ClassNotFoundException e) {
 				// No hook by the name specified.
 				continue;
+			} catch (NoClassDefFoundError e) {
+				// Class exists, but dependencies are not available.
+				debug(() -> String.format("Dependencies not found for %s hook, skipping.", hookName), e);
+				continue;
 			}
 
 			try {

@@ -20,6 +20,6 @@ softdepend:
 commands:
  regionerator:
   aliases: [regeninfo, rgr]
-  description: Check Regionerator's progress, stop/start, or reload configuration.
+  description: Check progress, (un)flag area, stop/start, or reload configuration.
   permission: regionerator.command
   usage: /regionerator [pause|resume|reload|(un)flag|check|cache] (no args for a report)
