@@ -59,7 +59,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		phaser.arriveAndAwaitAdvance();
 
 		regionCount.incrementAndGet();
-		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s:%s (%s)",
+		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s: %s (%s)",
 				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
 		try {
@@ -81,14 +81,14 @@ public class DeletionRunnable extends BukkitRunnable {
 				VisitStatus visitStatus = chunk.getVisitStatus();
 				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
 			});
-
-			// Orphan chunks - N.B. this is called here and not outside of the block because AnvilRegion deletes regions on AnvilRegion#write
-			chunks.forEach(ChunkInfo::setOrphaned);
 		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
 				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus()== VisitStatus.UNVISITED)) {
 			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
 			return;
 		}
+
+		// Orphan chunks. N.B. Changes do not take effect until RegionInfo#write is called.
+		chunks.forEach(ChunkInfo::setOrphaned);
 
 		if (chunks.size() == 0) {
 			// If no chunks are modified, do nothing.
@@ -135,7 +135,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (chunkInfo.isOrphaned()) {
 			// Chunk already deleted
 			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is already orphaned.",
-					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkX()));
+					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ()));
 			return true;
 		}
 

@@ -44,6 +44,7 @@ public class AnvilRegion extends RegionInfo {
 	@Override
 	public boolean write() throws IOException {
 		if (!getRegionFile().exists()) {
+			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s", getIdentifier()));
 			return false;
 		}
 
