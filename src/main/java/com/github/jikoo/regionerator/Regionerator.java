@@ -30,7 +30,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -47,7 +46,7 @@ public class Regionerator extends JavaPlugin {
 	private ChunkFlagger chunkFlagger;
 	private Config config;
 	private MiscData miscData;
-	private BukkitTask flagging;
+	private FlaggingListener flagger;
 	private DebugListener debugListener;
 
 	@Override
@@ -124,8 +123,8 @@ public class Regionerator extends JavaPlugin {
 	public void reloadFeatures() {
 		// Remove all existing features
 		HandlerList.unregisterAll(this);
-		if (flagging != null) {
-			flagging.cancel();
+		if (flagger != null) {
+			flagger.cancel();
 		}
 		protectionHooks.clear();
 
@@ -185,19 +184,12 @@ public class Regionerator extends JavaPlugin {
 
 		if (getServer().getWorlds().stream().anyMatch(world -> config.getFlagDuration(world) > 0)) {
 			// Flag duration is set, start flagging
-
-			getServer().getPluginManager().registerEvents(new FlaggingListener(this), this);
-
-			flagging = new FlaggingRunnable(this).runTaskTimer(this, 0, config.getFlaggingInterval());
-		} else {
-			// Flagging runnable is not scheduled, schedule a task to start deletion
-			flagging = new BukkitRunnable() {
-				@Override
-				public void run() {
-					attemptDeletionActivation();
-				}
-			}.runTaskTimer(this, 0L, 1200L);
+			flagger = new FlaggingListener(this);
+			getServer().getPluginManager().registerEvents(flagger, this);
 		}
+
+		// Periodically attempt to start deletion
+		getServer().getScheduler().runTaskTimer(this, this::attemptDeletionActivation, 0L, 1200L);
 
 		if (debug(DebugLevel.HIGH)) {
 			getServer().getPluginManager().registerEvents(debugListener, this);

@@ -1,22 +1,45 @@
 package com.github.jikoo.regionerator.listeners;
 
+import com.github.jikoo.regionerator.Coords;
 import com.github.jikoo.regionerator.Regionerator;
+import com.github.jikoo.regionerator.util.DistributedTask;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Listener used to flag chunks.
+ * Listener used to flag chunks as visited.
  * 
  * @author Jikoo
  */
 public class FlaggingListener implements Listener {
 
 	private final Regionerator plugin;
+	private final FlaggingRunnable flagger;
 
-	public FlaggingListener(Regionerator plugin) {
+	public FlaggingListener(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
+		this.flagger = new FlaggingRunnable(plugin);
+
+		for (Player player : plugin.getServer().getOnlinePlayers()) {
+			flagger.add(player);
+		}
+
+		flagger.schedule(plugin);
+	}
+
+	public void cancel() {
+		this.flagger.cancel(plugin);
 	}
 
 	/**
@@ -26,7 +49,7 @@ public class FlaggingListener implements Listener {
 	 * @param event the ChunkPopulateEvent
 	 */
 	@EventHandler
-	public void onChunkPopulate(ChunkPopulateEvent event) {
+	private void onChunkPopulate(@NotNull ChunkPopulateEvent event) {
 		World world = event.getWorld();
 
 		if (!plugin.config().isEnabled(world.getName())) {
@@ -34,6 +57,57 @@ public class FlaggingListener implements Listener {
 		}
 
 		plugin.getFlagger().flagChunk(world.getName(), event.getChunk().getX(), event.getChunk().getZ(), plugin.config().getFlagGenerated(world));
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	private void onPlayerJoin(@NotNull PlayerJoinEvent event) {
+		flagger.add(event.getPlayer());
+	}
+
+	@EventHandler
+	private void onPlayerQuit(@NotNull PlayerQuitEvent event) {
+		flagger.remove(event.getPlayer());
+	}
+
+	/**
+	 * DistributedTask for periodically marking chunks near players as visited.
+	 */
+	private static class FlaggingRunnable extends DistributedTask<Player> {
+
+		FlaggingRunnable(Regionerator plugin) {
+			super(plugin.config().getFlaggingInterval() * 50, TimeUnit.MILLISECONDS, players -> {
+				List<ChunkId> flagged = new ArrayList<>();
+				for (Player player : players) {
+					if (player.getGameMode().name().equals("SPECTATOR")
+							|| !plugin.config().isEnabled(player.getWorld().getName())) {
+						continue;
+					}
+
+					flagged.add(new ChunkId(player.getWorld(), player.getLocation()));
+				}
+
+				if (!flagged.isEmpty()) {
+					plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+						for (ChunkId chunk : flagged) {
+							plugin.getFlagger().flagChunksInRadius(chunk.worldName, chunk.chunkX, chunk.chunkZ);
+						}
+					});
+				}
+
+			});
+		}
+
+	}
+
+	private static class ChunkId {
+		private final String worldName;
+		private final int chunkX, chunkZ;
+
+		private ChunkId(World world, Location location) {
+			this.worldName = world.getName();
+			this.chunkX = Coords.blockToChunk(location.getBlockX());
+			this.chunkZ = Coords.blockToChunk(location.getBlockZ());
+		}
 	}
 
 }
