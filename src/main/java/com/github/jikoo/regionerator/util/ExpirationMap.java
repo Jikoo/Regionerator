@@ -1,11 +1,14 @@
 package com.github.jikoo.regionerator.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Wrapper for mapping keys to timestamps for expiration.
@@ -14,9 +17,12 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class ExpirationMap<V> {
 
+	private static final long EXPIRATION_FREQUENCY = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
+
 	private final ConcurrentSkipListMap<Long, Collection<V>> multiMap = new ConcurrentSkipListMap<>();
 	private final ConcurrentHashMap<V, Long> inverse = new ConcurrentHashMap<>();
 	private final long durationMillis;
+	private final AtomicLong lastExpiration = new AtomicLong();
 
 	public ExpirationMap(long durationMillis) {
 		this.durationMillis = durationMillis;
@@ -28,10 +34,17 @@ public class ExpirationMap<V> {
 	 * @return a {@link Set} of expired values
 	 */
 	public Set<V> doExpiration() {
+		long now = System.currentTimeMillis();
+
+		if (lastExpiration.get() >= now - EXPIRATION_FREQUENCY) {
+			return Collections.emptySet();
+		}
+
+		lastExpiration.set(now);
 
 		Set<V> values = new HashSet<>();
 
-		ConcurrentNavigableMap<Long, Collection<V>> headMap = multiMap.headMap(System.currentTimeMillis(), true);
+		ConcurrentNavigableMap<Long, Collection<V>> headMap = multiMap.headMap(now, true);
 
 		for (Collection<V> collection : headMap.values()) {
 			values.addAll(collection);
@@ -39,7 +52,7 @@ public class ExpirationMap<V> {
 
 		headMap.clear();
 
-		for (V key :  values) {
+		for (V key : values) {
 			inverse.remove(key);
 		}
 

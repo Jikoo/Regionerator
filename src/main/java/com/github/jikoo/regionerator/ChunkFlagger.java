@@ -68,8 +68,8 @@ public class ChunkFlagger {
 		convertOldPerWorldFlagFiles();
 		flagCache.lazyExpireAll();
 
-		// Even if cache is stagnant, save every 3 minutes
-		Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, flagCache::lazyExpireAll, 3600, 3600);
+		// Even if cache is stagnant, save every 10 minutes
+		Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, flagCache::lazyExpireAll, 10 * 60 * 20, 10 * 60 * 20);
 	}
 
 	/**
