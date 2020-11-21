@@ -38,4 +38,9 @@ public class WorldGuardHook extends PluginHook {
 		return regionManager.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top)).size() > 0;
 	}
 
+	@Override
+	public boolean isAsyncCapable() {
+		return true;
+	}
+
 }
