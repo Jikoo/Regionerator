@@ -3,11 +3,11 @@ package com.github.jikoo.regionerator.util;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -17,15 +17,21 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ExpirationMap<V> {
 
-	private static final long EXPIRATION_FREQUENCY = TimeUnit.MILLISECONDS.convert(10, TimeUnit.SECONDS);
-
 	private final ConcurrentSkipListMap<Long, Collection<V>> multiMap = new ConcurrentSkipListMap<>();
 	private final ConcurrentHashMap<V, Long> inverse = new ConcurrentHashMap<>();
 	private final long durationMillis;
+	private final int maxSize;
+	private final long expirationFrequency;
 	private final AtomicLong lastExpiration = new AtomicLong();
 
 	public ExpirationMap(long durationMillis) {
+		this(durationMillis, -1, 10_000L);
+	}
+
+	public ExpirationMap(long durationMillis, int maxSize, long expirationFrequency) {
 		this.durationMillis = durationMillis;
+		this.maxSize = maxSize;
+		this.expirationFrequency = expirationFrequency;
 	}
 
 	/**
@@ -36,24 +42,30 @@ public class ExpirationMap<V> {
 	public Set<V> doExpiration() {
 		long now = System.currentTimeMillis();
 
-		if (lastExpiration.get() >= now - EXPIRATION_FREQUENCY) {
+		if (lastExpiration.get() >= now - expirationFrequency) {
 			return Collections.emptySet();
 		}
 
 		lastExpiration.set(now);
 
+		Iterator<Map.Entry<Long, Collection<V>>> iterator = multiMap.descendingMap().entrySet().iterator();
+		int count = 0;
 		Set<V> values = new HashSet<>();
 
-		ConcurrentNavigableMap<Long, Collection<V>> headMap = multiMap.headMap(now, true);
+		while (iterator.hasNext()) {
+			Map.Entry<Long, Collection<V>> next = iterator.next();
 
-		for (Collection<V> collection : headMap.values()) {
-			values.addAll(collection);
-		}
+			if (next.getKey() > now && (count += next.getValue().size()) <= maxSize) {
+				continue;
+			}
 
-		headMap.clear();
+			values.addAll(next.getValue());
 
-		for (V key : values) {
-			inverse.remove(key);
+			for (V key : next.getValue()) {
+				inverse.remove(key);
+			}
+
+			iterator.remove();
 		}
 
 		return values;
@@ -65,6 +77,8 @@ public class ExpirationMap<V> {
 	 * @param value the value to add
 	 */
 	public void add(V value) {
+		// Potential (slight) optimization: Bucket to nearest expiration frequency
+		// Would need a max frequency cap.
 		Long timestamp = System.currentTimeMillis() + durationMillis;
 		Long replacedTimestamp = inverse.replace(value, timestamp);
 

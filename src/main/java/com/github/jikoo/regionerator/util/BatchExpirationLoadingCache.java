@@ -53,7 +53,26 @@ public class BatchExpirationLoadingCache<K, V> {
 	 */
 	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
 			@NotNull final Consumer<Collection<V>> expirationConsumer, int maxBatchSize, long batchDelay) {
-		expirationMap = new ExpirationMap<>(retention);
+		this(new ExpirationMap<>(retention), load, expirationConsumer, maxBatchSize, batchDelay);
+	}
+
+	/**
+	 * Construct a new {@link BatchExpirationLoadingCache}. For builder use.
+	 *
+	 * @param expirationMap the {@link ExpirationMap} backing the cache
+	 * @param load the loading function
+	 * @param expirationConsumer a consumer for expired values
+	 * @param maxBatchSize the maximum batch size to expire simultaneously
+	 * @param batchDelay the delay between batches expiring
+	 */
+	private BatchExpirationLoadingCache(
+			@NotNull final ExpirationMap<K> expirationMap,
+			@NotNull final Function<K, V> load,
+			@NotNull final Consumer<Collection<V>> expirationConsumer,
+			int maxBatchSize,
+			long batchDelay) {
+
+		this.expirationMap = expirationMap;
 
 		// Wrap load function to update expiration when used
 		this.load = key -> {
@@ -242,6 +261,96 @@ public class BatchExpirationLoadingCache<K, V> {
 	 */
 	public int getQueued() {
 		return expired.size();
+	}
+
+	/**
+	 * A builder for a {@link BatchExpirationLoadingCache}.
+	 * @param <K> the type of key
+	 * @param <V> the type of value
+	 */
+	public static class Builder<K, V> {
+		private long retention = 600_000L;
+		private int cacheMax = 640_000;
+		private long frequency = 10_000L;
+		private int batchMax = 1_024;
+		private long batchDelay = 500L;
+
+		/**
+		 * Construct a {@link BatchExpirationLoadingCache}.
+		 *
+		 * @param load the loading function
+		 * @param expirationConsumer the consumer of expired values
+		 * @return the constructed cache
+		 */
+		public BatchExpirationLoadingCache<K, V> build(
+				@NotNull final Function<K, V> load,
+				@NotNull final Consumer<Collection<V>> expirationConsumer) {
+			ExpirationMap<K> map = new ExpirationMap<>(retention, cacheMax, frequency);
+			return new BatchExpirationLoadingCache<>(map, load, expirationConsumer, batchMax, batchDelay);
+		}
+
+		/**
+		 * Set the retention of the cache in milliseconds.
+		 *
+		 * <p>Defaults to 600,000 (10 minutes).
+		 *
+		 * @param retention the retention duration
+		 * @return the builder
+		 */
+		public Builder<K, V> setRetention(long retention) {
+			this.retention = retention;
+			return this;
+		}
+
+		/**
+		 * Set the maximum size of the cache.
+		 *
+		 * <p>Defaults to 640,000 - roughly 525 (25x25) regions.
+		 *
+		 * @param cacheMax the maximum cache size
+		 * @return the builder
+		 */
+		public Builder<K, V> setCacheMax(int cacheMax) {
+			this.cacheMax = cacheMax;
+			return this;
+		}
+
+		/**
+		 * Set the duration between cache expiration checks in milliseconds.
+		 *
+		 * <p>Defaults to 10,000 (10 seconds).
+		 *
+		 * @param frequency the maximum frequency of expiration checks
+		 * @return the builder
+		 */
+		public Builder<K, V> setFrequency(long frequency) {
+			this.frequency = frequency;
+			return this;
+		}
+
+		/**
+		 * Set the maximum number of values in a single batch update.
+		 *
+		 * <p>Defaults to 1024 (one region worth of chunks).
+		 *
+		 * @param batchMax the maximum batch size
+		 * @return the builder
+		 */
+		public Builder<K, V> setBatchMax(int batchMax) {
+			this.batchMax = batchMax;
+			return this;
+		}
+
+		/**
+		 * The delay between batch updates when batch size is exceeded.
+		 *
+		 * @param batchDelay the delay between batches
+		 * @return the builder
+		 */
+		public Builder<K, V> setBatchDelay(long batchDelay) {
+			this.batchDelay = batchDelay;
+			return this;
+		}
 	}
 
 }

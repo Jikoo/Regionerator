@@ -30,6 +30,13 @@ final class ConfigUpdater {
 		config.set("flagging.flag-generated-chunks-until-visited", !config.getBoolean("delete-new-unvisited-chunks"));
 		config.set("delete-new-unvisited-chunks", null);
 
+		// Cache section
+		config.set("cache.minimum-expiration-frequency", 10);
+		config.set("cache.retention", 10);
+		config.set("cache.maximum-batch-size", 1_024);
+		config.set("cache.batch-delay", 500);
+		config.set("cache.max-cache-size", 640_000);
+
 		// Deletion section
 		config.set("deletion.recovery-time", config.getInt("ticks-per-deletion") * 50);
 		config.set("ticks-per-deletion", null);

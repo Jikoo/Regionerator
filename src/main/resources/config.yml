@@ -22,6 +22,21 @@ flagging:
   # Note that flagging must be enabled in worlds (days-till-flag-expires > 0).
   flag-generated-chunks-until-visited: true
 
+# Don't mess with the cache settings unless you know what you're doing and
+# are having problems. Larger servers may want to tweak these values to reduce
+# GC churn or memory usage.
+cache:
+  # Seconds between expiration. Longer reduces churn.
+  minimum-expiration-frequency: 10
+  # Minutes to cache values for. Increase to reduce churn, decrease to reduce memory usage.
+  retention: 10
+  # Maximum number of entries per batch update.
+  maximum-batch-size: 1024
+  # Milliseconds between batch updates.
+  batch-delay: 500
+  # Maximum number of cached entries. Increase to reduce churn, decrease to reduce memory usage.
+  max-cache-size: 640000
+
 deletion:
   # Recovery time in milliseconds between expensive operations.
   # Recovery time is always waited between region checks.

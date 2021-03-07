@@ -4,6 +4,7 @@ import com.github.jikoo.regionerator.database.DatabaseAdapter;
 import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import java.io.File;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -39,30 +40,14 @@ public class ChunkFlagger {
 			throw new RuntimeException("An error occurred while setting up the database", e);
 		}
 
-		this.flagCache = new BatchExpirationLoadingCache<>(180000, key -> {
-			try {
-				return new FlagData(key, adapter.get(key));
-			} catch (Exception e) {
-				plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
-				return new FlagData(key, Config.FLAG_OH_NO);
-			}
-		}, expiredData -> {
-			// Only attempt to save if dirty to minimize write time
-			expiredData.removeIf(next -> !next.isDirty() || next.getLastVisit() == Config.FLAG_OH_NO);
-
-			if (expiredData.isEmpty()) {
-				return;
-			}
-
-			try {
-				adapter.update(expiredData);
-
-				// Flag as no longer dirty to reduce saves if data is still in use
-				expiredData.forEach(FlagData::wash);
-			} catch (Exception e) {
-				plugin.getLogger().log(Level.SEVERE, "Exception updating chunk flags", e);
-			}
-		});
+		Config config = plugin.config();
+		this.flagCache = new BatchExpirationLoadingCache.Builder<String, FlagData>()
+				.setRetention(config.getCacheRetention())
+				.setCacheMax(config.getCacheMaxSize())
+				.setFrequency(config.getCacheExpirationFrequency())
+				.setBatchMax(config.getCacheBatchMax())
+				.setBatchDelay(config.getCacheBatchDelay())
+				.build(this::loadFlag, this::expireBatch);
 
 		convertOldFlagsFile();
 		convertOldPerWorldFlagFiles();
@@ -70,6 +55,44 @@ public class ChunkFlagger {
 
 		// Even if cache is stagnant, save every 10 minutes
 		Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, flagCache::lazyExpireAll, 10 * 60 * 20, 10 * 60 * 20);
+	}
+
+	/**
+	 * For use in cache. Don't call manually.
+	 *
+	 * @param key the key of the FlagData
+	 * @return the FlagData
+	 */
+	private FlagData loadFlag(String key) {
+		try {
+			return new FlagData(key, adapter.get(key));
+		} catch (Exception e) {
+			plugin.getLogger().log(Level.WARNING, "Exception fetching chunk flags", e);
+			return new FlagData(key, Config.FLAG_OH_NO);
+		}
+	}
+
+	/**
+	 * For use in cache. Don't call manually.
+	 *
+	 * @param expiredData the batch of expired FlagData
+	 */
+	private void expireBatch(Collection<FlagData> expiredData) {
+		// Only attempt to save if dirty to minimize write time
+		expiredData.removeIf(next -> !next.isDirty() || next.getLastVisit() == Config.FLAG_OH_NO);
+
+		if (expiredData.isEmpty()) {
+			return;
+		}
+
+		try {
+			adapter.update(expiredData);
+
+			// Flag as no longer dirty to reduce saves if data is still in use
+			expiredData.forEach(FlagData::wash);
+		} catch (Exception e) {
+			plugin.getLogger().log(Level.SEVERE, "Exception updating chunk flags", e);
+		}
 	}
 
 	/**
