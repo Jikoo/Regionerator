@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.listeners;
 
-import com.github.jikoo.regionerator.Coords;
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.DistributedTask;
 import java.util.ArrayList;

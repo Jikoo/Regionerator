@@ -1,13 +1,11 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Coords;
-
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
-
 import org.bukkit.World;
 
 /**

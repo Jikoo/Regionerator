@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.world.impl;
 
-import com.github.jikoo.regionerator.Coords;
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;

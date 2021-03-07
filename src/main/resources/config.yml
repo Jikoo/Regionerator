@@ -1,3 +1,7 @@
+# This is the Regionerator configuration file.
+# For more information about options, please see https://github.com/Jikoo/Regionerator/wiki/Configuration
+#
+
 # Every x seconds, chunks around each player online are flagged.
 # Flags prevent deletion for a configurable amount of time, allowing
 # players to prevent areas from being deleted simply by being active.
@@ -59,8 +63,8 @@ hooks:
 # Debug-level enables more and more verbose logging of actions as increased.
 # OFF - no debug messages
 # LOW - Minimal debug messages, periodic deletion reports
-# MEDIUM - More debug messages. Spammy, not recommended.
-# HIGH - Lots of debug messages. Don't enable this unless you have a serious issue.
+# MEDIUM - More debug messages. Causes lots of spam but can help you resolve startup issues.
+# HIGH - Lots of debug messages. Don't enable this unless you have a serious issue - excessive logging causes lag.
 debug-level: LOW
 
 # Please don't mess with this, you may lose settings. Controls automatic updates to config layout.

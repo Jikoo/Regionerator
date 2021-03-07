@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.util.function.ThrowingTriFunction;
+import com.github.jikoo.planarwrappers.function.ThrowingTriFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import org.bukkit.World;
@@ -14,7 +14,7 @@ import org.bukkit.World;
 public class FactionsHook extends PluginHook {
 
 	private Method boardSingleton, boardGetFaction, factionIsWilderness;
-	private ThrowingTriFunction<Object, String, Integer, Integer> getLocation;
+	private ThrowingTriFunction<String, Integer, Integer, Object, ReflectiveOperationException> getLocation;
 
 	public FactionsHook() throws ReflectiveOperationException {
 		super("Factions");

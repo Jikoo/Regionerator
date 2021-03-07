@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.world;
 
-import com.github.jikoo.regionerator.Coords;
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.google.common.base.Preconditions;
 import java.io.IOException;

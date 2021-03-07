@@ -1,6 +1,6 @@
 package com.github.jikoo.regionerator.commands;
 
-import com.github.jikoo.regionerator.Coords;
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.sk89q.worldedit.LocalSession;

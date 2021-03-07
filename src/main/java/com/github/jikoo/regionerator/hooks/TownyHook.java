@@ -1,11 +1,9 @@
 package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
-
-import com.github.jikoo.regionerator.Coords;
-
 import org.bukkit.World;
 
 /**

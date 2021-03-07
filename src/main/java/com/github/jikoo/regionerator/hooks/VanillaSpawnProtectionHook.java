@@ -1,7 +1,6 @@
 package com.github.jikoo.regionerator.hooks;
 
-import com.github.jikoo.regionerator.Coords;
-
+import com.github.jikoo.planarwrappers.util.Coords;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
