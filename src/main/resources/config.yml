@@ -1,5 +1,6 @@
 # This is the Regionerator configuration file.
-# For more information about options, please see https://github.com/Jikoo/Regionerator/wiki/Configuration
+# For more information about options, please see the wiki:
+#   https://github.com/Jikoo/Regionerator/wiki/Configuration
 #
 
 # Every x seconds, chunks around each player online are flagged.
@@ -26,7 +27,7 @@ flagging:
 # are having problems. Larger servers may want to tweak these values to reduce
 # GC churn or memory usage.
 cache:
-  # Seconds between expiration. Longer reduces churn.
+  # Seconds between expiration. Longer reduces churn but decreases accuracy of other cache settings.
   minimum-expiration-frequency: 10
   # Minutes to cache values for. Increase to reduce churn, decrease to reduce memory usage.
   retention: 10

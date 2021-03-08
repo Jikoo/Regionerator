@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2015-2021 by Jikoo.
+ *
+ * Regionerator is licensed under a Creative Commons
+ * Attribution-ShareAlike 4.0 International License.
+ *
+ * You should have received a copy of the license along with this
+ * work. If not, see <http://creativecommons.org/licenses/by-sa/4.0/>.
+ */
+
 package com.github.jikoo.regionerator.database;
 
 import com.github.jikoo.regionerator.ChunkFlagger;
@@ -12,8 +22,6 @@ import org.jetbrains.annotations.NotNull;
  * Interface defining behavior for interacting with a database.
  * <p>
  * All methods should expect to be called from multiple threads.
- *
- * @author Jikoo
  */
 public interface DatabaseAdapter {
 
