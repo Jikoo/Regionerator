@@ -187,7 +187,7 @@
               <includes>
                 <include>com/github/jikoo/planarwrappers/util/Coords.class</include>
                 <include>com/github/jikoo/planarwrappers/tuple/Pair.class</include>
-                <include>com/github/jikoo/planarwrappers/function/TriThrowingFunction.class</include>
+                <include>com/github/jikoo/planarwrappers/function/ThrowingTriFunction.class</include>
               </includes>
             </filter>
           </filters>
