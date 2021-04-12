@@ -1,4 +1,5 @@
 ## Regionerator
+[![Build status](https://ci.appveyor.com/api/projects/status/4enx36sic8j3f0my?svg=true)](https://ci.appveyor.com/project/Jikoo/regionerator/build/artifacts)  
 A Bukkit plugin for gradually deleting unused area, allowing you to free up disk space and get rid of old builds or devastated land.
 
 Please refer to [the wiki](https://github.com/Jikoo/Regionerator/wiki) for more information.
