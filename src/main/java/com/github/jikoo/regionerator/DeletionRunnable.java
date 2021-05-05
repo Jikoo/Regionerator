@@ -60,6 +60,11 @@ public class DeletionRunnable extends BukkitRunnable {
 		phaser.arriveAndDeregister();
 	}
 
+	@Override
+	public synchronized boolean isCancelled() throws IllegalStateException {
+		return super.isCancelled() || !plugin.isEnabled();
+	}
+
 	private void handleRegion(@NotNull RegionInfo region) {
 		if (isCancelled()) {
 			return;
@@ -126,6 +131,9 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	private void recover() {
+		if (isCancelled()) {
+			return;
+		}
 		try {
 			// Allow server to recover for configured time.
 			Thread.sleep(plugin.config().getDeletionRecoveryMillis());
