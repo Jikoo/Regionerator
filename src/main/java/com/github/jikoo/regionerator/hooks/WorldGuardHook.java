@@ -17,6 +17,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=http://dev.bukkit.org/bukkit-plugins/worldguard/>WorldGuard</a>.
@@ -28,7 +29,7 @@ public class WorldGuardHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		int chunkBlockX = Coords.chunkToBlock(chunkX);
 		int chunkBlockZ = Coords.chunkToBlock(chunkZ);
 

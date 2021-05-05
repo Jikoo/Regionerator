@@ -12,6 +12,7 @@ package com.github.jikoo.regionerator.hooks;
 
 import com.cjburkey.claimchunk.ClaimChunk;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=https://github.com/cjburkey01/ClaimChunk/>ClaimChunk</a>.
@@ -23,7 +24,7 @@ public class ClaimChunkHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		return ClaimChunk.getPlugin(ClaimChunk.class).getChunkHandler().isClaimed(chunkWorld, chunkX, chunkZ);
 	}
 

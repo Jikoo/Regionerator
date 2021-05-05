@@ -11,18 +11,19 @@
 package com.github.jikoo.regionerator.hooks;
 
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An extension of the {@link Hook} framework for depending on specific {@link org.bukkit.plugin.Plugin Plugins}.
  */
 public abstract class PluginHook extends Hook {
 
-	public PluginHook(String pluginName) {
+	public PluginHook(@NotNull String pluginName) {
 		super(pluginName);
 	}
 
 	@Override
-	public String getProtectionName() {
+	public @NotNull String getProtectionName() {
 		return "Plugin:" + super.getProtectionName();
 	}
 
@@ -31,7 +32,7 @@ public abstract class PluginHook extends Hook {
 	 *
 	 * @return the name of the {@code Plugin}
 	 */
-	public String getPluginName() {
+	public @NotNull String getPluginName() {
 		return super.getProtectionName();
 	}
 

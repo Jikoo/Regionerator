@@ -12,6 +12,7 @@ package com.github.jikoo.regionerator.util;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Supplier wrapper that temporarily caches values. Designed for values that are costly to calculate.
@@ -20,12 +21,15 @@ import java.util.function.Supplier;
  */
 public class SupplierCache<T> {
 
-	private final Supplier<T> supplier;
+	private final @NotNull Supplier<T> supplier;
 	private final long cacheDuration;
 	private T value;
 	private long lastUpdate;
 
-	public SupplierCache(Supplier<T> supplier, long duration, TimeUnit timeUnit) {
+	public SupplierCache(
+			@NotNull Supplier<T> supplier,
+			long duration,
+			@NotNull TimeUnit timeUnit) {
 		this.supplier = supplier;
 		cacheDuration = TimeUnit.MILLISECONDS.convert(duration, timeUnit);
 	}

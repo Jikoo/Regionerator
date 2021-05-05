@@ -14,6 +14,7 @@ import com.github.jikoo.planarwrappers.util.Coords;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Hook for respecting vanilla's spawn protection radius.
@@ -30,7 +31,7 @@ public class VanillaSpawnProtectionHook extends Hook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		int protectionRadius = Bukkit.getSpawnRadius();
 
 		if (protectionRadius <= 0) {

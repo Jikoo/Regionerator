@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class MiscData extends FileYamlData {
 
-	private final Regionerator plugin;
+	private final @NotNull Regionerator plugin;
 
 	public MiscData(@NotNull Regionerator plugin, @NotNull File file) {
 		super(plugin, file);
@@ -32,7 +32,7 @@ public class MiscData extends FileYamlData {
 	}
 
 	public void checkWorldValidity() {
-		if (plugin == null || plugin.config() == null) {
+		if (plugin.config() == null) {
 			return;
 		}
 		ConfigurationSection worlds = raw().getConfigurationSection("next-cycle");

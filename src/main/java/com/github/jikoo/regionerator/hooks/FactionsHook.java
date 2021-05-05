@@ -14,6 +14,7 @@ import com.github.jikoo.planarwrappers.function.ThrowingTriFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
@@ -21,8 +22,10 @@ import org.bukkit.World;
  */
 public class FactionsHook extends PluginHook {
 
-	private Method boardSingleton, boardGetFaction, factionIsWilderness;
-	private ThrowingTriFunction<String, Integer, Integer, Object, ReflectiveOperationException> getLocation;
+	private @NotNull Method boardSingleton;
+	private @NotNull Method boardGetFaction;
+	private @NotNull Method factionIsWilderness;
+	private @NotNull ThrowingTriFunction<String, Integer, Integer, Object, ReflectiveOperationException> getLocation;
 
 	public FactionsHook() throws ReflectiveOperationException {
 		super("Factions");
@@ -57,7 +60,7 @@ public class FactionsHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		try {
 			Object faction = boardGetFaction.invoke(boardSingleton.invoke(null),
 					getLocation.apply(chunkWorld.getName(), chunkX, chunkZ));

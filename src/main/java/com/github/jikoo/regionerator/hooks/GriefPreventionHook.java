@@ -14,6 +14,7 @@ import org.bukkit.World;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
@@ -25,7 +26,7 @@ public class GriefPreventionHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World world, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World world, int chunkX, int chunkZ) {
 		for (Claim claim : GriefPrevention.instance.dataStore.getClaims(chunkX, chunkZ)) {
 			if (world.equals(claim.getGreaterBoundaryCorner().getWorld())) {
 				return true;

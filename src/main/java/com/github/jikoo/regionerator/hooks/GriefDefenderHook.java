@@ -15,6 +15,7 @@ import com.griefdefender.api.claim.Claim;
 import com.griefdefender.api.claim.ClaimManager;
 import java.util.Set;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=https://www.spigotmc.org/resources/griefdefender.68900/>GriefDefender</a>.
@@ -26,7 +27,7 @@ public class GriefDefenderHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		if (!GriefDefender.getCore().isEnabled(chunkWorld.getUID())) {
 			return false;
 		}

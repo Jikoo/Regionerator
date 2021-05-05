@@ -27,8 +27,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SQLeadenAdapter implements DatabaseAdapter {
 
-	private final Regionerator plugin;
-	final Connection database;
+	private final @NotNull Regionerator plugin;
+	final @NotNull Connection database;
 
 	SQLeadenAdapter(@NotNull Regionerator plugin, @NotNull Connection database) throws SQLException {
 		this.plugin = plugin;

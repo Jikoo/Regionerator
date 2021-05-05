@@ -29,14 +29,16 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"unused", "SameParameterValue"})
 public abstract class YamlData {
 
-	final Plugin plugin;
-	private final Supplier<FileConfiguration> loadSupplier;
-	private final Consumer<FileConfiguration> saveConsumer;
+	final @NotNull Plugin plugin;
+	private final @NotNull Supplier<FileConfiguration> loadSupplier;
+	private final @NotNull Consumer<FileConfiguration> saveConsumer;
 	private FileConfiguration storage;
 	private boolean dirty = false;
 	private BukkitTask saveTask;
 
-	public YamlData(@NotNull Plugin plugin, @NotNull Supplier<FileConfiguration> loadSupplier,
+	public YamlData(
+			@NotNull Plugin plugin,
+			@NotNull Supplier<FileConfiguration> loadSupplier,
 			@NotNull Consumer<FileConfiguration> saveConsumer) {
 		this.plugin = plugin;
 		this.loadSupplier = loadSupplier;

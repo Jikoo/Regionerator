@@ -24,10 +24,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 public class VisitStatusCache extends SupplierCache<VisitStatus> {
 
-	public VisitStatusCache(Regionerator plugin, ChunkInfo chunkInfo) {
+	public VisitStatusCache(@NotNull Regionerator plugin, @NotNull ChunkInfo chunkInfo) {
 		super(() -> {
 			// If chunk is already orphaned on disk, don't check anything.
 			if (chunkInfo.isOrphaned()) {
@@ -126,7 +127,7 @@ public class VisitStatusCache extends SupplierCache<VisitStatus> {
 	 *
 	 * @return the value calculated
 	 */
-	private static int calcCacheDuration(Regionerator plugin) {
+	private static int calcCacheDuration(@NotNull Regionerator plugin) {
 		Config config = plugin.config();
 		return (int) Math.ceil(1024D / config.getDeletionChunkCount() * config.getDeletionRecoveryMillis() / 60000);
 	}

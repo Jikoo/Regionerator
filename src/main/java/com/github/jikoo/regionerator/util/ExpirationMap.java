@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Wrapper for mapping keys to timestamps for expiration.
@@ -47,7 +48,7 @@ public class ExpirationMap<V> {
 	 *
 	 * @return a {@link Set} of expired values
 	 */
-	public Set<V> doExpiration() {
+	public @NotNull Set<V> doExpiration() {
 		long now = System.currentTimeMillis();
 
 		if (lastExpiration.get() >= now - expirationFrequency) {

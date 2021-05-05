@@ -40,6 +40,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -212,11 +214,11 @@ public class Regionerator extends JavaPlugin {
 		return miscData;
 	}
 
-	public WorldManager getWorldManager() {
+	public @NotNull WorldManager getWorldManager() {
 		return worldManager;
 	}
 
-	void finishCycle(DeletionRunnable runnable) {
+	void finishCycle(@NotNull DeletionRunnable runnable) {
 		miscData.setNextCycle(runnable.getWorld(), runnable.getNextRun());
 	}
 
@@ -262,11 +264,11 @@ public class Regionerator extends JavaPlugin {
 		}
 	}
 
-	public Set<Hook> getProtectionHooks() {
+	public @NotNull Set<Hook> getProtectionHooks() {
 		return Collections.unmodifiableSet(this.protectionHooks);
 	}
 
-	public void addHook(PluginHook hook) {
+	public void addHook(@Nullable PluginHook hook) {
 		if (hook == null) {
 			throw new IllegalArgumentException("Hook cannot be null");
 		}
@@ -322,23 +324,23 @@ public class Regionerator extends JavaPlugin {
 		deletionRunnables.values().stream().map(DeletionRunnable::getPhaser).forEach(phaserConsumer);
 	}
 
-	public boolean debug(DebugLevel level) {
+	public boolean debug(@NotNull DebugLevel level) {
 		return config.getDebugLevel().ordinal() >= level.ordinal();
 	}
 
-	public void debug(DebugLevel level, Supplier<String> message) {
+	public void debug(@NotNull DebugLevel level, @NotNull Supplier<String> message) {
 		if (debug(level)) {
 			getLogger().info(message.get());
 		}
 	}
 
-	public void debug(DebugLevel level, Runnable runnable) {
+	public void debug(@NotNull DebugLevel level, @NotNull Runnable runnable) {
 		if (debug(level)) {
 			runnable.run();
 		}
 	}
 
-	public void debug(Supplier<String> message, Throwable throwable) {
+	public void debug(@NotNull Supplier<String> message, Throwable throwable) {
 		if (debug(DebugLevel.MEDIUM)) {
 			getLogger().log(Level.WARNING, message.get(), throwable);
 		} else if (debug(DebugLevel.LOW)) {

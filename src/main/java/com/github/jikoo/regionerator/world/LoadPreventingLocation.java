@@ -27,9 +27,8 @@ public class LoadPreventingLocation extends Location {
 		super(world, x, y, z);
 	}
 
-	@NotNull
 	@Override
-	public Chunk getChunk() {
+	public @NotNull Chunk getChunk() {
 		return new DummyChunk(Objects.requireNonNull(getWorld()), Coords.blockToChunk((int) this.getX()),
 				Coords.blockToChunk((int) this.getZ()));
 	}

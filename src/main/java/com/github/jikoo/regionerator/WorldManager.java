@@ -15,22 +15,23 @@ import com.github.jikoo.regionerator.world.WorldInfo;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 public class WorldManager {
 
-	private final Regionerator plugin;
-	private final Map<String, WorldInfo> worlds;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull Map<String, WorldInfo> worlds;
 
-	public WorldManager(Regionerator plugin) {
+	public WorldManager(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
 		this.worlds = new HashMap<>();
 	}
 
-	public WorldInfo getWorld(World world) {
+	public @NotNull WorldInfo getWorld(@NotNull World world) {
 		return worlds.computeIfAbsent(world.getName(), (name) -> getWorldImpl(world));
 	}
 
-	private WorldInfo getWorldImpl(World world) {
+	private @NotNull WorldInfo getWorldImpl(@NotNull World world) {
 		return new AnvilWorld(plugin, world);
 	}
 

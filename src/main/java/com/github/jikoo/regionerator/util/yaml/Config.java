@@ -28,6 +28,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 public class Config extends ConfigYamlData {
 
@@ -41,17 +42,20 @@ public class Config extends ConfigYamlData {
 	private final Object lock = new Object();
 	private DebugLevel debugLevel;
 	private Map<String, Long> worlds;
-	private final AtomicLong ticksPerFlag = new AtomicLong(),
-			millisBetweenCycles = new AtomicLong(), deletionRecovery = new AtomicLong();
-	private final AtomicInteger flaggingRadius = new AtomicInteger(), deletionChunkCount = new AtomicInteger();
-	private final AtomicBoolean rememberCycleDelay = new AtomicBoolean(), deleteFreshChunks = new AtomicBoolean();
+	private final AtomicLong ticksPerFlag = new AtomicLong();
+	private final AtomicLong millisBetweenCycles = new AtomicLong();
+	private final AtomicLong deletionRecovery = new AtomicLong();
+	private final AtomicInteger flaggingRadius = new AtomicInteger();
+	private final AtomicInteger deletionChunkCount = new AtomicInteger();
+	private final AtomicBoolean rememberCycleDelay = new AtomicBoolean();
+	private final AtomicBoolean deleteFreshChunks = new AtomicBoolean();
 	private long cacheExpirationFrequency;
 	private long cacheRetention;
 	private int cacheBatchMax;
 	private long cacheBatchDelay;
 	private int cacheMaxSize;
 
-	public Config(Plugin plugin) {
+	public Config(@NotNull Plugin plugin) {
 		super(plugin);
 		reload();
 	}
@@ -152,7 +156,7 @@ public class Config extends ConfigYamlData {
 		return deleteFreshChunks.get() && getFlagDuration() > 0;
 	}
 
-	public boolean isDeleteFreshChunks(World world) {
+	public boolean isDeleteFreshChunks(@NotNull World world) {
 		return deleteFreshChunks.get() && getFlagDuration(world) > 0;
 	}
 
@@ -163,7 +167,7 @@ public class Config extends ConfigYamlData {
 		}
 	}
 
-	public long getFlagDuration(World world) {
+	public long getFlagDuration(@NotNull World world) {
 		return getFlagDuration(world.getName());
 	}
 
@@ -178,7 +182,7 @@ public class Config extends ConfigYamlData {
 		return isDeleteFreshChunks() ? getFlagVisit() : Long.MAX_VALUE;
 	}
 
-	public long getFlagGenerated(World world) {
+	public long getFlagGenerated(@NotNull World world) {
 		return isDeleteFreshChunks(world) ? getFlagVisit(world) : Long.MAX_VALUE;
 	}
 
@@ -187,7 +191,7 @@ public class Config extends ConfigYamlData {
 		return System.currentTimeMillis() + getFlagDuration();
 	}
 
-	public long getFlagVisit(World world) {
+	public long getFlagVisit(@NotNull World world) {
 		return getFlagVisit(world.getName());
 	}
 
@@ -217,7 +221,7 @@ public class Config extends ConfigYamlData {
 		return getFlagDuration(worldName) >= 0;
 	}
 
-	public Collection<String> enabledWorlds() {
+	public @NotNull Collection<String> enabledWorlds() {
 		return Collections.unmodifiableSet(plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toSet()));
 	}
 

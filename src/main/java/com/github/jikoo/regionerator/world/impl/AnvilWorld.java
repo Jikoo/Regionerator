@@ -29,31 +29,29 @@ public class AnvilWorld extends WorldInfo {
 	// r.0.0.mca, r.-1.0.mca, etc.
 	public static final Pattern ANVIL_REGION = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)\\.mca");
 
-	public AnvilWorld(Regionerator plugin, World world) {
+	public AnvilWorld(@NotNull Regionerator plugin, @NotNull World world) {
 		super(plugin, world);
 	}
 
-	@NotNull
 	@Override
-	public RegionInfo getRegion(int regionX, int regionZ) {
+	public @NotNull RegionInfo getRegion(int regionX, int regionZ) {
 		File regionFolder = findRegionFolder(getWorld());
 		File regionFile = new File(regionFolder, "r." + regionX + "." + regionZ + ".mca");
 		return new AnvilRegion(this, regionFile, Coords.regionToChunk(regionX), Coords.regionToChunk(regionZ));
 	}
 
-	@Nullable
 	@Override
-	public Stream<RegionInfo> getRegions() {
-		AtomicInteger index = new AtomicInteger();
+	public @NotNull Stream<RegionInfo> getRegions() {
 		File regionFolder = findRegionFolder(getWorld());
 		File[] regionFiles = regionFolder.listFiles((dir, name) -> ANVIL_REGION.matcher(name).matches());
 		if (regionFiles == null) {
-			return null;
+			return Stream.empty();
 		}
+		AtomicInteger index = new AtomicInteger();
 		return Stream.generate(() -> parseRegion(regionFiles[index.getAndIncrement()])).limit(regionFiles.length).filter(Objects::nonNull);
 	}
 
-	private File findRegionFolder(@NotNull World world) {
+	private @NotNull File findRegionFolder(@NotNull World world) {
 		switch (world.getEnvironment()) {
 			case NETHER:
 				return new File(world.getWorldFolder(), "DIM-1" + File.separatorChar + "region");
@@ -67,7 +65,7 @@ public class AnvilWorld extends WorldInfo {
 
 	private @Nullable RegionInfo parseRegion(@NotNull File regionFile) {
 		Matcher matcher = ANVIL_REGION.matcher(regionFile.getName());
-		if (!matcher.matches()) {
+		if (!matcher.matches() || !getPlugin().isEnabled()) {
 			return null;
 		}
 		return new AnvilRegion(this, regionFile, Coords.regionToChunk(Integer.parseInt(matcher.group(1))),

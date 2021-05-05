@@ -37,12 +37,12 @@ import org.jetbrains.annotations.Nullable;
 
 public class RegioneratorExecutor implements TabExecutor {
 
-	private final Regionerator plugin;
-	private final Map<String, DeletionRunnable> deletionRunnables;
-	private final FlagHandler flagHandler;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull Map<String, DeletionRunnable> deletionRunnables;
+	private final @NotNull FlagHandler flagHandler;
 
-	public RegioneratorExecutor(Regionerator plugin,
-			Map<String, DeletionRunnable> deletionRunnables) {
+	public RegioneratorExecutor(@NotNull Regionerator plugin,
+			@NotNull Map<String, DeletionRunnable> deletionRunnables) {
 		this.plugin = plugin;
 		this.deletionRunnables = deletionRunnables;
 		flagHandler = new FlagHandler(plugin);
@@ -50,7 +50,7 @@ public class RegioneratorExecutor implements TabExecutor {
 
 	@Override
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
-			@NotNull String label, String[] args) {
+			@NotNull String label, @NotNull String @NotNull [] args) {
 		plugin.attemptDeletionActivation();
 
 		if (args.length < 1) {
@@ -187,10 +187,9 @@ public class RegioneratorExecutor implements TabExecutor {
 		return false;
 	}
 
-	@Nullable
 	@Override
-	public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
-			@NotNull String label, @NotNull String[] args) {
+	public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
+			@NotNull String label, @NotNull String @NotNull [] args) {
 		if (!sender.hasPermission("regionerator.command") || args.length < 1) {
 			return Collections.emptyList();
 		}

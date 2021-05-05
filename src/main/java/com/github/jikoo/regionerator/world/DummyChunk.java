@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class DummyChunk implements Chunk {
 
-	private final World world;
+	private final @NotNull World world;
 	private final int chunkX, chunkZ;
 
 	public DummyChunk(@NotNull World world, int chunkX, int chunkZ) {
@@ -53,12 +53,12 @@ public class DummyChunk implements Chunk {
 	}
 
 	@Override
-	public @NotNull Entity[] getEntities() {
+	public @NotNull Entity @NotNull [] getEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
 	@Override
-	public @NotNull BlockState[] getTileEntities() {
+	public @NotNull BlockState @NotNull [] getTileEntities() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
@@ -127,9 +127,8 @@ public class DummyChunk implements Chunk {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
-	@NotNull
 	@Override
-	public Collection<Plugin> getPluginChunkTickets() {
+	public @NotNull Collection<Plugin> getPluginChunkTickets() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 

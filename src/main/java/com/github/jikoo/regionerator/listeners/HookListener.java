@@ -19,15 +19,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.PluginEnableEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Listener for hooked plugins being enabled or disabled.
  */
 public class HookListener implements Listener {
 
-	private final Regionerator plugin;
+	private final @NotNull Regionerator plugin;
 
-	public HookListener(Regionerator plugin) {
+	public HookListener(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
 	}
 
@@ -37,7 +38,7 @@ public class HookListener implements Listener {
 	 * @param event the {@link PluginEnableEvent}
 	 */
 	@EventHandler
-	public void onPluginEnable(PluginEnableEvent event) {
+	public void onPluginEnable(@NotNull PluginEnableEvent event) {
 		String pluginName = event.getPlugin().getName();
 		if (!plugin.getConfig().getBoolean("hooks." + pluginName)) {
 			return;
@@ -70,7 +71,7 @@ public class HookListener implements Listener {
 	 * @param event the {@link PluginDisableEvent}
 	 */
 	@EventHandler
-	public void onPluginDisable(PluginDisableEvent event) {
+	public void onPluginDisable(@NotNull PluginDisableEvent event) {
 		String pluginName = event.getPlugin().getName();
 		for (Hook hook : this.plugin.getProtectionHooks()) {
 			if (!(hook instanceof PluginHook)) {

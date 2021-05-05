@@ -32,8 +32,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class FlaggingListener implements Listener {
 
-	private final Regionerator plugin;
-	private final FlaggingRunnable flagger;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull FlaggingRunnable flagger;
 
 	public FlaggingListener(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
@@ -82,7 +82,7 @@ public class FlaggingListener implements Listener {
 	 */
 	private static class FlaggingRunnable extends DistributedTask<Player> {
 
-		FlaggingRunnable(Regionerator plugin) {
+		FlaggingRunnable(@NotNull Regionerator plugin) {
 			super(plugin.config().getFlaggingInterval() * 50, TimeUnit.MILLISECONDS, players -> {
 				List<ChunkId> flagged = new ArrayList<>();
 				for (Player player : players) {
@@ -108,10 +108,11 @@ public class FlaggingListener implements Listener {
 	}
 
 	private static class ChunkId {
-		private final String worldName;
-		private final int chunkX, chunkZ;
+		private final @NotNull String worldName;
+		private final int chunkX;
+		private final int chunkZ;
 
-		private ChunkId(World world, Location location) {
+		private ChunkId(@NotNull World world, @NotNull Location location) {
 			this.worldName = world.getName();
 			this.chunkX = Coords.blockToChunk(location.getBlockX());
 			this.chunkZ = Coords.blockToChunk(location.getBlockZ());

@@ -15,6 +15,7 @@ import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.object.Coord;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=https://github.com/LlmDl/Towny>Towny</a>.
@@ -26,7 +27,7 @@ public class TownyHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		int minX = Coords.chunkToBlock(chunkX);
 		int maxX = minX + 15;
 		int minZ = Coords.chunkToBlock(chunkZ);

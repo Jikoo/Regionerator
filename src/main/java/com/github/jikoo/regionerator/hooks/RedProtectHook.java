@@ -16,6 +16,7 @@ import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.world.DummyChunk;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * PluginHook for <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
@@ -43,7 +44,7 @@ public class RedProtectHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		/*
 		 * RedProtectAPI is somewhat lacking and contains several typos.
 		 * Check is far more efficient to perform off the API.

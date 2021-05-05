@@ -19,22 +19,23 @@ import org.bukkit.Chunk;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Listener used for additional debugging info.
  */
 public class DebugListener implements Listener {
 
-	private final Regionerator plugin;
-	private final Set<Long> badChunkHashes;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull Set<Long> badChunkHashes;
 
-	public DebugListener(Regionerator plugin) {
+	public DebugListener(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
 		this.badChunkHashes = new HashSet<>();
 	}
 
 	@EventHandler
-	public void onChunkLoad(ChunkLoadEvent event) {
+	public void onChunkLoad(@NotNull ChunkLoadEvent event) {
 		if (badChunkHashes.contains(getHash(event.getChunk()))) {
 			plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk loaded while being checked at %s, %s", event.getChunk().getX(), event.getChunk().getZ()));
 			plugin.debug(DebugLevel.EXTREME, () -> plugin.getLogger().log(Level.INFO, "Chunk load trace", new Throwable()));
@@ -49,7 +50,7 @@ public class DebugListener implements Listener {
 		badChunkHashes.remove(getHash(chunkX, chunkZ));
 	}
 
-	private long getHash(Chunk chunk) {
+	private long getHash(@NotNull Chunk chunk) {
 		return getHash(chunk.getX(), chunk.getZ());
 	}
 

@@ -28,15 +28,16 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility for storing and loading chunk visit timestamps.
  */
 public class ChunkFlagger {
 
-	private final Regionerator plugin;
-	private final DatabaseAdapter adapter;
-	private final BatchExpirationLoadingCache<String, FlagData> flagCache;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull DatabaseAdapter adapter;
+	private final @NotNull BatchExpirationLoadingCache<String, FlagData> flagCache;
 
 	ChunkFlagger(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
@@ -71,7 +72,7 @@ public class ChunkFlagger {
 	 * @param key the key of the FlagData
 	 * @return the FlagData
 	 */
-	private FlagData loadFlag(String key) {
+	private @NotNull FlagData loadFlag(@NotNull String key) {
 		try {
 			return new FlagData(key, adapter.get(key));
 		} catch (Exception e) {
@@ -85,7 +86,7 @@ public class ChunkFlagger {
 	 *
 	 * @param expiredData the batch of expired FlagData
 	 */
-	private void expireBatch(Collection<FlagData> expiredData) {
+	private void expireBatch(@NotNull Collection<FlagData> expiredData) {
 		// Only attempt to save if dirty to minimize write time
 		expiredData.removeIf(next -> !next.isDirty() || next.getLastVisit() == Config.FLAG_OH_NO);
 
@@ -331,7 +332,7 @@ public class ChunkFlagger {
 	 * @param chunkZ the chunk Z coordinate
 	 * @return a {@link CompletableFuture<FlagData>}
 	 */
-	public CompletableFuture<FlagData> getChunkFlagOnDelete(@NotNull World world, int chunkX, int chunkZ) {
+	public @NotNull CompletableFuture<FlagData> getChunkFlagOnDelete(@NotNull World world, int chunkX, int chunkZ) {
 		return this.flagCache.get(getFlagDbId(world.getName(), chunkX, chunkZ) + "_old");
 	}
 
@@ -343,9 +344,8 @@ public class ChunkFlagger {
 	 * @param chunkZ the chunk Z coordinate
 	 * @return the ID of the chunk for database use
 	 */
-	@NotNull
 	@Contract(pure = true)
-	private String getFlagDbId(@NotNull String worldName, int chunkX, int chunkZ) {
+	private @NotNull String getFlagDbId(@NotNull String worldName, int chunkX, int chunkZ) {
 		return worldName + "_" + chunkX + '_' + chunkZ;
 	}
 
@@ -354,9 +354,9 @@ public class ChunkFlagger {
 	 */
 	public static class FlagData {
 
-		private final String chunkId;
-		private final AtomicLong lastVisit;
-		private final AtomicBoolean dirty;
+		private final @NotNull String chunkId;
+		private final @NotNull AtomicLong lastVisit;
+		private final @NotNull AtomicBoolean dirty;
 
 		private FlagData(@NotNull String chunkId, long lastVisit) {
 			this(chunkId, lastVisit, false);
@@ -444,7 +444,7 @@ public class ChunkFlagger {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(@Nullable Object obj) {
 			if (this == obj) return true;
 			if (obj == null || getClass() != obj.getClass()) return false;
 			FlagData other = (FlagData) obj;

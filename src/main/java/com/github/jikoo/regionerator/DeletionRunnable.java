@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.bukkit.World;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Runnable for checking and deleting chunks and regions.
@@ -31,14 +32,14 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	private static final String STATS_FORMAT = "%s: checked %s, deleted %s regions & %s chunks";
 
-	private final Regionerator plugin;
-	private final Phaser phaser;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull Phaser phaser;
 	private final WorldInfo world;
 	private final AtomicLong nextRun = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicInteger regionCount = new AtomicInteger(), heavyChecks = new AtomicInteger(),
 			regionsDeleted = new AtomicInteger(), chunksDeleted = new AtomicInteger();
 
-	DeletionRunnable(Regionerator plugin, World world) {
+	DeletionRunnable(@NotNull Regionerator plugin, @NotNull World world) {
 		this.plugin = plugin;
 		this.phaser = new Phaser(1);
 		this.world = plugin.getWorldManager().getWorld(world);
@@ -59,7 +60,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		phaser.arriveAndDeregister();
 	}
 
-	private void handleRegion(RegionInfo region) {
+	private void handleRegion(@NotNull RegionInfo region) {
 		if (isCancelled()) {
 			return;
 		}
@@ -133,7 +134,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		heavyChecks.set(0);
 	}
 
-	private boolean isDeleteEligible(ChunkInfo chunkInfo) {
+	private boolean isDeleteEligible(@NotNull ChunkInfo chunkInfo) {
 		if (isCancelled()) {
 			// If task is cancelled, report all chunks ineligible for deletion
 			plugin.debug(DebugLevel.HIGH, () -> "Deletion task is cancelled, chunks are ineligible for delete.");
@@ -199,7 +200,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount.get(), regionsDeleted, chunksDeleted);
 	}
 
-	public String getWorld() {
+	public @NotNull String getWorld() {
 		return world.getWorld().getName();
 	}
 
@@ -207,7 +208,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		return nextRun.get();
 	}
 
-	Phaser getPhaser() {
+	@NotNull Phaser getPhaser() {
 		return phaser;
 	}
 

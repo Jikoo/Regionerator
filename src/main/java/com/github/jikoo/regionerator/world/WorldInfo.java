@@ -22,11 +22,11 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class WorldInfo {
 
-	private final Regionerator plugin;
-	private final World world;
-	protected final Map<String, RegionInfo> regions;
+	private final @NotNull Regionerator plugin;
+	private final @NotNull World world;
+	protected final @NotNull Map<String, RegionInfo> regions;
 
-	public WorldInfo(Regionerator plugin, World world) {
+	public WorldInfo(@NotNull Regionerator plugin, @NotNull World world) {
 		this.plugin = plugin;
 		this.world = world;
 		regions = new ConcurrentHashMap<>();
@@ -37,7 +37,7 @@ public abstract class WorldInfo {
 	 *
 	 * @return the Bukkit world
 	 */
-	public World getWorld() {
+	public @NotNull World getWorld() {
 		return world;
 	}
 
@@ -48,22 +48,21 @@ public abstract class WorldInfo {
 	 * @param regionZ the region's Z coordinate
 	 * @return the {@link RegionInfo}
 	 */
-	@NotNull
-	public abstract RegionInfo getRegion(int regionX, int regionZ);
+	public abstract @NotNull RegionInfo getRegion(int regionX, int regionZ);
 
 	/**
 	 * Gets a {@link Stream<RegionInfo>} requesting every {@link RegionInfo} contained by the WorldInfo.
 	 *
 	 * @return a {@link Stream<RegionInfo>}
 	 */
-	public abstract Stream<RegionInfo> getRegions();
+	public abstract @NotNull Stream<RegionInfo> getRegions();
 
 	/**
 	 * Gets the instance of Regionerator loading the WorldInfo.
 	 *
 	 * @return the Regionerator instance
 	 */
-	protected Regionerator getPlugin() {
+	protected @NotNull Regionerator getPlugin() {
 		return plugin;
 	}
 

@@ -35,9 +35,9 @@ public class BatchExpirationLoadingCache<K, V> {
 	private final Map<K, V> internal = new ConcurrentHashMap<>();
 	private final Collection<K> expired = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final AtomicBoolean expirationQueued = new AtomicBoolean();
-	private final ExpirationMap<K> expirationMap;
-	private final Function<K, V> load;
-	private final Consumer<Collection<V>> expirationConsumer;
+	private final @NotNull ExpirationMap<K> expirationMap;
+	private final @NotNull Function<K, V> load;
+	private final @NotNull Consumer<Collection<V>> expirationConsumer;
 	private final int maxBatchSize;
 	private final long batchDelay;
 
@@ -48,8 +48,10 @@ public class BatchExpirationLoadingCache<K, V> {
 	 * @param load the {@link Function} used to load values into the cache
 	 * @param expirationConsumer the {@link Consumer} accepting batches of expired values
 	 */
-	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
-		@NotNull final Consumer<Collection<V>> expirationConsumer) {
+	public BatchExpirationLoadingCache(
+			final long retention,
+			@NotNull final Function<K, V> load,
+			@NotNull final Consumer<Collection<V>> expirationConsumer) {
 		this(retention, load, expirationConsumer, 1024, 5000);
 	}
 
@@ -62,8 +64,12 @@ public class BatchExpirationLoadingCache<K, V> {
 	 * @param maxBatchSize the maximum batch size to expire simultaneously
 	 * @param batchDelay the delay to await a full batch for expiration
 	 */
-	public BatchExpirationLoadingCache(final long retention, @NotNull final Function<K, V> load,
-			@NotNull final Consumer<Collection<V>> expirationConsumer, int maxBatchSize, long batchDelay) {
+	public BatchExpirationLoadingCache(
+			final long retention,
+			@NotNull final Function<K, V> load,
+			@NotNull final Consumer<Collection<V>> expirationConsumer,
+			int maxBatchSize,
+			long batchDelay) {
 		this(new ExpirationMap<>(retention), load, expirationConsumer, maxBatchSize, batchDelay);
 	}
 
@@ -110,8 +116,7 @@ public class BatchExpirationLoadingCache<K, V> {
 	 * @param key the key
 	 * @return a {@link CompletableFuture} providing the requested value
 	 */
-	@NotNull
-	public CompletableFuture<V> get(@NotNull K key) {
+	public @NotNull CompletableFuture<V> get(@NotNull K key) {
 		V value = getIfPresent(key);
 		if (value != null) {
 			return CompletableFuture.completedFuture(value);
@@ -125,8 +130,7 @@ public class BatchExpirationLoadingCache<K, V> {
 	 * @param key the key
 	 * @return the loaded value or {@code null}
 	 */
-	@Nullable
-	public V getIfPresent(@NotNull K key) {
+	public @Nullable V getIfPresent(@NotNull K key) {
 		V value = internal.get(key);
 		if (value != null) {
 			expirationMap.add(key);
@@ -141,7 +145,7 @@ public class BatchExpirationLoadingCache<K, V> {
 	 * @param key the key
 	 * @return the loaded value or {@code null}
 	 */
-	public @NotNull V computeIfAbsent(@NotNull K key, Function<K, V> supplier) {
+	public @NotNull V computeIfAbsent(@NotNull K key, @NotNull Function<K, V> supplier) {
 		V value = getIfPresent(key);
 		if (value != null) {
 			return value;
@@ -293,7 +297,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param expirationConsumer the consumer of expired values
 		 * @return the constructed cache
 		 */
-		public BatchExpirationLoadingCache<K, V> build(
+		public @NotNull BatchExpirationLoadingCache<K, V> build(
 				@NotNull final Function<K, V> load,
 				@NotNull final Consumer<Collection<V>> expirationConsumer) {
 			ExpirationMap<K> map = new ExpirationMap<>(retention, cacheMax, frequency);
@@ -308,7 +312,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param retention the retention duration
 		 * @return the builder
 		 */
-		public Builder<K, V> setRetention(long retention) {
+		public @NotNull Builder<K, V> setRetention(long retention) {
 			this.retention = retention;
 			return this;
 		}
@@ -321,7 +325,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param cacheMax the maximum cache size
 		 * @return the builder
 		 */
-		public Builder<K, V> setCacheMax(int cacheMax) {
+		public @NotNull Builder<K, V> setCacheMax(int cacheMax) {
 			this.cacheMax = cacheMax;
 			return this;
 		}
@@ -334,7 +338,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param frequency the maximum frequency of expiration checks
 		 * @return the builder
 		 */
-		public Builder<K, V> setFrequency(long frequency) {
+		public @NotNull Builder<K, V> setFrequency(long frequency) {
 			this.frequency = frequency;
 			return this;
 		}
@@ -347,7 +351,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param batchMax the maximum batch size
 		 * @return the builder
 		 */
-		public Builder<K, V> setBatchMax(int batchMax) {
+		public @NotNull Builder<K, V> setBatchMax(int batchMax) {
 			this.batchMax = batchMax;
 			return this;
 		}
@@ -358,7 +362,7 @@ public class BatchExpirationLoadingCache<K, V> {
 		 * @param batchDelay the delay between batches
 		 * @return the builder
 		 */
-		public Builder<K, V> setBatchDelay(long batchDelay) {
+		public @NotNull Builder<K, V> setBatchDelay(long batchDelay) {
 			this.batchDelay = batchDelay;
 			return this;
 		}

@@ -23,6 +23,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -30,13 +31,13 @@ import org.jetbrains.annotations.Nullable;
  */
 public class FlagHandler {
 
-	private final Regionerator plugin;
+	private final @NotNull Regionerator plugin;
 
-	public FlagHandler(Regionerator plugin) {
+	public FlagHandler(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
 	}
 
-	public void handleFlags(CommandSender sender, String[] args, boolean flag) {
+	public void handleFlags(@NotNull CommandSender sender, String @NotNull [] args, boolean flag) {
 		List<ChunkPosition> chunks = getSelectedArea(sender, args);
 		if (chunks == null) {
 			// More descriptive errors are handled when selecting chunks
@@ -74,7 +75,7 @@ public class FlagHandler {
 		sender.sendMessage("Edited flags successfully!");
 	}
 
-	private @Nullable List<ChunkPosition> getSelectedArea(CommandSender sender, String[] args) {
+	private @Nullable List<ChunkPosition> getSelectedArea(CommandSender sender, String @NotNull [] args) {
 		if (args.length < 3 && !(sender instanceof Player)) {
 			sender.sendMessage("Console usage: /regionerator (un)flag <world> <chunk X> <chunk Z>");
 			sender.sendMessage("Chunk coordinates = regular coordinates / 16");

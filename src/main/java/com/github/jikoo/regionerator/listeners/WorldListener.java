@@ -14,6 +14,7 @@ import com.github.jikoo.regionerator.Regionerator;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class WorldListener implements Listener {
 
@@ -24,7 +25,7 @@ public class WorldListener implements Listener {
 	}
 
 	@EventHandler
-	public void onWorldLoad(WorldLoadEvent event) {
+	public void onWorldLoad(@NotNull WorldLoadEvent event) {
 		String name = event.getWorld().getName();
 		for (String worldName : plugin.config().enabledWorlds()) {
 			if (worldName.equals(name)) {

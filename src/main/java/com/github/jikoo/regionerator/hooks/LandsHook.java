@@ -27,7 +27,7 @@ public class LandsHook extends PluginHook {
 	}
 
 	@Override
-	public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
 		return getLandsAPI().isClaimed(chunkWorld, chunkX, chunkZ);
 	}
 
@@ -36,8 +36,7 @@ public class LandsHook extends PluginHook {
 		return true;
 	}
 
-	@NotNull
-	private LandsIntegration getLandsAPI() {
+	private @NotNull LandsIntegration getLandsAPI() {
 		if (landsAPI == null) {
 			landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class));
 		}

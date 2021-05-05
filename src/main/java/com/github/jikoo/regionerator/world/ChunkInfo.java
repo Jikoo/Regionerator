@@ -17,15 +17,16 @@ import com.github.jikoo.regionerator.util.SupplierCache;
 import com.github.jikoo.regionerator.util.VisitStatusCache;
 import com.google.common.base.Preconditions;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A representation of a Minecraft chunk.
  */
 public abstract class ChunkInfo {
 
-	private final RegionInfo regionInfo;
+	private final @NotNull RegionInfo regionInfo;
 	private final int localChunkX, localChunkZ;
-	private final SupplierCache<VisitStatus> visitStatusSupplier;
+	private final @NotNull SupplierCache<VisitStatus> visitStatusSupplier;
 
 	/**
 	 * Constructs a new ChunkInfo instance.
@@ -34,7 +35,7 @@ public abstract class ChunkInfo {
 	 * @param localChunkX the chunk X coordinate within the region
 	 * @param localChunkZ the chunk Z coordinate within the region
 	 */
-	public ChunkInfo(RegionInfo regionInfo, int localChunkX, int localChunkZ) {
+	public ChunkInfo(@NotNull RegionInfo regionInfo, int localChunkX, int localChunkZ) {
 		Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32, "localChunkX must be between 0 and 31");
 		Preconditions.checkArgument(localChunkZ >= 0 && localChunkZ < 32, "localChunkZ must be between 0 and 31");
 		this.regionInfo = regionInfo;
@@ -48,7 +49,7 @@ public abstract class ChunkInfo {
 	 *
 	 * @return the World
 	 */
-	public World getWorld() {
+	public @NotNull World getWorld() {
 		return regionInfo.getWorld();
 	}
 
@@ -57,7 +58,7 @@ public abstract class ChunkInfo {
 	 *
 	 * @return the RegionInfo
 	 */
-	public RegionInfo getRegionInfo() {
+	public @NotNull RegionInfo getRegionInfo() {
 		return this.regionInfo;
 	}
 
@@ -136,7 +137,7 @@ public abstract class ChunkInfo {
 	 * operation. Use with caution.
 	 * @return the VisitStatus
 	 */
-	public VisitStatus getVisitStatus() {
+	public @NotNull VisitStatus getVisitStatus() {
 		return  visitStatusSupplier.get();
 	}
 
@@ -145,7 +146,7 @@ public abstract class ChunkInfo {
 	 *
 	 * @return the Regionerator instance
 	 */
-	private Regionerator getPlugin() {
+	private @NotNull Regionerator getPlugin() {
 		return getRegionInfo().getWorldInfo().getPlugin();
 	}
 
