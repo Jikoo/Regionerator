@@ -87,6 +87,8 @@ public class DeletionRunnable extends BukkitRunnable {
 		List<ChunkInfo> chunks = region.getChunks().filter(this::isDeleteEligible).collect(Collectors.toList());
 
 		if (chunks.size() != 1024) {
+			plugin.debug(DebugLevel.HIGH, () ->
+					String.format("Not all chunks are delete-eligible (%s) - removing unnecessary chunks", chunks.size()));
 			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
 			chunks.removeIf(chunk -> {
 				if (isCancelled()) {
@@ -96,19 +98,21 @@ public class DeletionRunnable extends BukkitRunnable {
 				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
 			});
 		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
-				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus()== VisitStatus.UNVISITED)) {
+				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus() == VisitStatus.UNVISITED)) {
 			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
+			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - chunks are freshly generated.");
+			return;
+		}
+
+		if (chunks.size() == 0) {
+			// If no chunks are modified, do nothing.
+			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - no chunks are delete-eligible.");
+			recover();
 			return;
 		}
 
 		// Orphan chunks. N.B. Changes do not take effect until RegionInfo#write is called.
 		chunks.forEach(ChunkInfo::setOrphaned);
-
-		if (chunks.size() == 0) {
-			// If no chunks are modified, do nothing.
-			recover();
-			return;
-		}
 
 		try {
 			region.write();
@@ -137,7 +141,8 @@ public class DeletionRunnable extends BukkitRunnable {
 		try {
 			// Allow server to recover for configured time.
 			Thread.sleep(plugin.config().getDeletionRecoveryMillis());
-		} catch (InterruptedException ignored) {}
+		} catch (InterruptedException ignored) {
+		}
 		// Reset chunk count after sleep.
 		heavyChecks.set(0);
 	}
@@ -151,8 +156,8 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		if (chunkInfo.isOrphaned()) {
 			// Chunk already deleted
-			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is already orphaned.",
-					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ()));
+			plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk %s_%s_%s is already orphaned.",
+					chunkInfo.getWorld().getName(), chunkInfo.getChunkX(), chunkInfo.getChunkZ()));
 			return true;
 		}
 
@@ -162,14 +167,14 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		if (!isFresh && now <= lastVisit) {
 			// Chunk is visited
-			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is visited until %s",
-					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), lastVisit));
+			plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk %s_%s_%s is visited until %s",
+					chunkInfo.getWorld().getName(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), lastVisit));
 			return false;
 		}
 
 		if (!isFresh && now - plugin.config().getFlagDuration(chunkInfo.getWorld()) <= chunkInfo.getLastModified()) {
-			plugin.debug(DebugLevel.HIGH, () -> String.format("%s: %s, %s is modified until %s",
-					chunkInfo.getRegionInfo().getIdentifier(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), chunkInfo.getLastModified()));
+			plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk %s_%s_%s is modified until %s",
+					chunkInfo.getWorld().getName(), chunkInfo.getChunkX(), chunkInfo.getChunkZ(), chunkInfo.getLastModified()));
 			return false;
 		}
 

@@ -67,7 +67,21 @@ public class AnvilRegion extends RegionInfo {
 				try (RandomAccessFile regionRandomAccess = new RandomAccessFile(getRegionFile(), "rwd")) {
 					regionRandomAccess.write(header, 0, 4096);
 				}
-				getPlugin().debug(DebugLevel.HIGH, () -> String.format("Rewrote header of region %s", getIdentifier()));
+				if (getPlugin().debug(DebugLevel.HIGH)) {
+					// Convert back from header index to chunk location.
+					int nonZeroIndex = i / 4;
+					int chunkX = getLowestChunkX() + nonZeroIndex % 32;// TODO faster bitwise op
+					// Truncation eliminates X data, no need to subtract before division.
+					int chunkZ = getLowestChunkZ() + nonZeroIndex / 32;
+
+					getPlugin().getLogger().info(
+							String.format(
+									"Rewrote header of region %s due to non-zero index of chunk %s_%s_%s",
+									getIdentifier(),
+									getWorld().getName(),
+									chunkX,
+									chunkZ));
+				}
 				return true;
 			}
 		}

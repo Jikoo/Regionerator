@@ -118,6 +118,7 @@ public class VisitStatusCache extends SupplierCache<VisitStatus> {
 				return VisitStatus.GENERATED;
 			}
 
+			plugin.debug(DebugLevel.HIGH, () -> "Chunk " + flagData.getChunkId() + " has not been visited.");
 			return VisitStatus.UNVISITED;
 		}, calcCacheDuration(plugin), TimeUnit.MINUTES);
 	}
