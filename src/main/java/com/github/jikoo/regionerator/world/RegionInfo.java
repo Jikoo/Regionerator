@@ -12,9 +12,7 @@ package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
-import com.google.common.base.Preconditions;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -126,18 +124,19 @@ public abstract class RegionInfo {
 	 * @return the {@link ChunkInfo}
 	 */
 	public @NotNull ChunkInfo getLocalChunk(int localChunkX, int localChunkZ) {
-		Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32 && localChunkZ >= 0 && localChunkZ < 32,
-				"Local chunk coords must be within range 0-31! Received values X: %s, Z: %s", localChunkX, localChunkZ);
 		return getChunkInternal(localChunkX, localChunkZ);
 	}
 
 	/**
-	 * Implementation of obtaining a ChunkInfo.
+	 * @deprecated implement {@link #getLocalChunk(int, int)}
+	 *
+	 * <p>This method existed as a helper method. However, the helper was required due to implementation-specific details.
 	 *
 	 * @param localChunkX the chunk X coordinate within the region
 	 * @param localChunkZ the chunk Z coordinate within the region
 	 * @return the {@link ChunkInfo} implementation
 	 */
+	@Deprecated
 	protected @NotNull abstract ChunkInfo getChunkInternal(int localChunkX, int localChunkZ);
 
 	/**
@@ -145,15 +144,9 @@ public abstract class RegionInfo {
 	 *
 	 * @return a {@link Stream<ChunkInfo>}
 	 */
-	public @NotNull Stream<ChunkInfo> getChunks() {
-		AtomicInteger index = new AtomicInteger();
-		return Stream.generate(() -> {
-			int localIndex = index.getAndIncrement();
-			int localChunkX = localIndex % 32;
-			int localChunkZ = localIndex / 32;
-			return getLocalChunk(localChunkX, localChunkZ);
-		}).limit(1024);
-	}
+	public abstract @NotNull Stream<ChunkInfo> getChunks();
+
+	public abstract int getChunksPerRegion();
 
 	/**
 	 * Gets the instance of Regionerator loading the RegionInfo.

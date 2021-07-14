@@ -15,7 +15,6 @@ import com.github.jikoo.regionerator.VisitStatus;
 import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.SupplierCache;
 import com.github.jikoo.regionerator.util.VisitStatusCache;
-import com.google.common.base.Preconditions;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,8 +35,6 @@ public abstract class ChunkInfo {
 	 * @param localChunkZ the chunk Z coordinate within the region
 	 */
 	public ChunkInfo(@NotNull RegionInfo regionInfo, int localChunkX, int localChunkZ) {
-		Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32, "localChunkX must be between 0 and 31");
-		Preconditions.checkArgument(localChunkZ >= 0 && localChunkZ < 32, "localChunkZ must be between 0 and 31");
 		this.regionInfo = regionInfo;
 		this.localChunkX = localChunkX;
 		this.localChunkZ = localChunkZ;
@@ -107,8 +104,8 @@ public abstract class ChunkInfo {
 
 	/**
 	 * Sets a chunk orphaned.
-	 * <p>
-	 * To better support batch operations, this method does not immediately orphan the chunk.
+	 *
+	 * <p>To better support batch operations, this method does not immediately orphan the chunk.
 	 * To write changes, call {@link RegionInfo#write()} on the ChunkInfo's owning region.
 	 */
 	public abstract void setOrphaned();
@@ -131,8 +128,8 @@ public abstract class ChunkInfo {
 
 	/**
 	 * Gets the {@link VisitStatus} of the chunk.
-	 * <p>
-	 * N.B. This method caches its value for a short duration based on chunks per deletion attempt
+	 *
+	 * <p>N.B. This method caches its value for a short duration based on chunks per deletion attempt
 	 * and recovery time. However, querying {@link Hook Hooks} will always result in a heavier first
 	 * operation. Use with caution.
 	 * @return the VisitStatus
