@@ -144,7 +144,8 @@ public class Regionerator extends JavaPlugin {
 		if (flagger != null) {
 			flagger.cancel();
 		}
-		protectionHooks.clear();
+		// Remove only hooks added by Regionerator to not break other plugins' hooks on reload.
+		protectionHooks.removeIf(hook -> hook.getClass().getPackage().getName().equals("com.github.jikoo.regionerator.hooks"));
 
 		debug(DebugLevel.LOW, () -> "Loading features...");
 		// Always enable hook listener in case someone else adds hooks.
