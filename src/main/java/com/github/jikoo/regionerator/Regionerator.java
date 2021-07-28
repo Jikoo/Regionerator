@@ -93,15 +93,23 @@ public class Regionerator extends JavaPlugin {
 
 		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
 
-		// Don't register listeners if there are no worlds configured
+		// Don't load features if there are no worlds configured
 		if (config.enabledWorlds().isEmpty()) {
 			getLogger().severe("No worlds are enabled. There's nothing to do!");
 			return;
 		}
 
-		reloadFeatures();
+		/*
+		 * Load features after server has finished boot.
+		 * While softdepend should take care of this for us, as soon as another plugin causes
+		 * a circular dependency Bukkit makes no attempt to resolve soft dependencies at all.
+		 * To combat this, we load features after the server boots.
+		 */
+		getServer().getScheduler().runTask(this, () -> {
+			reloadFeatures();
 
-		debug(DebugLevel.LOW, () -> executor.onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
+			debug(DebugLevel.LOW, () -> executor.onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));
+		});
 	}
 
 	@Override
@@ -138,6 +146,7 @@ public class Regionerator extends JavaPlugin {
 		}
 		protectionHooks.clear();
 
+		debug(DebugLevel.LOW, () -> "Loading features...");
 		// Always enable hook listener in case someone else adds hooks.
 		getServer().getPluginManager().registerEvents(new HookListener(this), this);
 
@@ -204,6 +213,7 @@ public class Regionerator extends JavaPlugin {
 		if (debug(DebugLevel.HIGH)) {
 			getServer().getPluginManager().registerEvents(debugListener, this);
 		}
+		debug(DebugLevel.LOW, () -> "Load complete!");
 	}
 
 	public Config config() {
