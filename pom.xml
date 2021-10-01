@@ -58,6 +58,12 @@
       <artifactId>RedProtect-Core</artifactId>
       <version>7.7.3</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>br.net.fabiozumbi12.RedProtect</groupId>
@@ -66,8 +72,8 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>de.keyle</groupId>
-          <artifactId>mypet</artifactId>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -131,7 +137,7 @@
     </repository>
     <repository>
       <id>redprotect-repo</id>
-      <url>https://raw.github.com/FabioZumbi12/RedProtect/mvn-repo/</url>
+      <url>https://raw.githubusercontent.com/FabioZumbi12/RedProtect/mvn-repo/</url>
     </repository>
   </repositories>
 
