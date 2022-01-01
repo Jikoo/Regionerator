@@ -13,7 +13,7 @@ jobs:
         if: github.actor == 'dependabot[bot]'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: 'Build Java 8'
+          checkName: 'Build Java 17'
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: autoapprove
         if: github.actor == 'dependabot[bot]' && steps.wait-for-build.outputs.conclusion == 'success'
