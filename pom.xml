@@ -111,7 +111,7 @@
     <dependency>
       <groupId>com.github.elBukkit</groupId>
       <artifactId>PreciousStones</artifactId>
-      <version>1.16.5</version>
+      <version>1.17.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
