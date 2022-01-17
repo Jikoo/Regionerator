@@ -237,6 +237,11 @@ public class Regionerator extends JavaPlugin {
 	 * Attempts to activate {@link DeletionRunnable}s for any configured worlds.
 	 */
 	public void attemptDeletionActivation() {
+		
+		if (!(getConfig().getBoolean("deletion.enable"))) {
+			return;
+		}
+		
 		deletionRunnables.values().removeIf(value -> value.getNextRun() < System.currentTimeMillis());
 
 		if (isPaused()) {
