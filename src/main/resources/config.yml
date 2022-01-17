@@ -39,6 +39,8 @@ cache:
   max-cache-size: 640000
 
 deletion:
+  # setting this to false to let the plugin only flagging chunk
+  enable: true
   # Recovery time in milliseconds between expensive operations.
   # Recovery time is always waited between region checks.
   deletion-recovery-time: 250
