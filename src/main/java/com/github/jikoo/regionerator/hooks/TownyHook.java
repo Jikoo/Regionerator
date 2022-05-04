@@ -18,7 +18,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=https://github.com/LlmDl/Towny>Towny</a>.
+ * PluginHook for <a href="https://github.com/LlmDl/Towny">Towny</a>.
  */
 public class TownyHook extends PluginHook {
 

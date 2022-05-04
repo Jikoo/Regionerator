@@ -19,7 +19,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=https://www.spigotmc.org/resources/redprotect.15841/>RedProtect</a>.
+ * PluginHook for <a href="https://www.spigotmc.org/resources/redprotect.15841/">RedProtect</a>.
  */
 public class RedProtectHook extends PluginHook {
 

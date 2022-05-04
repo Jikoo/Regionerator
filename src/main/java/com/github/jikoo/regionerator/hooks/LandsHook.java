@@ -16,7 +16,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=https://www.spigotmc.org/resources/lands.53313/>Lands</a>.
+ * PluginHook for <a href="https://www.spigotmc.org/resources/lands.53313/">Lands</a>.
  */
 public class LandsHook extends PluginHook {
 

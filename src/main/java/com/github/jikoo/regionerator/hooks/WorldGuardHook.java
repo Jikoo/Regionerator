@@ -20,7 +20,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=http://dev.bukkit.org/bukkit-plugins/worldguard/>WorldGuard</a>.
+ * PluginHook for <a href="http://dev.bukkit.org/bukkit-plugins/worldguard/">WorldGuard</a>.
  */
 public class WorldGuardHook extends PluginHook {
 

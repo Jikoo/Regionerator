@@ -11,14 +11,15 @@
 package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.planarwrappers.function.ThrowingTriFunction;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
 /**
- * PluginHook for <a href=https://www.spigotmc.org/resources/factions.1900/>Factions</a> and
- * <a href=https://www.spigotmc.org/resources/factionsuuid.1035/>FactionsUUID</a>.
+ * PluginHook for <a href="https://www.spigotmc.org/resources/factions.1900/">Factions</a> and
+ * <a href="https://www.spigotmc.org/resources/factionsuuid.1035/">FactionsUUID</a>.
  */
 public class FactionsHook extends PluginHook {
 

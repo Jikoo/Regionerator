@@ -15,7 +15,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=https://github.com/cjburkey01/ClaimChunk/>ClaimChunk</a>.
+ * PluginHook for <a href="https://github.com/cjburkey01/ClaimChunk/">ClaimChunk</a>.
  */
 public class ClaimChunkHook extends PluginHook {
 

@@ -13,12 +13,13 @@ package com.github.jikoo.regionerator.hooks;
 import com.griefdefender.api.GriefDefender;
 import com.griefdefender.api.claim.Claim;
 import com.griefdefender.api.claim.ClaimManager;
-import java.util.Set;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Set;
+
 /**
- * PluginHook for <a href=https://www.spigotmc.org/resources/griefdefender.68900/>GriefDefender</a>.
+ * PluginHook for <a href="https://www.spigotmc.org/resources/griefdefender.68900/">GriefDefender</a>.
  */
 public class GriefDefenderHook extends PluginHook {
 
@@ -39,7 +40,7 @@ public class GriefDefenderHook extends PluginHook {
 	/**
 	 * Calculate key from chunk coordinates.
 	 * <p>
-	 * See <a href=https://github.com/bloodmc/GriefDefender/blob/6f96c90d9d0baf29dfe167fe1f20b678adb6b72d/bukkit/src/main/java/com/griefdefender/claim/GDClaimManager.java#L649>GDClaimManager#L649</a>.
+	 * See <a href="https://github.com/bloodmc/GriefDefender/blob/6f96c90d9d0baf29dfe167fe1f20b678adb6b72d/bukkit/src/main/java/com/griefdefender/claim/GDClaimManager.java#L649">GDClaimManager#L649</a>.
 	 *
 	 * @param chunkX the chunk X
 	 * @param chunkZ the chunk Z

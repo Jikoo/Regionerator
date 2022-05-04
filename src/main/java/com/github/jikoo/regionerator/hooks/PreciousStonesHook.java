@@ -17,7 +17,7 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=https://github.com/elBukkit/PreciousStones/>PreciousStones</a>.
+ * PluginHook for <a href="https://github.com/elBukkit/PreciousStones/">PreciousStones</a>.
  */
 public class PreciousStonesHook extends PluginHook {
 

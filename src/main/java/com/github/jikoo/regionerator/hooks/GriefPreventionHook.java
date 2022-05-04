@@ -10,14 +10,13 @@
 
 package com.github.jikoo.regionerator.hooks;
 
-import org.bukkit.World;
-
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
+import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * PluginHook for <a href=http://dev.bukkit.org/bukkit-plugins/grief-prevention/>GriefPrevention</a>.
+ * PluginHook for <a href="http://dev.bukkit.org/bukkit-plugins/grief-prevention/">GriefPrevention</a>.
  */
 public class GriefPreventionHook extends PluginHook {
 
