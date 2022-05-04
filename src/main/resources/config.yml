@@ -71,6 +71,7 @@ hooks:
   Lands: true
   PreciousStones: true
   RedProtect: true
+  Residence: true
   Towny: true
   WorldGuard: true
   VanillaSpawnProtection: true
