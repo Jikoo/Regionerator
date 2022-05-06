@@ -56,9 +56,13 @@ worlds:
   default:
     # Flags older than x days can be ignored and the region deleted.
     # Set to -1 to disable Regionerator in a world.
-    # To disable flagging, set this to 0.
+    # To disable flagging, set to 0.
     # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
     days-till-flag-expires: -1
+    # Chunks last modified x days ago can be ignored and the region deleted.
+    # Set to -1 to disable Regionerator in a world.
+    # To ignore last chunk modification, set to 0.
+    days-since-chunk-modify: -1
 
 # Hooks to attempt to check for protections from.
 # If your protection plugin of choice isn't here, ask!

@@ -13,6 +13,11 @@ package com.github.jikoo.regionerator;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
+import org.bukkit.World;
+import org.bukkit.plugin.IllegalPluginAccessException;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Phaser;
@@ -20,10 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import org.bukkit.World;
-import org.bukkit.plugin.IllegalPluginAccessException;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Runnable for checking and deleting chunks and regions.
@@ -205,7 +206,7 @@ public class DeletionRunnable extends BukkitRunnable {
 			plugin.getDebugListener().ignoreChunk(chunkInfo.getChunkX(), chunkInfo.getChunkZ());
 		}
 
-		return visitStatus.ordinal() < VisitStatus.VISITED.ordinal();
+		return visitStatus.canDelete();
 
 	}
 

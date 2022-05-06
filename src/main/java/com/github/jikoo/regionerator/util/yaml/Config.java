@@ -11,8 +11,14 @@
 package com.github.jikoo.regionerator.util.yaml;
 
 import com.github.jikoo.regionerator.DebugLevel;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,11 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
 
 public class Config extends ConfigYamlData {
 
@@ -38,10 +39,12 @@ public class Config extends ConfigYamlData {
 	public static final long FLAG_ETERNAL = Long.MAX_VALUE - 1;
 	/** Constant representing a failure to load data. */
 	public static final long FLAG_OH_NO = Long.MAX_VALUE - 2;
+	public static final String WORLD_DEFAULTS = "default";
 
 	private final Object lock = new Object();
 	private DebugLevel debugLevel;
-	private Map<String, Long> worlds;
+	private Map<String, Long> worldFlagDurations;
+	private Map<String, Long> worldChunkModifyDurations;
 	private final AtomicLong ticksPerFlag = new AtomicLong();
 	private final AtomicLong millisBetweenCycles = new AtomicLong();
 	private final AtomicLong deletionRecovery = new AtomicLong();
@@ -68,6 +71,7 @@ public class Config extends ConfigYamlData {
 
 		ConfigurationSection worldsSection = raw().getConfigurationSection("worlds");
 		Map<String, Long> worldFlagDurations = new HashMap<>();
+		Map<String, Long> worldChunkModifyDurations = new HashMap<>();
 		if (worldsSection != null) {
 
 			List<String> activeWorlds = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
@@ -91,12 +95,16 @@ public class Config extends ConfigYamlData {
 
 				int days = worldSection.getInt("days-till-flag-expires", worldsSection.getInt("default.days-till-flag-expires", -1));
 				worldFlagDurations.put(validCase, days < 0 ? -1 : TimeUnit.MILLISECONDS.convert(days, TimeUnit.DAYS));
+
+				days = worldSection.getInt("days-since-chunk-modify", worldsSection.getInt("default.days-since-chunk-modify", -1));
+				worldChunkModifyDurations.put(validCase, days < 0 ? -1 : TimeUnit.MILLISECONDS.convert(days, TimeUnit.DAYS));
 			}
 		}
 
 		synchronized (lock) {
 			// Immutable, this should not be changed during run.
-			this.worlds = ImmutableMap.copyOf(worldFlagDurations);
+			this.worldFlagDurations = ImmutableMap.copyOf(worldFlagDurations);
+			this.worldChunkModifyDurations = ImmutableMap.copyOf(worldChunkModifyDurations);
 
 			debugLevel = DebugLevel.of(getString("debug-level"));
 		}
@@ -153,17 +161,27 @@ public class Config extends ConfigYamlData {
 
 	@Deprecated
 	public boolean isDeleteFreshChunks() {
-		return deleteFreshChunks.get() && getFlagDuration() > 0;
+		return deleteFreshChunks.get() && getFlagDuration(WORLD_DEFAULTS) > 0;
 	}
 
 	public boolean isDeleteFreshChunks(@NotNull World world) {
 		return deleteFreshChunks.get() && getFlagDuration(world) > 0;
 	}
 
+	public long getChunkModifyDuration(@NotNull World world) {
+		return getChunkModifyDuration(world.getName());
+	}
+
+	public long getChunkModifyDuration(@NotNull String worldName) {
+		synchronized (lock) {
+			return worldChunkModifyDurations.getOrDefault(worldName, worldChunkModifyDurations.getOrDefault(WORLD_DEFAULTS, -1L));
+		}
+	}
+
 	@Deprecated
 	public long getFlagDuration() {
 		synchronized (lock) {
-			return worlds.getOrDefault("default", -1L);
+			return worldFlagDurations.getOrDefault(WORLD_DEFAULTS, -1L);
 		}
 	}
 
@@ -171,15 +189,15 @@ public class Config extends ConfigYamlData {
 		return getFlagDuration(world.getName());
 	}
 
-	public long getFlagDuration(String worldName) {
+	public long getFlagDuration(@NotNull String worldName) {
 		synchronized (lock) {
-			return worlds.getOrDefault(worldName, worlds.getOrDefault("default", -1L));
+			return worldFlagDurations.getOrDefault(worldName, worldFlagDurations.getOrDefault(WORLD_DEFAULTS, -1L));
 		}
 	}
 
 	@Deprecated
 	public long getFlagGenerated() {
-		return isDeleteFreshChunks() ? getFlagVisit() : Long.MAX_VALUE;
+		return isDeleteFreshChunks() ? getFlagVisit(WORLD_DEFAULTS) : Long.MAX_VALUE;
 	}
 
 	public long getFlagGenerated(@NotNull World world) {
@@ -188,14 +206,14 @@ public class Config extends ConfigYamlData {
 
 	@Deprecated
 	public long getFlagVisit() {
-		return System.currentTimeMillis() + getFlagDuration();
+		return System.currentTimeMillis() + getFlagDuration(WORLD_DEFAULTS);
 	}
 
 	public long getFlagVisit(@NotNull World world) {
 		return getFlagVisit(world.getName());
 	}
 
-	public long getFlagVisit(String worldName) {
+	public long getFlagVisit(@NotNull String worldName) {
 		return System.currentTimeMillis() + getFlagDuration(worldName);
 	}
 
@@ -217,17 +235,17 @@ public class Config extends ConfigYamlData {
 		return flaggingRadius.get();
 	}
 
-	public boolean isEnabled(String worldName) {
-		return getFlagDuration(worldName) >= 0;
+	public boolean isEnabled(@NotNull String worldName) {
+		return getFlagDuration(worldName) >= 0 && getChunkModifyDuration(worldName) >= 0;
 	}
 
-	public @NotNull Collection<String> enabledWorlds() {
+	public @NotNull @Unmodifiable Collection<@NotNull String> enabledWorlds() {
 		return Collections.unmodifiableSet(plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toSet()));
 	}
 
 	@Deprecated
-	public Collection<String> getWorlds() {
-		return ImmutableList.copyOf(enabledWorlds());
+	public @NotNull @Unmodifiable Collection<@NotNull String> getWorlds() {
+		return enabledWorlds();
 	}
 
 	public long getCacheExpirationFrequency() {

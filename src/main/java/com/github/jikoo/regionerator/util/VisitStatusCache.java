@@ -18,13 +18,14 @@ import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.jetbrains.annotations.NotNull;
 
 public class VisitStatusCache extends SupplierCache<VisitStatus> {
 
@@ -56,10 +57,10 @@ public class VisitStatusCache extends SupplierCache<VisitStatus> {
 				return VisitStatus.VISITED;
 			}
 
-			// If chunk is recently modified, prioritize that over protections for the sake of speed/calculation load.
-			if (!isFresh && now - plugin.config().getFlagDuration(bukkitWorld) <= chunkInfo.getLastModified()) {
+			// If chunk is recently modified, prioritize that for the sake of speed/calculation load.
+			if (!isFresh && now - plugin.config().getChunkModifyDuration(bukkitWorld) <= chunkInfo.getLastModified()) {
 				plugin.debug(DebugLevel.HIGH, () -> String.format("Chunk %s is modified until %s", flagData.getChunkId(), lastVisit));
-				return VisitStatus.VISITED;
+				return VisitStatus.RECENTLY_MODIFIED;
 			}
 
 			Collection<Hook> syncHooks = Bukkit.isPrimaryThread() ? null : new ArrayList<>();
