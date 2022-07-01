@@ -13,9 +13,6 @@ package com.github.jikoo.regionerator.listeners;
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.DistributedTask;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -26,6 +23,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Listener used to flag chunks as visited.
@@ -64,7 +65,14 @@ public class FlaggingListener implements Listener {
 			return;
 		}
 
-		plugin.getFlagger().flagChunk(world.getName(), event.getChunk().getX(), event.getChunk().getZ(), plugin.config().getFlagGenerated(world));
+		plugin.getServer().getScheduler().runTaskAsynchronously(
+				plugin,
+				() ->
+						plugin.getFlagger().flagChunk(
+								world.getName(),
+								event.getChunk().getX(),
+								event.getChunk().getZ(),
+								plugin.config().getFlagGenerated(world)));
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
