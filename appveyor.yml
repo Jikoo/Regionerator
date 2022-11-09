@@ -20,9 +20,6 @@ cache:
 artifacts:
   - path: target\Regionerator.jar
     name: Regionerator
-branches:
-  only:
-    - master
 only_commits:
   files:
     - src/**/*
