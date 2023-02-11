@@ -13,6 +13,12 @@ package com.github.jikoo.regionerator.util.yaml;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,11 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
 
 public class Config extends ConfigYamlData {
 
@@ -157,7 +158,11 @@ public class Config extends ConfigYamlData {
 	}
 
 	public boolean isDeleteFreshChunks(@NotNull World world) {
-		return deleteFreshChunks.get() && getFlagDuration(world) > 0;
+		return isDeleteFreshChunks(world.getName());
+	}
+
+	public boolean isDeleteFreshChunks(@NotNull String worldName) {
+		return deleteFreshChunks.get() && getFlagDuration(worldName) > 0;
 	}
 
 	@Deprecated
@@ -183,7 +188,11 @@ public class Config extends ConfigYamlData {
 	}
 
 	public long getFlagGenerated(@NotNull World world) {
-		return isDeleteFreshChunks(world) ? getFlagVisit(world) : Long.MAX_VALUE;
+		return getFlagGenerated(world.getName());
+	}
+
+	public long getFlagGenerated(@NotNull String worldName) {
+		return isDeleteFreshChunks(worldName) ? getFlagVisit(worldName) : Long.MAX_VALUE;
 	}
 
 	@Deprecated

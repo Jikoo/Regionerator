@@ -10,9 +10,11 @@
 
 package com.github.jikoo.regionerator.listeners;
 
+import com.github.jikoo.planarwrappers.scheduler.AsyncBatch;
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.DistributedTask;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -23,9 +25,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,6 +40,7 @@ public class FlaggingListener implements Listener {
 
 	private final @NotNull Regionerator plugin;
 	private final @NotNull FlaggingRunnable flagger;
+	private final @NotNull AsyncBatch<ChunkId> chunkPopulateBatch;
 
 	public FlaggingListener(@NotNull Regionerator plugin) {
 		this.plugin = plugin;
@@ -45,10 +51,24 @@ public class FlaggingListener implements Listener {
 		}
 
 		flagger.schedule(plugin);
+
+		this.chunkPopulateBatch = new AsyncBatch<>(this.plugin, 2L, TimeUnit.SECONDS) {
+			@Override
+			public void post(@NotNull @UnmodifiableView Set<ChunkId> batch) {
+				for (ChunkId chunkId : batch) {
+					plugin.getFlagger().flagChunk(
+									chunkId.worldName,
+									chunkId.chunkX,
+									chunkId.chunkZ,
+									plugin.config().getFlagGenerated(chunkId.worldName));
+				}
+			}
+		};
 	}
 
 	public void cancel() {
 		this.flagger.cancel(plugin);
+		this.chunkPopulateBatch.purge();
 	}
 
 	/**
@@ -59,20 +79,11 @@ public class FlaggingListener implements Listener {
 	 */
 	@EventHandler
 	private void onChunkPopulate(@NotNull ChunkPopulateEvent event) {
-		World world = event.getWorld();
-
-		if (!plugin.config().isEnabled(world.getName())) {
+		if (!plugin.config().isEnabled(event.getWorld().getName())) {
 			return;
 		}
 
-		plugin.getServer().getScheduler().runTaskAsynchronously(
-				plugin,
-				() ->
-						plugin.getFlagger().flagChunk(
-								world.getName(),
-								event.getChunk().getX(),
-								event.getChunk().getZ(),
-								plugin.config().getFlagGenerated(world)));
+		this.chunkPopulateBatch.add(new ChunkId(event.getChunk()));
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -120,11 +131,31 @@ public class FlaggingListener implements Listener {
 		private final int chunkX;
 		private final int chunkZ;
 
+		private ChunkId(@NotNull Chunk chunk) {
+			this.worldName = chunk.getWorld().getName();
+			this.chunkX = chunk.getX();
+			this.chunkZ = chunk.getZ();
+		}
+
 		private ChunkId(@NotNull World world, @NotNull Location location) {
 			this.worldName = world.getName();
 			this.chunkX = Coords.blockToChunk(location.getBlockX());
 			this.chunkZ = Coords.blockToChunk(location.getBlockZ());
 		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			ChunkId chunkId = (ChunkId) o;
+			return chunkX == chunkId.chunkX && chunkZ == chunkId.chunkZ && worldName.equals(chunkId.worldName);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(worldName, chunkX, chunkZ);
+		}
+
 	}
 
 }

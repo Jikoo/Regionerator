@@ -19,6 +19,16 @@ import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.listeners.WorldListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -33,15 +43,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Plugin for deleting unused region files gradually.
@@ -117,6 +118,10 @@ public class Regionerator extends JavaPlugin {
 		// Manually cancel deletion runnables - Bukkit does not do a good job of informing tasks they can't continue.
 		deletionRunnables.values().forEach(BukkitRunnable::cancel);
 		deletionRunnables.clear();
+		// Purge pending flags from listener.
+		if (flagger != null) {
+			flagger.cancel();
+		}
 		getServer().getScheduler().cancelTasks(this);
 
 		if (chunkFlagger != null) {
