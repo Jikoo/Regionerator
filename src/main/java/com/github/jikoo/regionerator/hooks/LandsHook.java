@@ -11,7 +11,7 @@
 package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.regionerator.Regionerator;
-import me.angeschossen.lands.api.integration.LandsIntegration;
+import me.angeschossen.lands.api.LandsIntegration;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +28,8 @@ public class LandsHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
-		return getLandsAPI().isClaimed(chunkWorld, chunkX, chunkZ);
+		// Chunks should never be loaded, must use methods for unloaded chunks.
+		return getLandsAPI().getLandByUnloadedChunk(chunkWorld, chunkX, chunkZ) != null;
 	}
 
 	@Override
@@ -38,7 +39,7 @@ public class LandsHook extends PluginHook {
 
 	private @NotNull LandsIntegration getLandsAPI() {
 		if (landsAPI == null) {
-			landsAPI = new LandsIntegration(Regionerator.getPlugin(Regionerator.class));
+			landsAPI = LandsIntegration.of(Regionerator.getPlugin(Regionerator.class));
 		}
 
 		return landsAPI;
