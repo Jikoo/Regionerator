@@ -13,13 +13,14 @@ package com.github.jikoo.regionerator.database;
 import com.github.jikoo.regionerator.ChunkFlagger;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.util.yaml.Config;
+import org.jetbrains.annotations.NotNull;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Adapter for modern SQLite.
@@ -32,12 +33,13 @@ public class SQLiteAdapter extends SQLeadenAdapter {
 		// Set up triggers
 		try (Statement st = database.createStatement()) {
 			st.executeUpdate(
-					"CREATE TRIGGER IF NOT EXISTS chunkdataold\n" +
-							"AFTER DELETE ON chunkdata\n" +
-							"WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'\n" +
-							"BEGIN\n" +
-							"INSERT INTO chunkdata(chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;\n" +
-							"END");
+							"""
+											CREATE TRIGGER IF NOT EXISTS chunkdataold
+											AFTER DELETE ON chunkdata
+											WHEN OLD.time NOT NULL AND OLD.chunk_id NOT LIKE '%_old'
+											BEGIN
+											INSERT INTO chunkdata(chunk_id,time) VALUES (OLD.chunk_id || '_old',OLD.time) ON CONFLICT(chunk_id) DO UPDATE SET `time`=OLD.time;
+											END""");
 			database.commit();
 		} catch (SQLException e) {
 			plugin.getLogger().severe("An exception setting up database trigger!");

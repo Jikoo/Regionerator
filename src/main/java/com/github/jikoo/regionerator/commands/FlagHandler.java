@@ -16,15 +16,16 @@ import com.github.jikoo.regionerator.util.yaml.Config;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.regions.Region;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Class for handling logic related to flag management commands.
@@ -49,7 +50,7 @@ public class FlagHandler {
 			return;
 		}
 
-		String worldName = chunks.get(0).getName();
+		String worldName = chunks.get(0).name();
 		boolean invalid = true;
 		for (String world : plugin.config().enabledWorlds()) {
 			if (world.equalsIgnoreCase(worldName)) {
@@ -66,9 +67,9 @@ public class FlagHandler {
 
 		for (ChunkPosition chunk : chunks) {
 			if (flag) {
-				plugin.getFlagger().flagChunksInRadius(worldName, chunk.getChunkX(), chunk.getChunkZ(), 0, Config.FLAG_ETERNAL);
+				plugin.getFlagger().flagChunksInRadius(worldName, chunk.chunkX(), chunk.chunkZ(), 0, Config.FLAG_ETERNAL);
 			} else {
-				plugin.getFlagger().unflagChunk(worldName, chunk.getChunkX(), chunk.getChunkZ());
+				plugin.getFlagger().unflagChunk(worldName, chunk.chunkX(), chunk.chunkZ());
 			}
 		}
 
@@ -187,27 +188,6 @@ public class FlagHandler {
 		return WorldEditPlugin.getPlugin(WorldEditPlugin.class);
 	}
 
-	private static class ChunkPosition {
-		private final String name;
-		private final int chunkX, chunkZ;
-
-		private ChunkPosition(String name, int chunkX, int chunkZ) {
-			this.name = name;
-			this.chunkX = chunkX;
-			this.chunkZ = chunkZ;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public int getChunkX() {
-			return chunkX;
-		}
-
-		public int getChunkZ() {
-			return chunkZ;
-		}
-	}
+	private record ChunkPosition(String name, int chunkX, int chunkZ) {}
 
 }

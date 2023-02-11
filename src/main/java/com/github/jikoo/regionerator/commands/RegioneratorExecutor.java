@@ -17,6 +17,15 @@ import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
+import org.bukkit.Chunk;
+import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -26,14 +35,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import org.bukkit.Chunk;
-import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class RegioneratorExecutor implements TabExecutor {
 
@@ -127,8 +128,7 @@ public class RegioneratorExecutor implements TabExecutor {
 			return true;
 		}
 
-		if (sender instanceof Player && args[0].equals("check")) {
-			Player player = (Player) sender;
+		if (sender instanceof Player player && args[0].equals("check")) {
 
 			if (!plugin.config().isEnabled(player.getWorld().getName())) {
 				player.sendMessage("World is not configured for deletion.");

@@ -14,15 +14,16 @@ import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
+import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.bukkit.World;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class AnvilWorld extends WorldInfo {
 
@@ -52,15 +53,11 @@ public class AnvilWorld extends WorldInfo {
 	}
 
 	private @NotNull File findRegionFolder(@NotNull World world) {
-		switch (world.getEnvironment()) {
-			case NETHER:
-				return new File(world.getWorldFolder(), "DIM-1" + File.separatorChar + "region");
-			case THE_END:
-				return new File(world.getWorldFolder(), "DIM1" + File.separatorChar + "region");
-			case NORMAL:
-			default:
-				return new File(world.getWorldFolder(), "region");
-		}
+		return switch (world.getEnvironment()) {
+			case NETHER -> new File(world.getWorldFolder(), "DIM-1" + File.separatorChar + "region");
+			case THE_END -> new File(world.getWorldFolder(), "DIM1" + File.separatorChar + "region");
+			default -> new File(world.getWorldFolder(), "region");
+		};
 	}
 
 	private @Nullable RegionInfo parseRegion(@NotNull File regionFile) {

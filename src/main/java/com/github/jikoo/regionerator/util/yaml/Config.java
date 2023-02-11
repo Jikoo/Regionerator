@@ -20,7 +20,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class Config extends ConfigYamlData {
 		Map<String, Long> worldFlagDurations = new HashMap<>();
 		if (worldsSection != null) {
 
-			List<String> activeWorlds = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
+			List<String> activeWorlds = Bukkit.getWorlds().stream().map(World::getName).toList();
 
 			for (String key : worldsSection.getKeys(false)) {
 				String validCase;
@@ -231,7 +230,7 @@ public class Config extends ConfigYamlData {
 	}
 
 	public @NotNull Collection<String> enabledWorlds() {
-		return Collections.unmodifiableSet(plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toSet()));
+		return plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toUnmodifiableSet());
 	}
 
 	@Deprecated
