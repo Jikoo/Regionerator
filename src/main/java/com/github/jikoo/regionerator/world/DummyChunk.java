@@ -10,10 +10,10 @@
 
 package com.github.jikoo.regionerator.world;
 
-import java.util.Collection;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -21,6 +21,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
 
 /**
  * Dummy chunk used to prevent chunk loading when checking protection plugins.
@@ -49,6 +51,11 @@ public class DummyChunk implements Chunk {
 	@Override
 	public @NotNull ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome,
 			boolean includeBiomeTempRain) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public boolean isEntitiesLoaded() {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
@@ -144,6 +151,11 @@ public class DummyChunk implements Chunk {
 
 	@Override
 	public boolean contains(@NotNull BlockData blockData) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public boolean contains(@NotNull Biome biome) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
