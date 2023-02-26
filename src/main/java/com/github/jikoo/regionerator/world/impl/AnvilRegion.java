@@ -14,14 +14,16 @@ import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.google.common.base.Preconditions;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
 
 public class AnvilRegion extends RegionInfo {
 
@@ -36,7 +38,7 @@ public class AnvilRegion extends RegionInfo {
 	private static final int HEADER_LAST_MODIFIED_LENGTH = LAST_MODIFIED_LENGTH * CHUNK_COUNT;
 
 	private final @NotNull File regionFile;
-	// Full header is comprised of chunk pointers, then chunk last modification.
+	// Full header consists of chunk pointers, then chunk last modification.
 	private final byte[] header = new byte[HEADER_POINTER_LENGTH + HEADER_LAST_MODIFIED_LENGTH];
 	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
 
@@ -79,7 +81,7 @@ public class AnvilRegion extends RegionInfo {
 
 		try (RandomAccessFile regionRandomAccess = new RandomAccessFile(getRegionFile(), "rwd")) {
 			// Re-read header to prevent writing incorrect chunk locations.
-			// Prevents issues with servers with slow cycles combined with speedier modern chunk unloads.
+			// This prevents issues with servers with slow cycles combined with speedier modern chunk unloads.
 			regionRandomAccess.read(header);
 
 			// Wipe specified pointers.
@@ -119,8 +121,16 @@ public class AnvilRegion extends RegionInfo {
 			}
 		}
 
-		// Header contains no content, delete region
-		Files.deleteIfExists(getRegionFile().toPath());
+		// Header contains no content, delete data.
+		Path regionFile = getRegionFile().toPath();
+		Files.deleteIfExists(regionFile);
+
+		Path parent = regionFile.normalize().getParent().getParent();
+		String fileName = String.valueOf(regionFile.getFileName());
+
+		Files.deleteIfExists(parent.resolve(Path.of("entities", fileName)));
+		Files.deleteIfExists(parent.resolve(Path.of("poi", fileName)));
+
 		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s with empty header", getIdentifier()));
 		return true;
 	}
