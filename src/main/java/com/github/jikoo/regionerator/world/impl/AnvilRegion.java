@@ -38,6 +38,8 @@ public class AnvilRegion extends RegionInfo {
 	private static final int HEADER_LAST_MODIFIED_LENGTH = LAST_MODIFIED_LENGTH * CHUNK_COUNT;
 
 	private final @NotNull File regionFile;
+	private final @NotNull File entitiesFile;
+	private final @NotNull File poiFile;
 	// Full header consists of chunk pointers, then chunk last modification.
 	private final byte[] header = new byte[HEADER_POINTER_LENGTH + HEADER_LAST_MODIFIED_LENGTH];
 	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
@@ -45,6 +47,10 @@ public class AnvilRegion extends RegionInfo {
 	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) {
 		super(world, lowestChunkX, lowestChunkZ);
 		this.regionFile = regionFile;
+		Path parent = regionFile.toPath().normalize().getParent().getParent();
+		String fileName = regionFile.getName();
+		this.entitiesFile = parent.resolve(Path.of("entities", fileName)).toFile();
+		this.poiFile = parent.resolve(Path.of("poi", fileName)).toFile();
 		Arrays.fill(header, (byte) 1);
 		Arrays.fill(pointerWipes, false);
 	}
@@ -55,34 +61,44 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public void read() throws IOException {
-
-		if (!getRegionFile().exists()) {
+		if (!regionFile.exists()) {
 			Arrays.fill(header, (byte) 0);
 			return;
 		}
 
 		// Chunk pointers are the first 4096 bytes, last modification is the second set
-		try (RandomAccessFile regionRandomAccess = new RandomAccessFile(getRegionFile(), "r")) {
+		try (RandomAccessFile regionRandomAccess = new RandomAccessFile(regionFile, "r")) {
 			regionRandomAccess.read(header);
 		}
 	}
 
 	@Override
 	public boolean write() throws IOException {
-		if (!getRegionFile().exists()) {
+		// May just remove this and later change method signature - is either true or an exception is thrown
+		boolean failed = false;
+
+		for (File mcaFile : new File[] { regionFile, entitiesFile, poiFile }) {
+			failed |= !write(mcaFile);
+		}
+
+		return !failed;
+	}
+
+	private boolean write(@NotNull File mcaFile) throws IOException {
+		if (!mcaFile.exists()) {
 			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s", getIdentifier()));
 			// Return true even if file already did not exist; end goal was still accomplished
 			return true;
 		}
 
-		if (!getRegionFile().canWrite() && !getRegionFile().setWritable(true) && !getRegionFile().canWrite()) {
-			throw new IOException("Unable to set " + getRegionFile().getName() + " writable");
+		if (!mcaFile.canWrite() && !mcaFile.setWritable(true) && !mcaFile.canWrite()) {
+			throw new IOException("Unable to set " + mcaFile.getPath() + " writable");
 		}
 
-		try (RandomAccessFile regionRandomAccess = new RandomAccessFile(getRegionFile(), "rwd")) {
-			// Re-read header to prevent writing incorrect chunk locations.
+		try (RandomAccessFile randomAccess = new RandomAccessFile(mcaFile, "rwd")) {
+			// Always re-read header to prevent writing incorrect chunk locations.
 			// This prevents issues with servers with slow cycles combined with speedier modern chunk unloads.
-			regionRandomAccess.read(header);
+			randomAccess.read(header);
 
 			// Wipe specified pointers.
 			for (int index = 0; index < pointerWipes.length; ++index) {
@@ -99,8 +115,8 @@ public class AnvilRegion extends RegionInfo {
 			for (int i = 0; i < HEADER_POINTER_LENGTH; ++i) {
 				if (header[i] != 0) {
 					// Header is not empty, region still contains chunks and must be rewritten.
-					regionRandomAccess.seek(0);
-					regionRandomAccess.write(header, 0, HEADER_POINTER_LENGTH);
+					randomAccess.seek(0);
+					randomAccess.write(header, 0, HEADER_POINTER_LENGTH);
 
 					if (getPlugin().debug(DebugLevel.HIGH)) {
 						// Convert back from header index to chunk coordinates for readable logs.
@@ -109,12 +125,12 @@ public class AnvilRegion extends RegionInfo {
 						int chunkZ = getLowestChunkZ() + getLocalZ(nonZeroIndex);
 
 						getPlugin().getLogger().info(
-								String.format(
-										"Rewrote header of region %s due to non-zero index of chunk %s_%s_%s",
-										getIdentifier(),
-										getWorld().getName(),
-										chunkX,
-										chunkZ));
+										String.format(
+														"Rewrote header of region %s due to non-zero index of chunk %s_%s_%s",
+														getIdentifier(),
+														getWorld().getName(),
+														chunkX,
+														chunkZ));
 					}
 					return true;
 				}
@@ -122,15 +138,7 @@ public class AnvilRegion extends RegionInfo {
 		}
 
 		// Header contains no content, delete data.
-		Path regionFile = getRegionFile().toPath();
-		Files.deleteIfExists(regionFile);
-
-		Path parent = regionFile.normalize().getParent().getParent();
-		String fileName = String.valueOf(regionFile.getFileName());
-
-		Files.deleteIfExists(parent.resolve(Path.of("entities", fileName)));
-		Files.deleteIfExists(parent.resolve(Path.of("poi", fileName)));
-
+		Files.deleteIfExists(mcaFile.toPath());
 		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s with empty header", getIdentifier()));
 		return true;
 	}
@@ -142,7 +150,7 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public boolean exists() {
-		return getRegionFile().exists();
+		return regionFile.exists();
 	}
 
 	@Override
