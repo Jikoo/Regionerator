@@ -62,7 +62,6 @@ public class AnvilRegion extends RegionInfo {
 	@Override
 	public void read() throws IOException {
 		if (!regionFile.exists()) {
-			Arrays.fill(header, (byte) 0);
 			return;
 		}
 
@@ -103,6 +102,7 @@ public class AnvilRegion extends RegionInfo {
 			// Wipe specified pointers.
 			for (int index = 0; index < pointerWipes.length; ++index) {
 				if (pointerWipes[index]) {
+					pointerWipes[index] = false;
 					int pointerIndex = index * POINTER_LENGTH;
 					int pointerEnd = pointerIndex + POINTER_LENGTH;
 					for (; pointerIndex < pointerEnd; ++pointerIndex) {
