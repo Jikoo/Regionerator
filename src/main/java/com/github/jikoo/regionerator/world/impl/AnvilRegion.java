@@ -10,6 +10,7 @@
 
 package com.github.jikoo.regionerator.world.impl;
 
+import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
@@ -27,8 +28,9 @@ import java.util.stream.Stream;
 
 public class AnvilRegion extends RegionInfo {
 
-	// Regions consist of 32 * 32 chunks.
-	private static final int CHUNK_COUNT = 32 * 32;
+	private static final int CHUNKS_PER_AXIS = 32;
+	// Regions are a square of chunks.
+	private static final int CHUNK_COUNT = CHUNKS_PER_AXIS ^ 2;
 	// Header stores location in a 4 byte pointer.
 	private static final int POINTER_LENGTH = 4;
 	// Full header chunk pointer length is chunks * pointer length.
@@ -37,30 +39,40 @@ public class AnvilRegion extends RegionInfo {
 	// Full header last modification length is chunks * 4 bytes.
 	private static final int HEADER_LAST_MODIFIED_LENGTH = LAST_MODIFIED_LENGTH * CHUNK_COUNT;
 
-	private final @NotNull File regionFile;
-	private final @NotNull File entitiesFile;
-	private final @NotNull File poiFile;
+	static String[] DATA_SUBDIRS = { "region", "entities", "poi" };
+
+	private final @NotNull Path worldDataFolder;
+	private final @NotNull String fileName;
 	// Full header consists of chunk pointers, then chunk last modification.
 	private final byte[] header = new byte[HEADER_POINTER_LENGTH + HEADER_LAST_MODIFIED_LENGTH];
 	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
 
-	AnvilRegion(@NotNull AnvilWorld world, @NotNull File regionFile, int lowestChunkX, int lowestChunkZ) {
-		super(world, lowestChunkX, lowestChunkZ);
-		this.regionFile = regionFile;
-		Path parent = regionFile.toPath().normalize().getParent().getParent();
-		String fileName = regionFile.getName();
-		this.entitiesFile = parent.resolve(Path.of("entities", fileName)).toFile();
-		this.poiFile = parent.resolve(Path.of("poi", fileName)).toFile();
-		Arrays.fill(header, (byte) 1);
-		Arrays.fill(pointerWipes, false);
+	AnvilRegion(
+					@NotNull AnvilWorld world,
+					@NotNull Path worldDataFolder,
+					int regionX,
+					int regionZ,
+					@NotNull String fileFormat) {
+		super(world, Coords.regionToChunk(regionX), Coords.regionToChunk(regionZ));
+		this.worldDataFolder = worldDataFolder;
+		this.fileName = String.format(fileFormat, regionX, regionZ);
+		// Fill header with data. This prevents us accidentally deleting regions as "unused" if reading fails.
+		Arrays.fill(header, Byte.MAX_VALUE);
 	}
 
+	/**
+	 * @deprecated Region data may be saved in multiple files.
+	 * @return the chunk data Minecraft Region file
+	 */
+	@Deprecated
 	public @NotNull File getRegionFile() {
-		return regionFile;
+		return worldDataFolder.resolve(Path.of(DATA_SUBDIRS[0], fileName)).toFile();
 	}
 
 	@Override
 	public void read() throws IOException {
+		// TODO need to redefine reading header
+		File regionFile = worldDataFolder.resolve(Path.of(DATA_SUBDIRS[0], fileName)).toFile();
 		if (!regionFile.exists()) {
 			return;
 		}
@@ -76,7 +88,8 @@ public class AnvilRegion extends RegionInfo {
 		// May just remove this and later change method signature - is either true or an exception is thrown
 		boolean failed = false;
 
-		for (File mcaFile : new File[] { regionFile, entitiesFile, poiFile }) {
+		for (String dir : DATA_SUBDIRS) {
+			File mcaFile = worldDataFolder.resolve(Path.of(dir, fileName)).toFile();
 			failed |= !write(mcaFile);
 		}
 
@@ -139,6 +152,17 @@ public class AnvilRegion extends RegionInfo {
 
 		// Header contains no content, delete data.
 		Files.deleteIfExists(mcaFile.toPath());
+
+		// Also delete oversized chunks belonging to this region.
+		for (int dX = 0; dX < CHUNKS_PER_AXIS; ++dX) {
+			for (int dZ = 0; dZ < CHUNKS_PER_AXIS; ++dZ) {
+				String xlChunkData = String.format("c.%s.%s.mcc", getLowestChunkX() + dX, getLowestChunkZ() + dZ);
+				for (String dir : DATA_SUBDIRS) {
+					Files.deleteIfExists(worldDataFolder.resolve(Path.of(dir, xlChunkData)));
+				}
+			}
+		}
+
 		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s with empty header", getIdentifier()));
 		return true;
 	}
@@ -150,7 +174,13 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public boolean exists() {
-		return regionFile.exists();
+		for (String dir : DATA_SUBDIRS) {
+			File mcaFile = worldDataFolder.resolve(Path.of(dir, fileName)).toFile();
+			if (mcaFile.exists()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
