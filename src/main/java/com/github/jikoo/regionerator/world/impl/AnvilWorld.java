@@ -13,6 +13,7 @@ package com.github.jikoo.regionerator.world.impl;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
+import com.github.jikoo.regionerator.world.impl.anvil.RegionHeader;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,8 +28,9 @@ import java.util.stream.Stream;
 
 public class AnvilWorld extends WorldInfo {
 
-	// r.0.0.mca, r.-1.0.mca, etc.
-	public static final Pattern ANVIL_REGION = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])");
+	// Moving to a better home
+	@Deprecated(forRemoval = true, since = "2.5.0")
+	public static final Pattern ANVIL_REGION = RegionHeader.REGION_FILE_PATTERN;
 
 	public AnvilWorld(@NotNull Regionerator plugin, @NotNull World world) {
 		super(plugin, world);
@@ -77,7 +79,7 @@ public class AnvilWorld extends WorldInfo {
 	}
 
 	private @Nullable RegionInfo parseRegion(Path dataFolder, String fileName) {
-		Matcher matcher = ANVIL_REGION.matcher(fileName);
+		Matcher matcher = RegionHeader.REGION_FILE_PATTERN.matcher(fileName);
 		if (!matcher.matches() || !getPlugin().isEnabled()) {
 			return null;
 		}

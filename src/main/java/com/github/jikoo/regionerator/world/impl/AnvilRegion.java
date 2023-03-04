@@ -64,7 +64,7 @@ public class AnvilRegion extends RegionInfo {
 	 * @deprecated Region data may be saved in multiple files.
 	 * @return the chunk data Minecraft Region file
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true, since = "2.5.0")
 	public @NotNull File getRegionFile() {
 		return worldDataFolder.resolve(Path.of(DATA_SUBDIRS[0], fileName)).toFile();
 	}
@@ -214,7 +214,7 @@ public class AnvilRegion extends RegionInfo {
 
 	private class AnvilChunk extends ChunkInfo {
 
-		public AnvilChunk(int localChunkX, int localChunkZ) {
+		private AnvilChunk(int localChunkX, int localChunkZ) {
 			super(AnvilRegion.this, localChunkX, localChunkZ);
 			Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32, "localChunkX must be between 0 and 31");
 			Preconditions.checkArgument(localChunkZ >= 0 && localChunkZ < 32, "localChunkZ must be between 0 and 31");
