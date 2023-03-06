@@ -63,6 +63,7 @@ worlds:
 # Hooks to attempt to check for protections from.
 # If your protection plugin of choice isn't here, ask!
 hooks:
+  BentoBox: true
   Civs: true
   ClaimChunk: true
   Factions: true
