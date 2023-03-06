@@ -115,6 +115,18 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>world.bentobox</groupId>
+      <artifactId>bentobox</artifactId>
+      <version>1.20.0</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- JitPack -->
     <dependency>
       <groupId>com.github.cjburkey01</groupId>
@@ -131,7 +143,7 @@
     <dependency>
       <groupId>com.github.angeschossen</groupId>
       <artifactId>LandsAPI</artifactId>
-      <version>6.28.5</version>
+      <version>6.28.11</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -179,7 +191,7 @@
     <dependency>
       <groupId>com.github.TownyAdvanced</groupId>
       <artifactId>Towny</artifactId>
-      <version>0.98.6.3</version>
+      <version>0.98.6.9</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -210,6 +222,10 @@
     <repository>
       <id>redprotect-repo</id>
       <url>https://raw.githubusercontent.com/FabioZumbi12/RedProtect/mvn-repo/</url>
+    </repository>
+    <repository>
+      <id>codemc-repo</id>
+      <url>https://repo.codemc.org/repository/maven-public/</url>
     </repository>
   </repositories>
 
@@ -273,7 +289,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.1</version>
+        <version>3.11.0</version>
         <configuration>
           <source>17</source>
           <target>17</target>

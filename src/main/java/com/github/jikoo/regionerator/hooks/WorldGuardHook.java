@@ -30,17 +30,17 @@ public class WorldGuardHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
-		int chunkBlockX = Coords.chunkToBlock(chunkX);
-		int chunkBlockZ = Coords.chunkToBlock(chunkZ);
-
-		BlockVector3 bottom = BlockVector3.at(chunkBlockX, 0, chunkBlockZ);
-		BlockVector3 top = BlockVector3.at(chunkBlockX + 15, 255, chunkBlockZ + 15);
-
 		RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(chunkWorld));
 
 		if (regionManager == null) {
 			return false;
 		}
+
+		int chunkBlockX = Coords.chunkToBlock(chunkX);
+		int chunkBlockZ = Coords.chunkToBlock(chunkZ);
+
+		BlockVector3 bottom = BlockVector3.at(chunkBlockX, 0, chunkBlockZ);
+		BlockVector3 top = BlockVector3.at(chunkBlockX + 15, 255, chunkBlockZ + 15);
 
 		return regionManager.getApplicableRegions(new ProtectedCuboidRegion("REGIONERATOR_TMP", bottom, top)).size() > 0;
 	}

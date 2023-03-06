@@ -14,6 +14,7 @@ import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
 import com.github.jikoo.regionerator.world.impl.anvil.RegionHeader;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,13 +39,13 @@ public class AnvilWorld extends WorldInfo {
 
 	@Override
 	public @NotNull RegionInfo getRegion(int regionX, int regionZ) {
-		Path dataFolder = findWorldDataFolder();
+		Path dataFolder = findWorldDataFolder().toPath();
 		return new AnvilRegion(this, dataFolder, regionX, regionZ, "r.%s.%s.mca");
 	}
 
 	@Override
 	public @NotNull Stream<RegionInfo> getRegions() {
-		Path dataFolder = findWorldDataFolder();
+		Path dataFolder = findWorldDataFolder().toPath();
 
 		Stream<File> fileStream = null;
 		for (String folder : AnvilRegion.DATA_SUBDIRS) {
@@ -68,14 +69,42 @@ public class AnvilWorld extends WorldInfo {
 						.filter(Objects::nonNull);
 	}
 
-	private @NotNull Path findWorldDataFolder() {
+	private @NotNull File findWorldDataFolder() {
 		World world = getWorld();
-		Path worldFolder = world.getWorldFolder().toPath();
-		return switch (world.getEnvironment()) {
-			case NETHER -> worldFolder.resolve("DIM-1");
-			case THE_END -> worldFolder.resolve("DIM1");
+		World defaultWorld = Bukkit.getWorlds().get(0);
+
+		if (world.equals(defaultWorld)) {
+			// World is the default world.
+			return getDimFolder(world.getEnvironment(), world.getWorldFolder());
+		}
+
+		String defaultWorldFolder = defaultWorld.getWorldFolder().getAbsolutePath();
+		File worldFolder = world.getWorldFolder();
+		if (defaultWorldFolder.equals(worldFolder.getAbsolutePath())) {
+			// This is not a Craftbukkit-based Bukkit implementation.
+			// The world is not the default world but the world folder is the default world's folder.
+			// Determining which folder is actually the folder for this world's data would require us to parse
+			// level.dat and determine which world matches, but this is really more of a platform bug.
+			throw new IllegalStateException("Cannot determine world data directory! Platform has provided base world directory instead of dimension directory.");
+		}
+
+		return getDimFolder(world.getEnvironment(), worldFolder);
+	}
+
+	private static @NotNull File getDimFolder(@NotNull World.Environment environment, @NotNull File worldFolder) {
+		File bukkitDimFolder = switch (environment) {
+			case NETHER -> new File(worldFolder, "DIM-1");
+			case THE_END -> new File(worldFolder, "DIM1");
 			default -> worldFolder;
 		};
+
+		if (bukkitDimFolder.isDirectory()) {
+			// Default Bukkit behavior.
+			return bukkitDimFolder;
+		}
+
+		// Unknown but presumably good platform. We should already be inside the correct dimension folder.
+		return worldFolder;
 	}
 
 	private @Nullable RegionInfo parseRegion(Path dataFolder, String fileName) {
