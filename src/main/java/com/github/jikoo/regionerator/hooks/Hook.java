@@ -10,7 +10,9 @@
 
 package com.github.jikoo.regionerator.hooks;
 
+import com.github.jikoo.planarwrappers.util.Coords;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 
 /**
@@ -39,7 +41,7 @@ public abstract class Hook {
 	}
 
 	/**
-	 * Gets whether or not the Hook's dependencies are present.
+	 * Gets whether the Hook's dependencies are present.
 	 *
 	 * @return true if the Hook's dependencies are present
 	 */
@@ -52,7 +54,12 @@ public abstract class Hook {
 	 */
 	public boolean isHookUsable() {
 		try {
-			this.isChunkProtected(Bukkit.getWorlds().get(0), 0, 0);
+			// Check every world - hooks may have a quick return condition for being disabled in a world.
+			for (World world : Bukkit.getWorlds()) {
+				Location spawn = world.getSpawnLocation();
+				// Check 2 regions away from spawn. This ensures that we're not in loaded area.
+				this.isChunkProtected(world, Coords.blockToChunk(spawn.getBlockX()) + 64, Coords.blockToChunk(spawn.getBlockZ()) + 64);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -62,7 +69,7 @@ public abstract class Hook {
 	}
 
 	/**
-	 * Returns whether or not the Hook is capable of being used from other threads.
+	 * Returns whether the Hook is capable of being used from other threads.
 	 *
 	 * @return true if the Hook is capable of asynchronous operations
 	 */
@@ -71,7 +78,7 @@ public abstract class Hook {
 	}
 
 	/**
-	 * Checks whether or not the system the Hook interacts with is present in the specified chunk.
+	 * Checks whether the system the Hook interacts with is present in the specified chunk.
 	 *
 	 * @param chunkWorld the chunk {@link World}
 	 * @param chunkX the chunk X coordinate
