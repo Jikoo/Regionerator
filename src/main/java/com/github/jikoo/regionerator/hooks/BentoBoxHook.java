@@ -37,7 +37,7 @@ public class BentoBoxHook extends PluginHook
 		}
 		
 		// Distance between islands is always a half of actual value.
-		final int increment = Math.max(distanceBetweenIslands, 8) * 2 - 1;
+		final int increment = Math.min(distanceBetweenIslands, 8) * 2 - 1;
 
 		int locX = Coords.chunkToBlock(chunkX);
 		int locZ = Coords.chunkToBlock(chunkZ);
