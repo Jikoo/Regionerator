@@ -26,6 +26,10 @@ public class GriefPreventionHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(@NotNull World world, int chunkX, int chunkZ) {
+		if (!GriefPrevention.instance.claimsEnabledForWorld(world)) {
+			return false;
+		}
+
 		for (Claim claim : GriefPrevention.instance.dataStore.getClaims(chunkX, chunkZ)) {
 			if (world.equals(claim.getGreaterBoundaryCorner().getWorld())) {
 				return true;

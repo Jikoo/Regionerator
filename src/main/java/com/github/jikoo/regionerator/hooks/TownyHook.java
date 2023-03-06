@@ -11,8 +11,9 @@
 package com.github.jikoo.regionerator.hooks;
 
 import com.github.jikoo.planarwrappers.util.Coords;
-import com.palmergames.bukkit.towny.TownySettings;
+import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Coord;
+import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.WorldCoord;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,10 @@ public class TownyHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
+		if (!TownyAPI.getInstance().isTownyWorld(chunkWorld)) {
+			return false;
+		}
+
 		int minX = Coords.chunkToBlock(chunkX);
 		int maxX = minX + 15;
 		int minZ = Coords.chunkToBlock(chunkZ);
@@ -35,16 +40,14 @@ public class TownyHook extends PluginHook {
 
 		Coord lowCoord = Coord.parseCoord(minX, minZ);
 		Coord highCoord = Coord.parseCoord(maxX, maxZ);
-		int cellSize = TownySettings.getTownBlockSize();
 
-		for (int x = lowCoord.getX(); x <= highCoord.getX(); x += cellSize) {
-			for (int z = lowCoord.getZ(); z <= highCoord.getZ(); z += cellSize) {
+		for (int x = lowCoord.getX(); x <= highCoord.getX(); ++x) {
+			for (int z = lowCoord.getZ(); z <= highCoord.getZ(); ++z) {
 				WorldCoord worldCoord = new WorldCoord(chunkWorld.getName(), x, z);
-				try {
-					if (worldCoord.getTownBlock().hasTown()) {
-						return true;
-					}
-				} catch (Exception ignored) {}
+				TownBlock townBlock = worldCoord.getTownBlockOrNull();
+				if (townBlock != null && townBlock.hasTown()) {
+					return true;
+				}
 			}
 		}
 		return false;

@@ -16,8 +16,7 @@ import com.plotsquared.core.plot.PlotArea;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import org.bukkit.World;
-
-import java.util.Arrays;
+import org.jetbrains.annotations.NotNull;
 
 public class PlotSquaredHook extends PluginHook {
 
@@ -26,7 +25,7 @@ public class PlotSquaredHook extends PluginHook {
   }
 
   @Override
-  public boolean isChunkProtected(World chunkWorld, int chunkX, int chunkZ) {
+  public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
     int chunkBlockX = Coords.chunkToBlock(chunkX);
     int chunkBlockZ = Coords.chunkToBlock(chunkZ);
 
@@ -36,7 +35,14 @@ public class PlotSquaredHook extends PluginHook {
     CuboidRegion region = new CuboidRegion(bottom, top);
 
     PlotArea[] plotAreas = PlotSquared.platform().plotAreaManager().getPlotAreas(chunkWorld.getName(), region);
-    return Arrays.stream(plotAreas).anyMatch(area -> area.getPlots().size() > 0);
+
+    for (PlotArea plotArea : plotAreas) {
+      if (plotArea.getPlots().size() > 0) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @Override
