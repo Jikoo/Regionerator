@@ -10,6 +10,7 @@
 
 package com.github.jikoo.regionerator.world.impl.anvil;
 
+import com.github.jikoo.planarwrappers.util.Coords;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,14 +21,18 @@ import java.nio.IntBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 
 public abstract class RegionFile implements AutoCloseable {
 
-  public static final Pattern FILE_NAME_PATTERN = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])");
+  public static final Pattern FILE_NAME_PATTERN = Pattern.compile("^r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])$");
 
   // Useful constants for region file parsing.
   // TODO restrict access to these probably
@@ -47,15 +52,18 @@ public abstract class RegionFile implements AutoCloseable {
   /** Internally-saved chunk data may not exceed a certain length. */
   protected static final int CHUNK_MAXIMUM_LENGTH = CHUNK_MAXIMUM_SECTORS * SECTOR_BYTES - CHUNK_HEADER_LENGTH;
   /** Chunks exceeding {@link #CHUNK_MAXIMUM_LENGTH} are flagged and saved externally. */
-  protected static final int CHUNK_TOO_LARGE_FLAG = 128;
-  protected static final int LOCAL_CHUNK_MAX = 0x1F;
+  private static final int FLAG_CHUNK_TOO_LARGE = 0b10000000;
+  private static final int BITMASK_OFFSET_START_SECTOR = 0xFFFFFF;
+  private static final int BITMASK_LOCAL_CHUNK = 0x1F;
+  private static final int BITMASK_OFFSET_SECTOR_COUNT = 0xFF;
 
-  protected final Path regionPath;
-  protected final boolean sync;
-
+  private final Path regionPath;
+  private final boolean sync;
+  private final int regionX;
+  private final int regionZ;
   private final ByteBuffer regionHeader;
-  protected final IntBuffer chunkOffsets;
-  protected final IntBuffer chunkTimestamps;
+  private final IntBuffer chunkOffsets;
+  private final IntBuffer chunkTimestamps;
   private boolean regionHeaderRead = false;
 
   private final ByteBuffer chunkHeader;
@@ -66,7 +74,13 @@ public abstract class RegionFile implements AutoCloseable {
     if (Files.isDirectory(regionPath)) {
       throw new IllegalArgumentException("Provided region file is a directory " + regionPath.toAbsolutePath());
     }
-    this.regionPath = regionPath;
+    this.regionPath = regionPath.normalize();
+    Matcher matcher = FILE_NAME_PATTERN.matcher(this.regionPath.getFileName().toString());
+    if (!matcher.matches()) {
+      throw new IllegalArgumentException("Provided region file does not match name format " + regionPath.getFileName());
+    }
+    this.regionX = Integer.parseInt(matcher.group(1));
+    this.regionZ = Integer.parseInt(matcher.group(2));
     this.sync = sync;
 
     // TODO benchmark these assumptions:
@@ -125,15 +139,36 @@ public abstract class RegionFile implements AutoCloseable {
     file.write(regionHeader, 0);
   }
 
-  // TODO
-  //  getLastModified x+z/index
-  //  delete x+z/index
+  public long getLastModified(int x, int z) {
+    return getLastModified(packIndex(x, z));
+  }
 
-  // TODO readChunkRaw
+  public long getLastModified(int index) {
+    if (!regionHeaderRead) {
+      throw new IllegalStateException("Region header has not been successfully read!");
+    }
+
+    return TimeUnit.MILLISECONDS.convert(chunkTimestamps.get(index), TimeUnit.SECONDS);
+  }
+
+  public void deleteChunk(int x, int z) {
+    deleteChunk(packIndex(x, z));
+  }
+
+  public void deleteChunk(int index) {
+    if (!regionHeaderRead) {
+      throw new IllegalStateException("Region header has not been successfully read!");
+    }
+
+    chunkOffsets.put(index, 0);
+    chunkTimestamps.put(index, (int) Instant.now().getEpochSecond());
+    // TODO need to fetch old value and free sectors (and track sectors to start with)
+    //  A BitSet is probably far easier to use for this than a List<Boolean>
+  }
+
+  // TODO readChunkRaw or option to skip decode
   public @Nullable InputStream readChunk(int x, int z) throws IOException, DataFormatException {
-    x = x & LOCAL_CHUNK_MAX;
-    z = z & LOCAL_CHUNK_MAX;
-    return readChunk(x << 8 | z);
+    return readChunk(packIndex(x, z));
   }
 
   // TODO add chunk identifiers to exceptions
@@ -148,7 +183,7 @@ public abstract class RegionFile implements AutoCloseable {
       return null;
     }
 
-    int startSector = packedOffsetData >> 8 & 0xFFFFFF;
+    int startSector = packedOffsetData >> 8 & BITMASK_OFFSET_START_SECTOR;
     if (startSector < REGION_HEADER_SECTORS) {
       throw new DataFormatException("start sector in region header");
     }
@@ -161,16 +196,17 @@ public abstract class RegionFile implements AutoCloseable {
       throw new DataFormatException("chunk header too short");
     }
 
-    int declaredLength = (packedOffsetData & 0xFF) * SECTOR_BYTES;
+    int declaredLength = (packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT) * SECTOR_BYTES;
     int realLength = chunkHeader.getInt();
 
     if (realLength > declaredLength || realLength < 0) {
+      // TODO: Should external chunks skip this check? Need to actually read how mcc is handled
       throw new DataFormatException("invalid chunk data length");
     }
 
     byte encoding = chunkHeader.get();
-    if ((encoding & CHUNK_TOO_LARGE_FLAG) != 0) {
-      // TODO oversized chunk
+    if ((encoding & FLAG_CHUNK_TOO_LARGE) != 0) {
+      return getOversizedChunk(index, encoding);
     }
 
 
@@ -178,11 +214,42 @@ public abstract class RegionFile implements AutoCloseable {
     throw new IOException("Lazy person negates compiler warnings for " + index);
   }
 
+  private @NotNull InputStream getOversizedChunk(int index, byte encoding) throws IOException, DataFormatException {
+    int localX = index & BITMASK_LOCAL_CHUNK;
+    int localZ = index >> 5 & BITMASK_LOCAL_CHUNK;
+    String fileName = String.format(
+            "c.%s.%s.mcc",
+            Coords.regionToChunk(regionX) + localX,
+            Coords.regionToChunk(regionZ) + localZ);
+    Path oversizedFile = regionPath.resolveSibling(fileName);
+    if (!Files.isRegularFile(oversizedFile)) {
+      throw new NoSuchFileException(oversizedFile.toAbsolutePath().toString());
+    }
+
+    // TODO verify bit ops are correct
+    return decodeStream((byte) (encoding & ~FLAG_CHUNK_TOO_LARGE), Files.newInputStream(oversizedFile, StandardOpenOption.READ));
+  }
+
+  private @NotNull InputStream decodeStream(byte encoding, InputStream stream) throws DataFormatException, IOException {
+    RegionCompression compression = RegionCompression.byCompressionId(encoding);
+    if (compression == null) {
+      throw new DataFormatException("Unknown compression ID " + encoding);
+    }
+
+    return compression.decode(stream);
+  }
+
   @Override
   public void close() throws IOException {
     if (file != null) {
       file.close();
     }
+  }
+
+  private static int packIndex(int x, int z) {
+    // TODO should this be non-static and verify that chunks are inside?
+    //  should ignore local values
+    return (z & BITMASK_LOCAL_CHUNK) << 5 | (x & BITMASK_LOCAL_CHUNK);
   }
 
 }
