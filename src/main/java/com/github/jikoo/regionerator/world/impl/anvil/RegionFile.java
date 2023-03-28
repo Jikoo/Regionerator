@@ -22,6 +22,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
@@ -30,27 +31,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 
-public abstract class RegionFile implements AutoCloseable {
+public class RegionFile implements AutoCloseable {
 
   public static final Pattern FILE_NAME_PATTERN = Pattern.compile("^r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])$");
 
   // Useful constants for region file parsing.
-  // TODO restrict access to these probably
   /** Each sector is made up of a fixed number of bytes. */
-  protected static final int SECTOR_BYTES = 4096;
+  private static final int SECTOR_BYTES = 4096;
   /** Integers comprise certain entire sectors. */
-  protected static final int SECTOR_INTS = SECTOR_BYTES / Integer.BYTES;
+  private static final int SECTOR_INTS = SECTOR_BYTES / Integer.BYTES;
   /** The header consumes a number of sectors at the start of the file. */
-  protected static final int REGION_HEADER_SECTORS = 2;
+  static final int REGION_HEADER_SECTORS = 2;
   /** The total header size in bytes. */
-  protected static final int REGION_HEADER_LENGTH = SECTOR_BYTES * REGION_HEADER_SECTORS;
+  private static final int REGION_HEADER_LENGTH = SECTOR_BYTES * REGION_HEADER_SECTORS;
   private static final int CHUNK_NOT_PRESENT = 0;
   /** Chunks start with a header declaring their size and compression type. */
-  protected static final int CHUNK_HEADER_LENGTH = Integer.BYTES + 1;
+  private static final int CHUNK_HEADER_LENGTH = Integer.BYTES + 1;
   /** Internally-saved chunk data may not exceed a certain number of sectors. */
-  protected static final int CHUNK_MAXIMUM_SECTORS = 256;
+  private static final int CHUNK_MAXIMUM_SECTORS = 256;
   /** Internally-saved chunk data may not exceed a certain length. */
-  protected static final int CHUNK_MAXIMUM_LENGTH = CHUNK_MAXIMUM_SECTORS * SECTOR_BYTES - CHUNK_HEADER_LENGTH;
+  private static final int CHUNK_MAXIMUM_LENGTH = CHUNK_MAXIMUM_SECTORS * SECTOR_BYTES - CHUNK_HEADER_LENGTH;
   /** Chunks exceeding {@link #CHUNK_MAXIMUM_LENGTH} are flagged and saved externally. */
   private static final int FLAG_CHUNK_TOO_LARGE = 0b10000000;
   private static final int BITMASK_OFFSET_START_SECTOR = 0xFFFFFF;
@@ -83,12 +83,8 @@ public abstract class RegionFile implements AutoCloseable {
     this.regionZ = Integer.parseInt(matcher.group(2));
     this.sync = sync;
 
-    // TODO benchmark these assumptions:
-    //  A direct ByteBuffer is much slower to allocate but more performant when reading/writing.
-    //  As we care most about minimizing the time we spend doing I/O, a direct buffer makes sense.
-    //  However, as they are slow to create, we subdivide one larger buffer for our subsections.
-    //  Using specific slices is slightly less performant but causes clearer errors.
-    // TODO do we need clearer errors?
+    // A direct ByteBuffer is much slower to allocate but more performant when reading/writing.
+    // As we care most about minimizing the time we spend doing I/O, a direct buffer makes sense.
     regionHeader = ByteBuffer.allocateDirect(SECTOR_BYTES * REGION_HEADER_SECTORS);
     chunkOffsets = regionHeader.slice(0, SECTOR_BYTES).asIntBuffer();
     chunkTimestamps = regionHeader.position(SECTOR_BYTES).slice().asIntBuffer();
@@ -97,18 +93,21 @@ public abstract class RegionFile implements AutoCloseable {
     chunkHeader = ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH);
   }
 
-  public void open() throws IOException {
+  public void open(boolean readOnly) throws IOException {
     close();
 
-    // TODO Would opening read-only improve performance for exclusively read ops? Benchmark and test
-    //  Windows: read may not lock while write will
-    // TODO AsyncFileChannel? Supposedly faster due to less internal sync. We can single thread ourselves. Windows again
-    if (sync) {
-      // DSYNC and not SYNC because there's no need to write meta.
-      file = FileChannel.open(regionPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
+    OpenOption[] options;
+    if (readOnly) {
+      // This is the only case where a RandomAccessFile outperforms a FileChannel, but the gain is so marginal that it
+      // isn't worth retooling the rest of the class around accepting two completely different input methods.
+      options = new OpenOption[] { StandardOpenOption.READ };
+    } else if (sync) {
+      options = new OpenOption[] { StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.DSYNC };
     } else {
-      file = FileChannel.open(regionPath, StandardOpenOption.READ, StandardOpenOption.WRITE);
+      options = new OpenOption[] { StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE };
     }
+
+    file = FileChannel.open(regionPath, options);
   }
 
   public void readHeader() throws IOException, DataFormatException {
@@ -139,6 +138,18 @@ public abstract class RegionFile implements AutoCloseable {
     file.write(regionHeader, 0);
   }
 
+  public boolean isPresent(int x, int z) {
+    return isPresent(packIndex(x, z));
+  }
+
+  public boolean isPresent(int index) {
+    if (!regionHeaderRead) {
+      throw new IllegalStateException("Region header has not been successfully read!");
+    }
+
+    return chunkOffsets.get(index) != CHUNK_NOT_PRESENT;
+  }
+
   public long getLastModified(int x, int z) {
     return getLastModified(packIndex(x, z));
   }
@@ -162,17 +173,17 @@ public abstract class RegionFile implements AutoCloseable {
 
     chunkOffsets.put(index, 0);
     chunkTimestamps.put(index, (int) Instant.now().getEpochSecond());
-    // TODO need to fetch old value and free sectors (and track sectors to start with)
-    //  A BitSet is probably far easier to use for this than a List<Boolean>
+    // FUTURE need to fetch old value and free sectors (and track sectors to start with)
   }
 
-  // TODO readChunkRaw or option to skip decode
-  public @Nullable InputStream readChunk(int x, int z) throws IOException, DataFormatException {
+  // FUTURE
+  //  readChunkRaw/skip decode
+  private @Nullable InputStream readChunk(int x, int z) throws IOException, DataFormatException {
     return readChunk(packIndex(x, z));
   }
 
-  // TODO add chunk identifiers to exceptions
-  public @Nullable InputStream readChunk(int index) throws IOException, DataFormatException {
+  // FUTURE add chunk identifiers to exceptions
+  private @Nullable InputStream readChunk(int index) throws IOException, DataFormatException {
     if (file == null) {
       throw new ClosedChannelException();
     }
@@ -200,7 +211,7 @@ public abstract class RegionFile implements AutoCloseable {
     int realLength = chunkHeader.getInt();
 
     if (realLength > declaredLength || realLength < 0) {
-      // TODO: Should external chunks skip this check? Need to actually read how mcc is handled
+      // FUTURE Should external chunks skip this check? Need to actually read how mcc is handled
       throw new DataFormatException("invalid chunk data length");
     }
 
@@ -209,8 +220,7 @@ public abstract class RegionFile implements AutoCloseable {
       return getOversizedChunk(index, encoding);
     }
 
-
-    // TODO
+    // FUTURE
     throw new IOException("Lazy person negates compiler warnings for " + index);
   }
 
@@ -226,7 +236,6 @@ public abstract class RegionFile implements AutoCloseable {
       throw new NoSuchFileException(oversizedFile.toAbsolutePath().toString());
     }
 
-    // TODO verify bit ops are correct
     return decodeStream((byte) (encoding & ~FLAG_CHUNK_TOO_LARGE), Files.newInputStream(oversizedFile, StandardOpenOption.READ));
   }
 
@@ -247,8 +256,6 @@ public abstract class RegionFile implements AutoCloseable {
   }
 
   private static int packIndex(int x, int z) {
-    // TODO should this be non-static and verify that chunks are inside?
-    //  should ignore local values
     return (z & BITMASK_LOCAL_CHUNK) << 5 | (x & BITMASK_LOCAL_CHUNK);
   }
 
