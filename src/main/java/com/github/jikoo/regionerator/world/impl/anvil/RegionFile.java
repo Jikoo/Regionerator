@@ -11,6 +11,7 @@
 package com.github.jikoo.regionerator.world.impl.anvil;
 
 import com.github.jikoo.planarwrappers.util.Coords;
+import com.google.common.annotations.Beta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,12 +26,23 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 
+/**
+ * A from-scratch re-implementation of the MCR format as described in
+ * <a href="https://pastebin.com/niWTqLvk">RegionFile</a>, written by Scaevolus and Mojang AB.
+ *
+ * <p>This class is not intended to have any capacity to repair, recover, or parse broken regions.
+ *
+ * <h1>This is a work in progress!</h1>
+ * <p>Any and all API is subject to change as I fuddle my way through the intricacies of the format and more recent
+ * undocumented modifications by Mojang, such as {@code .mcc} files for overly-large chunks.</p>
+ */
+@Beta
 public class RegionFile implements AutoCloseable {
 
   public static final Pattern FILE_NAME_PATTERN = Pattern.compile("^r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])$");
@@ -101,6 +113,12 @@ public class RegionFile implements AutoCloseable {
     chunkHeader = ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH);
   }
 
+  /**
+   * Open the {@link FileChannel} used internally for reading data from the region file.
+   *
+   * @param readOnly whether the file should be opened read-only
+   * @throws IOException if an I/O error occurs. See {@link FileChannel#open(Path, OpenOption...)}
+   */
   public void open(boolean readOnly) throws IOException {
     close();
 
@@ -118,6 +136,14 @@ public class RegionFile implements AutoCloseable {
     file = FileChannel.open(regionPath, options);
   }
 
+  /**
+   * Read the header of the region file. This must be done before performing any operations that read or manipulate
+   * the file.
+   *
+   * @throws ClosedChannelException if the backing {@link FileChannel} is not open
+   * @throws IOException if an I/O error occurs. See {@link java.nio.channels.ReadableByteChannel#read(ByteBuffer)}
+   * @throws DataFormatException if the header is present but too short
+   */
   public void readHeader() throws IOException, DataFormatException {
     if (file == null) {
       throw new ClosedChannelException();
@@ -138,6 +164,14 @@ public class RegionFile implements AutoCloseable {
     regionHeaderRead = true;
   }
 
+  /**
+   * Write the header of the region file.
+   *
+   * @throws ClosedChannelException if the backing {@link FileChannel} is not open
+   * @throws IOException if an I/O error occurs. See {@link java.nio.channels.WritableByteChannel#write(ByteBuffer)}
+   * @throws IllegalStateException if the existing header was never read; as all header modifications require the header
+   *         to have been read initially the header must be blank and the file should be deleted
+   */
   public void writeHeader() throws IOException {
     if (!regionHeaderRead) {
       throw new IllegalStateException("Region header has not been successfully read!");
@@ -149,11 +183,28 @@ public class RegionFile implements AutoCloseable {
     file.write(regionHeader, 0);
   }
 
+  /**
+   * Check if the header contains data for a chunk.
+   *
+   * @param x the X coordinate
+   * @param z the Z coordinate
+   * @return true if the header contains data for the coordinates
+   * @throws IllegalArgumentException if the chunk coordinates are not either local or within the region's world bounds
+   * @throws IllegalStateException if the existing header was never read
+   */
   public boolean isPresent(int x, int z) {
     checkLegalChunks(x, z);
     return isPresent(packIndex(x, z));
   }
 
+  /**
+   * Check if the header contains data for a chunk.
+   *
+   * @param index the packed chunk index
+   * @return true if the header contains data for the coordinates
+   * @throws IllegalStateException if the existing header was never read
+   * @throws IndexOutOfBoundsException if the index is negative or equals/exceeds the number of chunks in a region
+   */
   public boolean isPresent(int index) {
     if (!regionHeaderRead) {
       throw new IllegalStateException("Region header has not been successfully read!");
@@ -162,11 +213,28 @@ public class RegionFile implements AutoCloseable {
     return chunkOffsets.get(index) != CHUNK_NOT_PRESENT;
   }
 
+  /**
+   * Get the last modification timestamp for a chunk in milliseconds since the epoch.
+   *
+   * @param x the X coordinate
+   * @param z the Z coordinate
+   * @return the number of milliseconds since the epoch of 1970-01-01T00:00:00Z
+   * @throws IllegalArgumentException if the chunk coordinates are not either local or within the region's world bounds
+   * @throws IllegalStateException if the existing header was never read
+   */
   public long getLastModified(int x, int z) {
     checkLegalChunks(x, z);
     return getLastModified(packIndex(x, z));
   }
 
+  /**
+   * Get the last modification timestamp for a chunk in milliseconds since the epoch.
+   *
+   * @param index the packed chunk index
+   * @return the number of milliseconds since the epoch of 1970-01-01T00:00:00Z
+   * @throws IllegalStateException if the existing header was never read
+   * @throws IndexOutOfBoundsException if the index is negative or equals/exceeds the number of chunks in a region
+   */
   public long getLastModified(int index) {
     if (!regionHeaderRead) {
       throw new IllegalStateException("Region header has not been successfully read!");
@@ -175,17 +243,41 @@ public class RegionFile implements AutoCloseable {
     return TimeUnit.MILLISECONDS.convert(chunkTimestamps.get(index), TimeUnit.SECONDS);
   }
 
-  public void deleteChunk(int x, int z) {
+  /**
+   * Delete the specified chunk.
+   *
+   * <p>This frees up the corresponding sectors, but does not compress the region to use those sectors. Doing so would
+   * require rewriting the full region file, which is a very expensive prospect.
+   *
+   * @param x the X coordinate
+   * @param z the Z coordinate
+   * @throws IllegalArgumentException if the chunk coordinates are not either local or within the region's world bounds
+   * @throws IllegalStateException if the existing header was never read
+   * @throws IOException if the chunk is extra-large and there is an exception deleting the file
+   */
+  public void deleteChunk(int x, int z) throws IOException {
     deleteChunk(packIndex(x, z));
   }
 
-  public void deleteChunk(int index) {
+  /**
+   * Delete the specified chunk.
+   *
+   * <p>This frees up the corresponding sectors, but does not compress the region to use those sectors. Doing so would
+   * require rewriting the full region file, which is a very expensive prospect.
+   *
+   * @param index the packed chunk index
+   * @throws IllegalStateException if the existing header was never read
+   * @throws IndexOutOfBoundsException if the index is negative or equals/exceeds the number of chunks in a region
+   * @throws IOException if the chunk is extra-large and there is an exception deleting the file
+   */
+  public void deleteChunk(int index) throws IOException {
     if (!regionHeaderRead) {
       throw new IllegalStateException("Region header has not been successfully read!");
     }
 
     chunkOffsets.put(index, 0);
-    chunkTimestamps.put(index, (int) Instant.now().getEpochSecond());
+    chunkTimestamps.put(index, (int) Clock.systemUTC().instant().getEpochSecond());
+    Files.deleteIfExists(getXlChunkPath(index));
     // FUTURE need to fetch old value and free sectors (and track sectors to start with)
   }
 
