@@ -84,10 +84,9 @@ public class RegionFile implements AutoCloseable {
   private final ByteBuffer regionHeader;
   private final IntBuffer chunkOffsets;
   private final IntBuffer chunkTimestamps;
-  private boolean regionHeaderRead = false;
-
+  private final SectorBitSet sectorsUsed;
   private final ByteBuffer chunkHeader;
-
+  private boolean regionHeaderRead = false;
   private @Nullable FileChannel file;
 
   public RegionFile(@NotNull Path regionPath, boolean sync) {
@@ -109,6 +108,11 @@ public class RegionFile implements AutoCloseable {
     chunkOffsets = regionHeader.slice(0, SECTOR_BYTES).asIntBuffer();
     chunkTimestamps = regionHeader.position(SECTOR_BYTES).slice().asIntBuffer();
     regionHeader.position(0);
+    sectorsUsed = new SectorBitSet();
+    // TODO should 2-indexing be done inside the SectorBitSet?
+    //  I.e. not even bother having bits, just add 2 to all return values?
+    //  May reduce need for data verification, but may make errors less clear.
+    sectorsUsed.set(0, REGION_HEADER_SECTORS);
 
     chunkHeader = ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH);
   }
@@ -159,6 +163,21 @@ public class RegionFile implements AutoCloseable {
               regionPath.getFileName(),
               bytesRead,
               REGION_HEADER_LENGTH));
+    }
+
+    for (int index = 0; index < SECTOR_INTS; ++index) {
+      int packedOffsetData = chunkOffsets.get(index);
+
+      if (packedOffsetData == CHUNK_NOT_PRESENT) {
+        continue;
+      }
+
+      int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
+      if (startSector < REGION_HEADER_SECTORS) {
+        throw new DataFormatException("Start sector in region header for " + friendlyIndex(index));
+      }
+      int sectorCount = packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT;
+      sectorsUsed.set(startSector, sectorCount);
     }
 
     regionHeaderRead = true;
@@ -273,6 +292,15 @@ public class RegionFile implements AutoCloseable {
   public void deleteChunk(int index) throws IOException {
     if (!regionHeaderRead) {
       throw new IllegalStateException("Region header has not been successfully read!");
+    }
+
+    int packedOffsetData = chunkOffsets.get(index);
+    if (packedOffsetData != CHUNK_NOT_PRESENT) {
+      int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
+      if (startSector >= REGION_HEADER_SECTORS) {
+        int sectorCount = packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT;
+        sectorsUsed.clear(startSector, sectorCount);
+      }
     }
 
     chunkOffsets.put(index, 0);

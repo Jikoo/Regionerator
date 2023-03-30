@@ -24,6 +24,10 @@ class SectorBitSet {
     this.sectorStates.clear(start, start + length);
   }
 
+  int getLastUsed() {
+    return this.sectorStates.length() - 1;
+  }
+
   int findContiguousRegion(int length) {
     int clearBit;
     int usedBit = RegionFile.REGION_HEADER_SECTORS - 1; // 0-index header sector count.
