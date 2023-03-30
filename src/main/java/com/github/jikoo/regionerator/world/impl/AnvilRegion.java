@@ -16,13 +16,14 @@ import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.impl.anvil.RegionFile;
 import com.google.common.base.Preconditions;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.DataFormatException;
 
@@ -32,11 +33,14 @@ public class AnvilRegion extends RegionInfo {
 	// Regions are a square of chunks.
 	private static final int CHUNK_COUNT = CHUNKS_PER_AXIS * CHUNKS_PER_AXIS;
 	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
-	static final String[] DATA_SUBDIRS = { "region", "entities", "poi" };
+	private static final String SUBDIR_BLOCK_DATA = "region";
+	private static final String SUBDIR_ENTITY_DATA = "entities";
+	static final String[] DATA_SUBDIRS = { SUBDIR_BLOCK_DATA, SUBDIR_ENTITY_DATA, "poi" };
 
 	private final @NotNull Path worldDataFolder;
 	private final @NotNull String fileName;
-	private final @NotNull RegionFile defaultRegionFile;
+	private final @NotNull RegionFile regionFileBlockData;
+	private final @NotNull RegionFile regionFileEntityData;
 
 	AnvilRegion(
 					@NotNull AnvilWorld world,
@@ -49,8 +53,14 @@ public class AnvilRegion extends RegionInfo {
 		this.fileName = String.format(fileFormat, regionX, regionZ);
 
 		// TODO need to redefine reading header
-		Path regionFilePath = worldDataFolder.resolve(Path.of(DATA_SUBDIRS[0], fileName));
-		defaultRegionFile = new RegionFile(regionFilePath, false);
+		regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
+		regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA);
+	}
+
+	@Contract("_ -> new")
+	private @NotNull RegionFile createRegionFile(@NotNull String dir) {
+		Path regionFilePath = worldDataFolder.resolve(Path.of(dir, fileName));
+		return new RegionFile(regionFilePath, true);
 	}
 
 	/**
@@ -59,15 +69,22 @@ public class AnvilRegion extends RegionInfo {
 	 */
 	@Deprecated(forRemoval = true, since = "2.5.0")
 	public @NotNull File getRegionFile() {
-		return worldDataFolder.resolve(Path.of(DATA_SUBDIRS[0], fileName)).toFile();
+		return worldDataFolder.resolve(Path.of(SUBDIR_BLOCK_DATA, fileName)).toFile();
 	}
 
 	@Override
 	public void read() throws IOException {
 		try {
-			defaultRegionFile.open(true);
-			defaultRegionFile.readHeader();
-			defaultRegionFile.close();
+			// Read world data.
+			regionFileBlockData.open(true);
+			regionFileBlockData.readHeader();
+			regionFileBlockData.close();
+			// Read entity data.
+			regionFileEntityData.open(true);
+			regionFileEntityData.readHeader();
+			regionFileEntityData.close();
+			// We don't read POI data because it generally only updates with a world or entity change.
+			// It's effectively a redundant disk operation.
 		} catch (DataFormatException e) {
 			throw new IOException(e);
 		}
@@ -79,17 +96,16 @@ public class AnvilRegion extends RegionInfo {
 		boolean failed = false;
 
 		for (String dir : DATA_SUBDIRS) {
-			Path mcaFilePath = worldDataFolder.resolve(Path.of(dir, fileName));
-			failed |= !write(mcaFilePath);
+			failed |= !write(dir);
 		}
 
 		return !failed;
 	}
 
-	private boolean write(@NotNull Path mcaFilePath) throws IOException {
-		// TODO identifiers for subdir in logging
+	private boolean write(@NotNull String subdirectory) throws IOException {
+		Path mcaFilePath = worldDataFolder.resolve(Path.of(subdirectory, fileName));
 		if (!Files.isRegularFile(mcaFilePath)) {
-			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s", getIdentifier()));
+			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s/%s", subdirectory, getIdentifier()));
 			// Return true even if file already did not exist; end goal was still accomplished
 			return true;
 		}
@@ -102,19 +118,19 @@ public class AnvilRegion extends RegionInfo {
 				if (pointerWipes[i]) {
 					regionFile.deleteChunk(i);
 				} else if (headerEmpty && regionFile.isPresent(i)) {
-
+					headerEmpty = false;
 					if (getPlugin().debug(DebugLevel.HIGH)) {
-						int chunkX = getLowestChunkX() + getLocalX(i);
-						int chunkZ = getLowestChunkZ() + getLocalZ(i);
-						getPlugin().getLogger().info(
+						int chunkX = getLowestChunkX() + RegionFile.unpackLocalX(i);
+						int chunkZ = getLowestChunkZ() + RegionFile.unpackLocalZ(i);
+						getPlugin().getLogger().info(() ->
 										String.format(
-														"Rewriting header of region %s due to non-zero index of chunk %s_%s_%s",
+														"Rewriting header of region %s/%s due to non-zero index of chunk %s_%s_%s",
+														subdirectory,
 														getIdentifier(),
 														getWorld().getName(),
 														chunkX,
 														chunkZ));
 					}
-					headerEmpty = false;
 				}
 			}
 			if (!headerEmpty) {
@@ -132,13 +148,11 @@ public class AnvilRegion extends RegionInfo {
 		for (int dX = 0; dX < CHUNKS_PER_AXIS; ++dX) {
 			for (int dZ = 0; dZ < CHUNKS_PER_AXIS; ++dZ) {
 				String xlChunkData = String.format("c.%s.%s.mcc", getLowestChunkX() + dX, getLowestChunkZ() + dZ);
-				for (String dir : DATA_SUBDIRS) {
-					Files.deleteIfExists(worldDataFolder.resolve(Path.of(dir, xlChunkData)));
-				}
+				Files.deleteIfExists(worldDataFolder.resolve(Path.of(subdirectory, xlChunkData)));
 			}
 		}
 
-		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s with empty header", getIdentifier()));
+		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s/%s with empty header", subdirectory, getIdentifier()));
 		return true;
 	}
 
@@ -150,8 +164,7 @@ public class AnvilRegion extends RegionInfo {
 	@Override
 	public boolean exists() {
 		for (String dir : DATA_SUBDIRS) {
-			File mcaFile = worldDataFolder.resolve(Path.of(dir, fileName)).toFile();
-			if (mcaFile.exists()) {
+			if (Files.exists(worldDataFolder.resolve(Path.of(dir, fileName)))) {
 				return true;
 			}
 		}
@@ -188,7 +201,6 @@ public class AnvilRegion extends RegionInfo {
 	}
 
 	private class AnvilChunk extends ChunkInfo {
-
 		private AnvilChunk(int localChunkX, int localChunkZ) {
 			super(AnvilRegion.this, localChunkX, localChunkZ);
 			Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32, "localChunkX must be between 0 and 31");
@@ -197,61 +209,25 @@ public class AnvilRegion extends RegionInfo {
 
 		@Override
 		public boolean isOrphaned() {
-			int index = getIndex();
+			int index = RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ());
 
 			// Is chunk slated to be orphaned on region write?
 			if (pointerWipes[index]) {
 				return true;
 			}
 
-			return defaultRegionFile.isPresent(index);
+			return !regionFileBlockData.isPresent(index);
 		}
 
 		@Override
 		public void setOrphaned() {
-			pointerWipes[getIndex()] = true;
+			pointerWipes[RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ())] = true;
 		}
 
 		@Override
 		public long getLastModified() {
-			return defaultRegionFile.getLastModified(getIndex());
+			int index = RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ());
+			return Math.max(regionFileBlockData.getLastModified(index), regionFileEntityData.getLastModified(index));
 		}
-
-		private int getIndex() {
-			return AnvilRegion.getLocalIndex(getLocalChunkX(), getLocalChunkZ());
-		}
-
 	}
-
-	/**
-	 * Get a localized index - 10 bits, highest 5 are Z, lowest 5 are X.
-	 *
-	 * @param localX the local chunk X
-	 * @param localZ the local chunk Z
-	 * @return a combined index
-	 */
-	private static int getLocalIndex(int localX, int localZ) {
-		return localX ^ (localZ << 5);
-	}
-
-	/**
-	 * Get a local chunk X coordinate from an index.
-	 *
-	 * @param index the index
-	 * @return the local chunk coordinate
-	 */
-	private static int getLocalX(int index) {
-		return index & 0x1F;
-	}
-
-	/**
-	 * Get a local chunk Z coordinate from an index.
-	 *
-	 * @param index the index
-	 * @return the local chunk coordinate
-	 */
-	private static int getLocalZ(int index) {
-		return index >> 5;
-	}
-
 }

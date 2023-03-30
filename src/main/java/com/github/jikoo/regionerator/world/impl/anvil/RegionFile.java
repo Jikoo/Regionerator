@@ -259,4 +259,16 @@ public class RegionFile implements AutoCloseable {
     return (z & BITMASK_LOCAL_CHUNK) << 5 | (x & BITMASK_LOCAL_CHUNK);
   }
 
+  public static int unpackLocalX(int index) {
+    return index & BITMASK_LOCAL_CHUNK;
+  }
+
+  public static int unpackLocalZ(int index) {
+    return index >> BIT_COUNT_LOCAL_CHUNK & BITMASK_LOCAL_CHUNK;
+  }
+
+  private static @NotNull String friendlyIndex(int index) {
+    return "[" + unpackLocalX(index) + "," + unpackLocalZ(index) + "]";
+  }
+
 }
