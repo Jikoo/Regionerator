@@ -186,13 +186,11 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public @NotNull Stream<ChunkInfo> getChunks() {
-		AtomicInteger index = new AtomicInteger();
-		return Stream.generate(() -> {
-			int localIndex = index.getAndIncrement();
-			int localChunkX = getLocalX(localIndex);
-			int localChunkZ = getLocalZ(localIndex);
+		return IntStream.range(0, CHUNK_COUNT).mapToObj(index -> {
+			int localChunkX = RegionFile.unpackLocalX(index);
+			int localChunkZ = RegionFile.unpackLocalZ(index);
 			return getLocalChunk(localChunkX, localChunkZ);
-		}).limit(CHUNK_COUNT);
+		});
 	}
 
 	@Override
