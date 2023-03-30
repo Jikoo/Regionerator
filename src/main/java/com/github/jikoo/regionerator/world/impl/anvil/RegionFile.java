@@ -53,9 +53,17 @@ public class RegionFile implements AutoCloseable {
   private static final int CHUNK_MAXIMUM_LENGTH = CHUNK_MAXIMUM_SECTORS * SECTOR_BYTES - CHUNK_HEADER_LENGTH;
   /** Chunks exceeding {@link #CHUNK_MAXIMUM_LENGTH} are flagged and saved externally. */
   private static final int FLAG_CHUNK_TOO_LARGE = 0b10000000;
-  private static final int BITMASK_OFFSET_START_SECTOR = 0xFFFFFF;
+  /** Bitmask for a local chunk coordinate. */
   private static final int BITMASK_LOCAL_CHUNK = 0x1F;
+  /** Bitmask for the number of sectors used to store a chunk's data. */
   private static final int BITMASK_OFFSET_SECTOR_COUNT = 0xFF;
+  /** Bitmask for the start sector of a chunk's data. */
+  private static final int BITMASK_OFFSET_START_SECTOR = 0xFFFFFF;
+  // TODO may want a util to construct these automatically from bitmasks
+  /** Number of bits in {@link #BITMASK_OFFSET_SECTOR_COUNT} */
+  private static final int BIT_COUNT_LOCAL_CHUNK = 5;
+  /** Number of bits in {@link #BITMASK_OFFSET_SECTOR_COUNT} */
+  private static final int BIT_COUNT_OFFSET_SECTOR_COUNT = 8;
 
   private final Path regionPath;
   private final boolean sync;
@@ -131,6 +139,9 @@ public class RegionFile implements AutoCloseable {
   }
 
   public void writeHeader() throws IOException {
+    if (!regionHeaderRead) {
+      throw new IllegalStateException("Region header has not been successfully read!");
+    }
     if (file == null) {
       throw new ClosedChannelException();
     }
@@ -139,6 +150,7 @@ public class RegionFile implements AutoCloseable {
   }
 
   public boolean isPresent(int x, int z) {
+    checkLegalChunks(x, z);
     return isPresent(packIndex(x, z));
   }
 
@@ -151,6 +163,7 @@ public class RegionFile implements AutoCloseable {
   }
 
   public long getLastModified(int x, int z) {
+    checkLegalChunks(x, z);
     return getLastModified(packIndex(x, z));
   }
 
@@ -176,16 +189,36 @@ public class RegionFile implements AutoCloseable {
     // FUTURE need to fetch old value and free sectors (and track sectors to start with)
   }
 
-  // FUTURE
-  //  readChunkRaw/skip decode
+  private @NotNull Path getXlChunkPath(int index) {
+    int localX = unpackLocalX(index);
+    int localZ = unpackLocalZ(index);
+    String fileName = String.format(
+            "c.%s.%s.mcc",
+            Coords.regionToChunk(regionX) + localX,
+            Coords.regionToChunk(regionZ) + localZ);
+    return regionPath.resolveSibling(fileName);
+  }
+
+  // FUTURE publicize readChunk
   private @Nullable InputStream readChunk(int x, int z) throws IOException, DataFormatException {
-    return readChunk(packIndex(x, z));
+    return readChunk(x, z, true);
+  }
+
+  private @Nullable InputStream readChunk(int x, int z, boolean decode) throws IOException, DataFormatException {
+    return readChunk(packIndex(x, z), decode);
+  }
+
+  private @Nullable InputStream readChunk(int index) throws IOException, DataFormatException {
+    return readChunk(index, true);
   }
 
   // FUTURE add chunk identifiers to exceptions
-  private @Nullable InputStream readChunk(int index) throws IOException, DataFormatException {
+  private @Nullable InputStream readChunk(int index, boolean decode) throws IOException, DataFormatException {
     if (file == null) {
       throw new ClosedChannelException();
+    }
+    if (!regionHeaderRead) {
+      throw new IllegalStateException("Region header has not been successfully read!");
     }
 
     int packedOffsetData = chunkOffsets.get(index);
@@ -194,7 +227,7 @@ public class RegionFile implements AutoCloseable {
       return null;
     }
 
-    int startSector = packedOffsetData >> 8 & BITMASK_OFFSET_START_SECTOR;
+    int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
     if (startSector < REGION_HEADER_SECTORS) {
       throw new DataFormatException("start sector in region header");
     }
@@ -216,37 +249,36 @@ public class RegionFile implements AutoCloseable {
     }
 
     byte encoding = chunkHeader.get();
+    RegionCompression compression;
+    if (decode) {
+      compression = RegionCompression.byCompressionId(encoding);
+      if (compression == null) {
+        throw new DataFormatException("Unknown compression ID " + encoding);
+      }
+    } else {
+      compression = RegionCompression.NONE;
+    }
+
     if ((encoding & FLAG_CHUNK_TOO_LARGE) != 0) {
-      return getOversizedChunk(index, encoding);
+      return compression.decode(getXlChunk(index));
     }
 
     // FUTURE
     throw new IOException("Lazy person negates compiler warnings for " + index);
   }
 
-  private @NotNull InputStream getOversizedChunk(int index, byte encoding) throws IOException, DataFormatException {
-    int localX = index & BITMASK_LOCAL_CHUNK;
-    int localZ = index >> 5 & BITMASK_LOCAL_CHUNK;
-    String fileName = String.format(
-            "c.%s.%s.mcc",
-            Coords.regionToChunk(regionX) + localX,
-            Coords.regionToChunk(regionZ) + localZ);
-    Path oversizedFile = regionPath.resolveSibling(fileName);
-    if (!Files.isRegularFile(oversizedFile)) {
-      throw new NoSuchFileException(oversizedFile.toAbsolutePath().toString());
+  private @NotNull InputStream getXlChunk(int index) throws IOException {
+    Path xlFile = getXlChunkPath(index);
+    if (!Files.isRegularFile(xlFile)) {
+      throw new NoSuchFileException(xlFile.toAbsolutePath().toString());
     }
 
-    return decodeStream((byte) (encoding & ~FLAG_CHUNK_TOO_LARGE), Files.newInputStream(oversizedFile, StandardOpenOption.READ));
+    return Files.newInputStream(xlFile, StandardOpenOption.READ);
   }
 
-  private @NotNull InputStream decodeStream(byte encoding, InputStream stream) throws DataFormatException, IOException {
-    RegionCompression compression = RegionCompression.byCompressionId(encoding);
-    if (compression == null) {
-      throw new DataFormatException("Unknown compression ID " + encoding);
-    }
-
-    return compression.decode(stream);
-  }
+  // FUTURE
+  //  fragment -> all decompressed .mcc for readability
+  //  defragment(RegionCompression) -> parse and recompress, re-assign sectors and fully rewrite file
 
   @Override
   public void close() throws IOException {
@@ -255,8 +287,36 @@ public class RegionFile implements AutoCloseable {
     }
   }
 
-  private static int packIndex(int x, int z) {
-    return (z & BITMASK_LOCAL_CHUNK) << 5 | (x & BITMASK_LOCAL_CHUNK);
+  private void checkLegalChunks(int chunkX, int chunkZ) {
+    boolean regionalX = checkLocalOrRegionalChunk(chunkX, regionX);
+    boolean regionalZ = checkLocalOrRegionalChunk(chunkZ, regionZ);
+    /*
+     * If the raw regional state matches, the pair is either local-local or regional-regional and is good. However,
+     * region 0 on one axis will result in valid coordinates that are both regional and local. As a result of assuming
+     * locality (because ideally everyone will use local coordinates and just pass the first condition outright),
+     * valid chunk coordinates may be deemed a regional/local mismatch due to the ambiguity of one axis. Therefore,
+     * if a coordinate is regional and the other coordinate is in region 0, the other coordinate is also regional.
+     */
+    if (regionalX != regionalZ && (regionalZ && regionX != 0 || regionalX && regionZ != 0)) {
+      // Mixed regional and local chunks, i.e. probably trying to query the wrong region.
+      throw new IllegalArgumentException("Mismatched local and regional coordinates " + chunkX + " and " + chunkZ);
+    }
+  }
+
+  private boolean checkLocalOrRegionalChunk(int chunk, int region) {
+    if (chunk >= 0 && chunk <= BITMASK_LOCAL_CHUNK) {
+      // Note: Can't tell whether individual axes are regional or local for region 0.
+      return false;
+    }
+    int regionChunk = region << BIT_COUNT_LOCAL_CHUNK;
+    if (chunk < regionChunk || chunk > regionChunk + BITMASK_LOCAL_CHUNK) {
+      throw new IllegalArgumentException("Chunk " + chunk + " is out of range for region " + region);
+    }
+    return true;
+  }
+
+  public static int packIndex(int x, int z) {
+    return (z & BITMASK_LOCAL_CHUNK) << BIT_COUNT_LOCAL_CHUNK | (x & BITMASK_LOCAL_CHUNK);
   }
 
   public static int unpackLocalX(int index) {
