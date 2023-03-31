@@ -49,16 +49,16 @@ public class RegionFile implements AutoCloseable {
 
   // Useful constants for region file parsing.
   /** Each sector is made up of a fixed number of bytes. */
-  private static final int SECTOR_BYTES = 4096;
+  public static final int SECTOR_BYTES = 4096;
   /** Integers comprise certain entire sectors. */
   private static final int SECTOR_INTS = SECTOR_BYTES / Integer.BYTES;
   /** The header consumes a number of sectors at the start of the file. */
   static final int REGION_HEADER_SECTORS = 2;
   /** The total header size in bytes. */
-  private static final int REGION_HEADER_LENGTH = SECTOR_BYTES * REGION_HEADER_SECTORS;
+  public static final int REGION_HEADER_LENGTH = SECTOR_BYTES * REGION_HEADER_SECTORS;
   private static final int CHUNK_NOT_PRESENT = 0;
   /** Chunks start with a header declaring their size and compression type. */
-  private static final int CHUNK_HEADER_LENGTH = Integer.BYTES + 1;
+  public static final int CHUNK_HEADER_LENGTH = Integer.BYTES + 1;
   /** Internally-saved chunk data may not exceed a certain number of sectors. */
   private static final int CHUNK_MAXIMUM_SECTORS = 256;
   /** Internally-saved chunk data may not exceed a certain length. */
@@ -90,6 +90,25 @@ public class RegionFile implements AutoCloseable {
   private @Nullable FileChannel file;
 
   public RegionFile(@NotNull Path regionPath, boolean sync) {
+    this(regionPath,
+        ByteBuffer.allocateDirect(REGION_HEADER_LENGTH),
+        ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH),
+        sync);
+  }
+
+  public RegionFile(
+          @NotNull Path regionPath,
+          @NotNull ByteBuffer regionHeaderBuffer,
+          @NotNull ByteBuffer chunkHeaderBuffer,
+          boolean sync,
+          @Nullable String whoAreYouAndIsThisSafe) {
+    this(regionPath,
+            verifyBuffer(regionHeaderBuffer, REGION_HEADER_LENGTH),
+            verifyBuffer(chunkHeaderBuffer, CHUNK_HEADER_LENGTH),
+            verifyIntent(whoAreYouAndIsThisSafe, sync));
+  }
+
+  private RegionFile(@NotNull Path regionPath, @NotNull ByteBuffer regionHeaderBuffer, @NotNull ByteBuffer chunkHeaderBuffer, boolean sync) {
     if (Files.isDirectory(regionPath)) {
       throw new IllegalArgumentException("Provided region file is a directory " + regionPath.toAbsolutePath());
     }
@@ -102,19 +121,18 @@ public class RegionFile implements AutoCloseable {
     this.regionZ = Integer.parseInt(matcher.group(2));
     this.sync = sync;
 
-    // A direct ByteBuffer is much slower to allocate but more performant when reading/writing.
-    // As we care most about minimizing the time we spend doing I/O, a direct buffer makes sense.
-    regionHeader = ByteBuffer.allocateDirect(SECTOR_BYTES * REGION_HEADER_SECTORS);
+    regionHeader = regionHeaderBuffer;
+    regionHeader.clear();
     chunkOffsets = regionHeader.slice(0, SECTOR_BYTES).asIntBuffer();
-    chunkTimestamps = regionHeader.position(SECTOR_BYTES).slice().asIntBuffer();
-    regionHeader.position(0);
+    chunkTimestamps = regionHeader.slice(SECTOR_BYTES, REGION_HEADER_LENGTH).asIntBuffer();
     sectorsUsed = new SectorBitSet();
     // TODO should 2-indexing be done inside the SectorBitSet?
     //  I.e. not even bother having bits, just add 2 to all return values?
     //  May reduce need for data verification, but may make errors less clear.
     sectorsUsed.set(0, REGION_HEADER_SECTORS);
 
-    chunkHeader = ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH);
+    chunkHeader = chunkHeaderBuffer;
+    chunkHeader.clear();
   }
 
   /**
@@ -449,6 +467,22 @@ public class RegionFile implements AutoCloseable {
 
   private static @NotNull String friendlyIndex(int index) {
     return "[" + unpackLocalX(index) + "," + unpackLocalZ(index) + "]";
+  }
+
+  private static boolean verifyIntent(@Nullable String password, boolean sync) {
+    // This is a silly little stopgap to ensure that people are at least a little aware that reusing a ByteBuffer can
+    // introduce unexpected behavior. If they know enough to look, they (hopefully) know enough to ensure safety.
+    if ("I am John RegionFile; I understand that providing my own buffer may be unsafe.".equals(password)) {
+      return sync;
+    }
+    throw new IllegalArgumentException("Please identify yourself and acknowledge that issues may arise.");
+  }
+
+  private static @NotNull ByteBuffer verifyBuffer(@NotNull ByteBuffer buffer, int capacity) {
+    if (buffer.isReadOnly() || !buffer.isDirect() || buffer.capacity() != capacity) {
+      throw new IllegalArgumentException("Buffer must be a writable direct ByteBuffer with capacity " + capacity);
+    }
+    return buffer;
   }
 
 }

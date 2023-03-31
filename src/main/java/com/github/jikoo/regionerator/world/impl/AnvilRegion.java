@@ -21,8 +21,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.BitSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.DataFormatException;
@@ -37,10 +41,14 @@ public class AnvilRegion extends RegionInfo {
 	private static final String SUBDIR_ENTITY_DATA = "entities";
 	static final String[] DATA_SUBDIRS = { SUBDIR_BLOCK_DATA, SUBDIR_ENTITY_DATA, "poi" };
 
+	private final ByteBuffer volatileRegionHeader;
+	private final IntBuffer volatileChunkTimes;
+	private final ByteBuffer storedRegionHeader;
+	private final IntBuffer storedChunkUsage;
+	private final IntBuffer storedChunkTimes;
+	private final ByteBuffer chunkHeader;
 	private final @NotNull Path worldDataFolder;
 	private final @NotNull String fileName;
-	private final @NotNull RegionFile regionFileBlockData;
-	private final @NotNull RegionFile regionFileEntityData;
 
 	AnvilRegion(
 					@NotNull AnvilWorld world,
@@ -52,15 +60,22 @@ public class AnvilRegion extends RegionInfo {
 		this.worldDataFolder = worldDataFolder;
 		this.fileName = String.format(fileFormat, regionX, regionZ);
 
-		// TODO need to redefine reading header
-		regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
-		regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA);
+		volatileRegionHeader = ByteBuffer.allocateDirect(RegionFile.REGION_HEADER_LENGTH);
+		volatileChunkTimes = volatileRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.REGION_HEADER_LENGTH).asIntBuffer();
+		storedRegionHeader = ByteBuffer.allocateDirect(RegionFile.REGION_HEADER_LENGTH);
+		storedChunkUsage = storedRegionHeader.slice(0, RegionFile.SECTOR_BYTES).asIntBuffer();
+		storedChunkTimes = storedRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.REGION_HEADER_LENGTH).asIntBuffer();
+		chunkHeader = ByteBuffer.allocateDirect(RegionFile.CHUNK_HEADER_LENGTH);
 	}
 
 	@Contract("_ -> new")
 	private @NotNull RegionFile createRegionFile(@NotNull String dir) {
 		Path regionFilePath = worldDataFolder.resolve(Path.of(dir, fileName));
-		return new RegionFile(regionFilePath, true);
+		return new RegionFile(regionFilePath,
+						volatileRegionHeader,
+						chunkHeader,
+						true,
+						"I am John RegionFile; I understand that providing my own buffer may be unsafe.");
 	}
 
 	/**
@@ -74,15 +89,24 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public void read() throws IOException {
-		try {
+		try (RegionFile regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
+				RegionFile regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA)) {
 			// Read world data.
 			regionFileBlockData.open(true);
 			regionFileBlockData.readHeader();
 			regionFileBlockData.close();
+			storedRegionHeader.put(volatileRegionHeader);
 			// Read entity data.
 			regionFileEntityData.open(true);
 			regionFileEntityData.readHeader();
 			regionFileEntityData.close();
+			for (int i = 0; i < CHUNK_COUNT; ++i) {
+				int blockDataTime = storedChunkTimes.get(i);
+				int entityDataTime = volatileChunkTimes.get(i);
+				if (entityDataTime > blockDataTime) {
+					storedChunkTimes.put(i, entityDataTime);
+				}
+			}
 			// We don't read POI data because it generally only updates with a world or entity change.
 			// It's effectively a redundant disk operation.
 		} catch (DataFormatException e) {
@@ -105,12 +129,13 @@ public class AnvilRegion extends RegionInfo {
 	private boolean write(@NotNull String subdirectory) throws IOException {
 		Path mcaFilePath = worldDataFolder.resolve(Path.of(subdirectory, fileName));
 		if (!Files.isRegularFile(mcaFilePath)) {
+			// TODO RegionFile#getPath
 			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s/%s", subdirectory, getIdentifier()));
 			// Return true even if file already did not exist; end goal was still accomplished
 			return true;
 		}
 
-		try (RegionFile regionFile = new RegionFile(mcaFilePath, true)) {
+		try (RegionFile regionFile = createRegionFile(subdirectory)) {
 			regionFile.open(false);
 			regionFile.readHeader();
 			boolean headerEmpty = true;
@@ -214,7 +239,7 @@ public class AnvilRegion extends RegionInfo {
 				return true;
 			}
 
-			return !regionFileBlockData.isPresent(index);
+			return storedChunkUsage.get(index) != 0;
 		}
 
 		@Override
@@ -224,8 +249,7 @@ public class AnvilRegion extends RegionInfo {
 
 		@Override
 		public long getLastModified() {
-			int index = RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ());
-			return Math.max(regionFileBlockData.getLastModified(index), regionFileEntityData.getLastModified(index));
+			return TimeUnit.MILLISECONDS.convert(storedChunkTimes.get(RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ())), TimeUnit.SECONDS);
 		}
 	}
 }
