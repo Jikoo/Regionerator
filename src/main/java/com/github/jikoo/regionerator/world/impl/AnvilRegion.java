@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.BitSet;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -122,6 +122,7 @@ public class AnvilRegion extends RegionInfo {
 		for (String dir : DATA_SUBDIRS) {
 			failed |= !write(dir);
 		}
+		Arrays.fill(pointerWipes, false);
 
 		return !failed;
 	}
