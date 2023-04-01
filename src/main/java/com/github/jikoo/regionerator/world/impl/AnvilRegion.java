@@ -61,10 +61,10 @@ public class AnvilRegion extends RegionInfo {
 		this.fileName = String.format(fileFormat, regionX, regionZ);
 
 		volatileRegionHeader = ByteBuffer.allocateDirect(RegionFile.REGION_HEADER_LENGTH);
-		volatileChunkTimes = volatileRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.REGION_HEADER_LENGTH).asIntBuffer();
-		storedRegionHeader = ByteBuffer.allocateDirect(RegionFile.REGION_HEADER_LENGTH);
+		volatileChunkTimes = volatileRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.SECTOR_BYTES).asIntBuffer();
+		storedRegionHeader = ByteBuffer.allocateDirect(volatileRegionHeader.capacity());
 		storedChunkUsage = storedRegionHeader.slice(0, RegionFile.SECTOR_BYTES).asIntBuffer();
-		storedChunkTimes = storedRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.REGION_HEADER_LENGTH).asIntBuffer();
+		storedChunkTimes = storedRegionHeader.slice(RegionFile.SECTOR_BYTES, RegionFile.SECTOR_BYTES).asIntBuffer();
 		chunkHeader = ByteBuffer.allocateDirect(RegionFile.CHUNK_HEADER_LENGTH);
 	}
 
@@ -89,28 +89,43 @@ public class AnvilRegion extends RegionInfo {
 
 	@Override
 	public void read() throws IOException {
+		// We don't read POI data because it generally only updates with a world or entity change.
+		// It's effectively a redundant disk operation.
 		try (RegionFile regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
 				RegionFile regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA)) {
 			// Read world data.
 			regionFileBlockData.open(true);
 			regionFileBlockData.readHeader();
 			regionFileBlockData.close();
-			storedRegionHeader.put(volatileRegionHeader);
+
+			// Clobber all our existing data with the new world data.
+			storeCurrentHeader();
+
 			// Read entity data.
 			regionFileEntityData.open(true);
 			regionFileEntityData.readHeader();
 			regionFileEntityData.close();
-			for (int i = 0; i < CHUNK_COUNT; ++i) {
-				int blockDataTime = storedChunkTimes.get(i);
-				int entityDataTime = volatileChunkTimes.get(i);
-				if (entityDataTime > blockDataTime) {
-					storedChunkTimes.put(i, entityDataTime);
-				}
-			}
-			// We don't read POI data because it generally only updates with a world or entity change.
-			// It's effectively a redundant disk operation.
+
+			// Use the more recent of block data and entity data modification times.
+			storeMoreRecentTimes();
 		} catch (DataFormatException e) {
 			throw new IOException(e);
+		}
+	}
+
+	private void storeCurrentHeader() {
+		storedRegionHeader.rewind();
+		volatileRegionHeader.rewind();
+		storedRegionHeader.put(volatileRegionHeader);
+	}
+
+	private void storeMoreRecentTimes() {
+		for (int i = 0; i < CHUNK_COUNT; ++i) {
+			int blockDataTime = storedChunkTimes.get(i);
+			int entityDataTime = volatileChunkTimes.get(i);
+			if (entityDataTime > blockDataTime) {
+				storedChunkTimes.put(i, entityDataTime);
+			}
 		}
 	}
 
@@ -130,7 +145,6 @@ public class AnvilRegion extends RegionInfo {
 	private boolean write(@NotNull String subdirectory) throws IOException {
 		Path mcaFilePath = worldDataFolder.resolve(Path.of(subdirectory, fileName));
 		if (!Files.isRegularFile(mcaFilePath)) {
-			// TODO RegionFile#getPath
 			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s/%s", subdirectory, getIdentifier()));
 			// Return true even if file already did not exist; end goal was still accomplished
 			return true;
@@ -161,6 +175,15 @@ public class AnvilRegion extends RegionInfo {
 			}
 			if (!headerEmpty) {
 				regionFile.writeHeader();
+				regionFile.close();
+
+				// Since the region still has content, update our stored data with the current data.
+				if (subdirectory.equals(SUBDIR_BLOCK_DATA)) {
+					storeCurrentHeader();
+				} else if (subdirectory.equals(SUBDIR_ENTITY_DATA)) {
+					storeMoreRecentTimes();
+				}
+
 				return true;
 			}
 		} catch (DataFormatException e) {

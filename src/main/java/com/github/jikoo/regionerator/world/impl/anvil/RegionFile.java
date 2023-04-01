@@ -71,7 +71,7 @@ public class RegionFile implements AutoCloseable {
   private static final int BITMASK_OFFSET_SECTOR_COUNT = 0xFF;
   /** Bitmask for the start sector of a chunk's data. */
   private static final int BITMASK_OFFSET_START_SECTOR = 0xFFFFFF;
-  // TODO may want a util to construct these automatically from bitmasks
+  // FUTURE may want a util to construct these automatically from bitmasks
   /** Number of bits in {@link #BITMASK_OFFSET_SECTOR_COUNT} */
   private static final int BIT_COUNT_LOCAL_CHUNK = 5;
   /** Number of bits in {@link #BITMASK_OFFSET_SECTOR_COUNT} */
@@ -124,7 +124,7 @@ public class RegionFile implements AutoCloseable {
     regionHeader = regionHeaderBuffer;
     regionHeader.clear();
     chunkOffsets = regionHeader.slice(0, SECTOR_BYTES).asIntBuffer();
-    chunkTimestamps = regionHeader.slice(SECTOR_BYTES, REGION_HEADER_LENGTH).asIntBuffer();
+    chunkTimestamps = regionHeader.slice(SECTOR_BYTES, SECTOR_BYTES).asIntBuffer();
     sectorsUsed = new SectorBitSet();
     // TODO should 2-indexing be done inside the SectorBitSet?
     //  I.e. not even bother having bits, just add 2 to all return values?
