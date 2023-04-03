@@ -10,6 +10,7 @@
 
 package com.github.jikoo.regionerator.util;
 
+import com.github.jikoo.planarwrappers.tuple.CachingSupplier;
 import com.github.jikoo.regionerator.ChunkFlagger;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.Regionerator;
@@ -18,15 +19,16 @@ import com.github.jikoo.regionerator.hooks.Hook;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
-public class VisitStatusCache extends SupplierCache<VisitStatus> {
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+public class VisitStatusCache extends CachingSupplier<VisitStatus> {
 
 	public VisitStatusCache(@NotNull Regionerator plugin, @NotNull ChunkInfo chunkInfo) {
 		super(() -> {

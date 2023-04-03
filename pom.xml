@@ -264,10 +264,18 @@
         </executions>
         <configuration>
           <relocations>
-            <!-- Relocate Coords utility in case an external dependent hook used it. -->
+            <!-- Relocate various utilities that have been migrated to PlanarWrappers. -->
             <relocation>
               <pattern>com.github.jikoo.planarwrappers.util.Coords</pattern>
               <shadedPattern>com.github.jikoo.regionerator.Coords</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.github.jikoo.planarwrappers.scheduler.DistributedTask</pattern>
+              <shadedPattern>com.github.jikoo.regionerator.util.DistributedTask</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.github.jikoo.planarwrappers.tuple.CachingSupplier</pattern>
+              <shadedPattern>com.github.jikoo.regionerator.util.SupplierCache</shadedPattern>
             </relocation>
             <relocation>
               <pattern>com.github.jikoo.planarwrappers</pattern>
