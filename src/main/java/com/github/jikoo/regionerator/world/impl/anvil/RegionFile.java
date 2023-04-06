@@ -313,18 +313,20 @@ public class RegionFile implements AutoCloseable {
     }
 
     int packedOffsetData = chunkOffsets.get(index);
-    if (packedOffsetData != CHUNK_NOT_PRESENT) {
-      int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
-      if (startSector >= REGION_HEADER_SECTORS) {
-        int sectorCount = packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT;
-        sectorsUsed.clear(startSector, sectorCount);
-      }
+    if (packedOffsetData == CHUNK_NOT_PRESENT) {
+      // Chunk already deleted.
+      return;
     }
 
-    chunkOffsets.put(index, 0);
+    chunkOffsets.put(index, CHUNK_NOT_PRESENT);
     chunkTimestamps.put(index, (int) Clock.systemUTC().instant().getEpochSecond());
-    Files.deleteIfExists(getXlChunkPath(index));
-    // FUTURE need to fetch old value and free sectors (and track sectors to start with)
+    Files.deleteIfExists(getXlChunkPath(index)); // TODO should this not delete if not open/delete on write?
+
+    int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
+    if (startSector >= REGION_HEADER_SECTORS) {
+      int sectorCount = packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT;
+      sectorsUsed.clear(startSector, sectorCount);
+    }
   }
 
   private @NotNull Path getXlChunkPath(int index) {
