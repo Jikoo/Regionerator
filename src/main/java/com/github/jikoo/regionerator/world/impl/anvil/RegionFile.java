@@ -172,7 +172,7 @@ public class RegionFile implements AutoCloseable {
     }
 
     regionHeader.rewind();
-    int bytesRead = file.read(regionHeader);
+    int bytesRead = file.read(regionHeader, 0);
     regionHeader.flip();
 
     if (bytesRead != -1 && bytesRead < REGION_HEADER_LENGTH) {
