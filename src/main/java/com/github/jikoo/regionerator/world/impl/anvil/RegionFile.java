@@ -89,6 +89,12 @@ public class RegionFile implements AutoCloseable {
   private boolean regionHeaderRead = false;
   private @Nullable FileChannel file;
 
+  /**
+   * Constructor for a {@code RegionFile}.
+   *
+   * @param regionPath the path of the region file
+   * @param sync whether to use {@link StandardOpenOption#DSYNC} when opening for writing
+   */
   public RegionFile(@NotNull Path regionPath, boolean sync) {
     this(regionPath,
         ByteBuffer.allocateDirect(REGION_HEADER_LENGTH),
@@ -96,6 +102,18 @@ public class RegionFile implements AutoCloseable {
         sync);
   }
 
+  /**
+   * Constructor for a {@code RegionFile} using provided {@link ByteBuffer ByteBuffers}.
+   *
+   * <p>Note that the provided buffers must be {@link ByteBuffer#isDirect() direct} and of the correct capacity.
+   *
+   * @param regionPath the path of the region file
+   * @param regionHeaderBuffer a {@link ByteBuffer#isDirect() direct} buffer with capacity {@link #REGION_HEADER_LENGTH}
+   * @param chunkHeaderBuffer a {@link ByteBuffer#isDirect() direct} buffer with capacity {@link #CHUNK_HEADER_LENGTH}
+   * @param sync whether to use {@link StandardOpenOption#DSYNC} when opening for writing
+   * @param whoAreYouAndIsThisSafe a passphrase to make sure the user has acknowledged the drawbacks of providing buffers
+   * @throws IllegalArgumentException if buffers do not meet every criterion or if the passphrase is incorrect
+   */
   public RegionFile(
           @NotNull Path regionPath,
           @NotNull ByteBuffer regionHeaderBuffer,
