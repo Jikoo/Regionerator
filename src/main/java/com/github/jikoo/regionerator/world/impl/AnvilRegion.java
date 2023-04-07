@@ -14,6 +14,7 @@ import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
+import com.github.jikoo.regionerator.world.impl.anvil.AccessMode;
 import com.github.jikoo.regionerator.world.impl.anvil.RegionFile;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Contract;
@@ -74,7 +75,6 @@ public class AnvilRegion extends RegionInfo {
 		return new RegionFile(regionFilePath,
 						volatileRegionHeader,
 						chunkHeader,
-						true,
 						"I am John RegionFile; I understand that providing my own buffer may be unsafe.");
 	}
 
@@ -94,7 +94,7 @@ public class AnvilRegion extends RegionInfo {
 		try (RegionFile regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
 				RegionFile regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA)) {
 			// Read world data.
-			regionFileBlockData.open(true);
+			regionFileBlockData.open(AccessMode.READ);
 			regionFileBlockData.readHeader();
 			regionFileBlockData.close();
 
@@ -102,7 +102,7 @@ public class AnvilRegion extends RegionInfo {
 			storeCurrentHeader();
 
 			// Read entity data.
-			regionFileEntityData.open(true);
+			regionFileEntityData.open(AccessMode.READ);
 			regionFileEntityData.readHeader();
 			regionFileEntityData.close();
 
@@ -151,7 +151,7 @@ public class AnvilRegion extends RegionInfo {
 		}
 
 		try (RegionFile regionFile = createRegionFile(subdirectory)) {
-			regionFile.open(false);
+			regionFile.open(AccessMode.WRITE_DSYNC);
 			regionFile.readHeader();
 			boolean headerEmpty = true;
 			for (int i = 0; i < pointerWipes.length; ++i) {
@@ -257,13 +257,8 @@ public class AnvilRegion extends RegionInfo {
 		@Override
 		public boolean isOrphaned() {
 			int index = RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ());
-
-			// Is chunk slated to be orphaned on region write?
-			if (pointerWipes[index]) {
-				return true;
-			}
-
-			return storedChunkUsage.get(index) != 0;
+			// Return true if chunk is slated to be orphaned on region write or already orphaned.
+			return pointerWipes[index] || storedChunkUsage.get(index) != 0;
 		}
 
 		@Override

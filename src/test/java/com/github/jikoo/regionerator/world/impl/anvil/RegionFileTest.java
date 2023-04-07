@@ -60,7 +60,7 @@ class RegionFileTest {
 
     ByteBuffer resultRegionHeaderBuffer = ByteBuffer.allocateDirect(RegionFile.REGION_HEADER_LENGTH);
     try (RegionFile resultRegion = regionFile(resultFile, resultRegionHeaderBuffer, chunkHeaderBuffer)) {
-      resultRegion.open(true);
+      resultRegion.open(AccessMode.READ);
       resultRegion.readHeader();
     }
 
@@ -68,7 +68,7 @@ class RegionFileTest {
     IntBuffer resultPointers = resultRegionHeaderBuffer.slice(0, RegionFile.SECTOR_BYTES).asIntBuffer();
     IntBuffer workPointers = workRegionHeaderBuffer.slice(0, RegionFile.SECTOR_BYTES).asIntBuffer();
     try (RegionFile workRegion = regionFile(workFile, workRegionHeaderBuffer, chunkHeaderBuffer)) {
-      workRegion.open(false);
+      workRegion.open(AccessMode.WRITE_DSYNC);
       workRegion.readHeader();
 
       assertNotEquals(resultPointers, workPointers, "Pointers must not match before edit");
@@ -93,7 +93,6 @@ class RegionFileTest {
             regionPath,
             regionHeaderBuffer,
             chunkHeaderBuffer,
-            true,
             "I am John RegionFile; I understand that providing my own buffer may be unsafe.");
   }
 

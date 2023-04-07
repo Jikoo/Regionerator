@@ -12,6 +12,7 @@ package com.github.jikoo.regionerator.world.impl.anvil;
 
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.google.common.annotations.Beta;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,7 +79,6 @@ public class RegionFile implements AutoCloseable {
   private static final int BIT_COUNT_OFFSET_SECTOR_COUNT = 8;
 
   private final Path regionPath;
-  private final boolean sync;
   private final int regionX;
   private final int regionZ;
   private final ByteBuffer regionHeader;
@@ -93,13 +93,11 @@ public class RegionFile implements AutoCloseable {
    * Constructor for a {@code RegionFile}.
    *
    * @param regionPath the path of the region file
-   * @param sync whether to use {@link StandardOpenOption#DSYNC} when opening for writing
    */
-  public RegionFile(@NotNull Path regionPath, boolean sync) {
+  public RegionFile(@NotNull Path regionPath) {
     this(regionPath,
         ByteBuffer.allocateDirect(REGION_HEADER_LENGTH),
-        ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH),
-        sync);
+        ByteBuffer.allocateDirect(CHUNK_HEADER_LENGTH));
   }
 
   /**
@@ -110,34 +108,32 @@ public class RegionFile implements AutoCloseable {
    * @param regionPath the path of the region file
    * @param regionHeaderBuffer a {@link ByteBuffer#isDirect() direct} buffer with capacity {@link #REGION_HEADER_LENGTH}
    * @param chunkHeaderBuffer a {@link ByteBuffer#isDirect() direct} buffer with capacity {@link #CHUNK_HEADER_LENGTH}
-   * @param sync whether to use {@link StandardOpenOption#DSYNC} when opening for writing
-   * @param whoAreYouAndIsThisSafe a passphrase to make sure the user has acknowledged the drawbacks of providing buffers
+   * @param whoAreYouAndIsThisSafe a phrase to make sure the user has acknowledged the drawbacks of providing buffers
    * @throws IllegalArgumentException if buffers do not meet every criterion or if the passphrase is incorrect
    */
   public RegionFile(
           @NotNull Path regionPath,
           @NotNull ByteBuffer regionHeaderBuffer,
           @NotNull ByteBuffer chunkHeaderBuffer,
-          boolean sync,
           @Nullable String whoAreYouAndIsThisSafe) {
-    this(regionPath,
+    this(verifyIntent(whoAreYouAndIsThisSafe, regionPath),
             verifyBuffer(regionHeaderBuffer, REGION_HEADER_LENGTH),
-            verifyBuffer(chunkHeaderBuffer, CHUNK_HEADER_LENGTH),
-            verifyIntent(whoAreYouAndIsThisSafe, sync));
+            verifyBuffer(chunkHeaderBuffer, CHUNK_HEADER_LENGTH));
   }
 
-  private RegionFile(@NotNull Path regionPath, @NotNull ByteBuffer regionHeaderBuffer, @NotNull ByteBuffer chunkHeaderBuffer, boolean sync) {
+  private RegionFile(@NotNull Path regionPath, @NotNull ByteBuffer regionHeaderBuffer, @NotNull ByteBuffer chunkHeaderBuffer) {
     if (Files.isDirectory(regionPath)) {
       throw new IllegalArgumentException("Provided region file is a directory " + regionPath.toAbsolutePath());
     }
     this.regionPath = regionPath.normalize();
+    // TODO should add a constructor accepting coordinates and skip this
+    //  May want to make regionPath a #read param instead
     Matcher matcher = FILE_NAME_PATTERN.matcher(this.regionPath.getFileName().toString());
     if (!matcher.matches()) {
       throw new IllegalArgumentException("Provided region file does not match name format " + regionPath.getFileName());
     }
     this.regionX = Integer.parseInt(matcher.group(1));
     this.regionZ = Integer.parseInt(matcher.group(2));
-    this.sync = sync;
 
     regionHeader = regionHeaderBuffer;
     regionHeader.clear();
@@ -156,24 +152,12 @@ public class RegionFile implements AutoCloseable {
   /**
    * Open the {@link FileChannel} used internally for reading data from the region file.
    *
-   * @param readOnly whether the file should be opened read-only
+   * @param accessMode the {@link OpenOption OpenOptions} used when opening the file
    * @throws IOException if an I/O error occurs. See {@link FileChannel#open(Path, OpenOption...)}
    */
-  public void open(boolean readOnly) throws IOException {
+  public void open(@NotNull AccessMode accessMode) throws IOException {
     close();
-
-    OpenOption[] options;
-    if (readOnly) {
-      // This is the only case where a RandomAccessFile outperforms a FileChannel, but the gain is so marginal that it
-      // isn't worth retooling the rest of the class around accepting two completely different input methods.
-      options = new OpenOption[] { StandardOpenOption.READ };
-    } else if (sync) {
-      options = new OpenOption[] { StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.DSYNC };
-    } else {
-      options = new OpenOption[] { StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE };
-    }
-
-    file = FileChannel.open(regionPath, options);
+    file = FileChannel.open(regionPath, accessMode.asOpenOptions());
   }
 
   /**
@@ -489,11 +473,12 @@ public class RegionFile implements AutoCloseable {
     return "[" + unpackLocalX(index) + "," + unpackLocalZ(index) + "]";
   }
 
-  private static boolean verifyIntent(@Nullable String password, boolean sync) {
+  @Contract("_, _ -> param2")
+  private static Path verifyIntent(@Nullable String password, Path path) {
     // This is a silly little stopgap to ensure that people are at least a little aware that reusing a ByteBuffer can
     // introduce unexpected behavior. If they know enough to look, they (hopefully) know enough to ensure safety.
     if ("I am John RegionFile; I understand that providing my own buffer may be unsafe.".equals(password)) {
-      return sync;
+      return path;
     }
     throw new IllegalArgumentException("Please identify yourself and acknowledge that issues may arise.");
   }
