@@ -33,5 +33,4 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build with Maven
-        if: matrix.java == '8'
         run: mvn -e clean package
