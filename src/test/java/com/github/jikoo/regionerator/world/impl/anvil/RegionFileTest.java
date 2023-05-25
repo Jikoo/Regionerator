@@ -38,7 +38,7 @@ class RegionFileTest {
   void beforeEach() throws IOException {
     Path regionDir = Path.of("src", "test", "resources", "region");
     String regionFileName = "r.0.0.mca";
-    Path inFile = regionDir.resolve(Path.of("in", regionFileName));
+    Path inFile = regionDir.resolve(Path.of("in", "deleteChunk", regionFileName));
     workDir = regionDir.resolve(Path.of("work", getClass().getSimpleName()));
     Files.createDirectories(workDir);
     workFile = workDir.resolve(regionFileName);
