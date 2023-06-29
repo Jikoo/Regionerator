@@ -24,6 +24,12 @@ class SectorBitSet {
     this.sectorStates.clear(start, start + length);
   }
 
+  void clear() {
+    if (sectorStates.length() > RegionFile.REGION_HEADER_SECTORS) {
+      this.sectorStates.clear(RegionFile.REGION_HEADER_SECTORS, sectorStates.length());
+    }
+  }
+
   int getLastUsed() {
     return this.sectorStates.length() - 1;
   }

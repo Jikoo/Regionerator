@@ -128,6 +128,7 @@ public class RegionFile implements AutoCloseable {
     this.regionPath = regionPath.normalize();
     // TODO should add a constructor accepting coordinates and skip this
     //  May want to make regionPath a #read param instead
+    //  Hold off until splitting Coords into RegionCoord, ChunkCoord, BlockCoord with conversions
     Matcher matcher = FILE_NAME_PATTERN.matcher(this.regionPath.getFileName().toString());
     if (!matcher.matches()) {
       throw new IllegalArgumentException("Provided region file does not match name format " + regionPath.getFileName());
@@ -173,10 +174,12 @@ public class RegionFile implements AutoCloseable {
       throw new ClosedChannelException();
     }
 
+    // Prepare buffer and read header.
     regionHeader.rewind();
     int bytesRead = file.read(regionHeader, 0);
     regionHeader.flip();
 
+    // Validate header data.
     if (bytesRead != -1 && bytesRead < REGION_HEADER_LENGTH) {
       throw new DataFormatException(String.format(
               "Invalid header for %s; read %s bytes of expected %s",
@@ -185,18 +188,30 @@ public class RegionFile implements AutoCloseable {
               REGION_HEADER_LENGTH));
     }
 
+    // Dump existing sector usage data.
+    sectorsUsed.clear();
+
+    // Chunk offset data is stored in a single integer per sector.
     for (int index = 0; index < SECTOR_INTS; ++index) {
       int packedOffsetData = chunkOffsets.get(index);
 
+      // Skip chunks that are not present.
       if (packedOffsetData == CHUNK_NOT_PRESENT) {
         continue;
       }
 
+      // Unpack the start sector from the offset data.
       int startSector = packedOffsetData >> BIT_COUNT_OFFSET_SECTOR_COUNT & BITMASK_OFFSET_START_SECTOR;
+
+      // Validate start sector.
       if (startSector < REGION_HEADER_SECTORS) {
         throw new DataFormatException("Start sector in region header for " + friendlyIndex(index));
       }
+
+      // Unpack sector count from the offset data.
       int sectorCount = packedOffsetData & BITMASK_OFFSET_SECTOR_COUNT;
+
+      // Consume sectors.
       sectorsUsed.set(startSector, sectorCount);
     }
 
@@ -218,7 +233,11 @@ public class RegionFile implements AutoCloseable {
     if (file == null) {
       throw new ClosedChannelException();
     }
+
+    // Rewind header before writing.
     regionHeader.rewind();
+
+    // Write header to start of file.
     file.write(regionHeader, 0);
   }
 
@@ -391,6 +410,12 @@ public class RegionFile implements AutoCloseable {
     }
 
     byte encoding = chunkHeader.get();
+    boolean isLargeChunk = false;
+    if ((encoding & FLAG_CHUNK_TOO_LARGE) != 0) {
+      isLargeChunk = true;
+      encoding &= ~FLAG_CHUNK_TOO_LARGE;
+    }
+
     RegionCompression compression;
     if (decode) {
       compression = RegionCompression.byCompressionId(encoding);
@@ -401,7 +426,7 @@ public class RegionFile implements AutoCloseable {
       compression = RegionCompression.NONE;
     }
 
-    if ((encoding & FLAG_CHUNK_TOO_LARGE) != 0) {
+    if (isLargeChunk) {
       return compression.decode(getXlChunk(index));
     }
 
