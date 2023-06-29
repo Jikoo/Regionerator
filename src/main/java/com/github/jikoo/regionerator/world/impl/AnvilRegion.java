@@ -70,8 +70,12 @@ public class AnvilRegion extends RegionInfo {
 	}
 
 	@Contract("_ -> new")
-	private @NotNull RegionFile createRegionFile(@NotNull String dir) {
-		Path regionFilePath = worldDataFolder.resolve(Path.of(dir, fileName));
+	private @NotNull Path getRegionPath(@NotNull String dir) {
+		return worldDataFolder.resolve(Path.of(dir, fileName));
+	}
+
+	@Contract("_ -> new")
+	private @NotNull RegionFile createRegionFile(@NotNull Path regionFilePath) {
 		return new RegionFile(regionFilePath,
 						volatileRegionHeader,
 						chunkHeader,
@@ -84,23 +88,42 @@ public class AnvilRegion extends RegionInfo {
 	 */
 	@Deprecated(forRemoval = true, since = "2.5.0")
 	public @NotNull File getRegionFile() {
-		return worldDataFolder.resolve(Path.of(SUBDIR_BLOCK_DATA, fileName)).toFile();
+		return getRegionPath(SUBDIR_BLOCK_DATA).toFile();
 	}
 
 	@Override
 	public void read() throws IOException {
 		// We don't read POI data because it generally only updates with a world or entity change.
 		// It's effectively a redundant disk operation.
-		try (RegionFile regionFileBlockData = createRegionFile(SUBDIR_BLOCK_DATA);
-				RegionFile regionFileEntityData = createRegionFile(SUBDIR_ENTITY_DATA)) {
-			// Read world data.
-			regionFileBlockData.open(AccessMode.READ);
-			regionFileBlockData.readHeader();
-			regionFileBlockData.close();
+		Path blockDataFile = getRegionPath(SUBDIR_BLOCK_DATA);
+		if (Files.isRegularFile(blockDataFile)) {
+			// If file exists, read block data.
+			try (RegionFile regionFileBlockData = createRegionFile(blockDataFile)) {
+				// Read world data.
+				regionFileBlockData.open(AccessMode.READ);
+				regionFileBlockData.readHeader();
+				regionFileBlockData.close();
 
-			// Clobber all our existing data with the new world data.
-			storeCurrentHeader();
+				// Clobber all our existing data with the new data.
+				storeCurrentHeader();
+				} catch (DataFormatException e) {
+				throw new IOException(e);
+			}
+		} else {
+			// If block data does not exist, entity data should be deleted too. Reading it is unnecessary.
+			// Wipe header in case this is a re-read.
+			for (int index = 0; index < RegionFile.REGION_HEADER_LENGTH; ++index) {
+				storedRegionHeader.put(index, (byte) 0);
+			}
+			return;
+		}
 
+		Path entityDataFile = getRegionPath(SUBDIR_ENTITY_DATA);
+		if (!Files.isRegularFile(entityDataFile)) {
+			// If entity data doesn't exist, our data is fully updated.
+			return;
+		}
+		try (RegionFile regionFileEntityData = createRegionFile(entityDataFile)) {
 			// Read entity data.
 			regionFileEntityData.open(AccessMode.READ);
 			regionFileEntityData.readHeader();
@@ -143,14 +166,14 @@ public class AnvilRegion extends RegionInfo {
 	}
 
 	private boolean write(@NotNull String subdirectory) throws IOException {
-		Path mcaFilePath = worldDataFolder.resolve(Path.of(subdirectory, fileName));
+		Path mcaFilePath = getRegionPath(subdirectory);
 		if (!Files.isRegularFile(mcaFilePath)) {
 			getPlugin().debug(DebugLevel.HIGH, () -> String.format("Skipped nonexistent region %s/%s", subdirectory, getIdentifier()));
 			// Return true even if file already did not exist; end goal was still accomplished
 			return true;
 		}
 
-		try (RegionFile regionFile = createRegionFile(subdirectory)) {
+		try (RegionFile regionFile = createRegionFile(mcaFilePath)) {
 			regionFile.open(AccessMode.WRITE_DSYNC);
 			regionFile.readHeader();
 			boolean headerEmpty = true;
