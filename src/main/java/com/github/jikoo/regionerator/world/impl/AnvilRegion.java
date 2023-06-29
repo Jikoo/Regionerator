@@ -281,7 +281,7 @@ public class AnvilRegion extends RegionInfo {
 		public boolean isOrphaned() {
 			int index = RegionFile.packIndex(getLocalChunkX(), getLocalChunkZ());
 			// Return true if chunk is slated to be orphaned on region write or already orphaned.
-			return pointerWipes[index] || storedChunkUsage.get(index) != 0;
+			return pointerWipes[index] || storedChunkUsage.get(index) == RegionFile.CHUNK_NOT_PRESENT;
 		}
 
 		@Override

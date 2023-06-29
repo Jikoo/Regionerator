@@ -57,7 +57,7 @@ public class RegionFile implements AutoCloseable {
   static final int REGION_HEADER_SECTORS = 2;
   /** The total header size in bytes. */
   public static final int REGION_HEADER_LENGTH = SECTOR_BYTES * REGION_HEADER_SECTORS;
-  private static final int CHUNK_NOT_PRESENT = 0;
+  public static final int CHUNK_NOT_PRESENT = 0;
   /** Chunks start with a header declaring their size and compression type. */
   public static final int CHUNK_HEADER_LENGTH = Integer.BYTES + 1;
   /** Internally-saved chunk data may not exceed a certain number of sectors. */
