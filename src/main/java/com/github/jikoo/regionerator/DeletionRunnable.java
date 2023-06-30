@@ -19,6 +19,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +42,8 @@ public class DeletionRunnable extends BukkitRunnable {
 	private final AtomicInteger heavyChecks = new AtomicInteger();
 	private final AtomicInteger regionsDeleted = new AtomicInteger();
 	private final AtomicInteger chunksDeleted = new AtomicInteger();
-	private long lastLog = 0;
+	private long nextLogSecond = Instant.now().getEpochSecond() + 5;
+	private int nextLogCount = 20;
 
 	DeletionRunnable(@NotNull Regionerator plugin, @NotNull World world) {
 		this.plugin = plugin;
@@ -52,7 +54,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	@Override
 	public void run() {
 		world.getRegions().forEach(this::handleRegion);
-		plugin.getLogger().info("Regeneration cycle complete for " + getRunStats());
+		plugin.getLogger().info("Deletion cycle complete for " + getRunStats());
 		nextRun.set(System.currentTimeMillis() + plugin.config().getCycleDelayMillis());
 		if (plugin.config().isRememberCycleDelay()) {
 			try {
@@ -131,7 +133,12 @@ public class DeletionRunnable extends BukkitRunnable {
 					"Caught an IOException attempting to populate chunk data: %s", e.getMessage()), e);
 		}
 
-		if (regionCount.get() % 20 == 0) {
+		// If 5 seconds have elapsed since last log and 20 or more regions have been checked, log run stats.
+		long now = Instant.now().getEpochSecond();
+		int regionsChecked = regionCount.get();
+		if (nextLogSecond <= now && regionsChecked >= nextLogCount) {
+			nextLogSecond = now + 5;
+			nextLogCount = regionsChecked + 20;
 			plugin.debug(DebugLevel.LOW, this::getRunStats);
 		}
 
@@ -214,7 +221,7 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	public String getRunStats() {
-		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount.get(), regionsDeleted, chunksDeleted);
+		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount, regionsDeleted, chunksDeleted);
 	}
 
 	public @NotNull String getWorld() {
