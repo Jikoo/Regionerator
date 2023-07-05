@@ -12,6 +12,7 @@ package com.github.jikoo.regionerator.world.impl.anvil;
 
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.google.common.annotations.Beta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +45,7 @@ import java.util.zip.DataFormatException;
  * undocumented modifications by Mojang, such as {@code .mcc} files for overly-large chunks.</p>
  */
 @Beta
+@ApiStatus.Experimental
 public class RegionFile implements AutoCloseable {
 
   public static final Pattern FILE_NAME_PATTERN = Pattern.compile("^r\\.(-?\\d+)\\.(-?\\d+)(\\.mc[ar])$");
