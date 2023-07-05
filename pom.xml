@@ -5,10 +5,13 @@
   <groupId>com.github.jikoo</groupId>
   <artifactId>regionerator</artifactId>
   <name>Regionerator</name>
-  <version>2.4.1-SNAPSHOT</version>
+  <version>2.5.0-SNAPSHOT</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
   </properties>
 
   <dependencies>
@@ -200,6 +203,13 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- Tests -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.9.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <repositories>
@@ -268,10 +278,18 @@
         </executions>
         <configuration>
           <relocations>
-            <!-- Relocate Coords utility in case an external dependent hook used it. -->
+            <!-- Relocate various utilities that have been migrated to PlanarWrappers. -->
             <relocation>
               <pattern>com.github.jikoo.planarwrappers.util.Coords</pattern>
               <shadedPattern>com.github.jikoo.regionerator.Coords</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.github.jikoo.planarwrappers.scheduler.DistributedTask</pattern>
+              <shadedPattern>com.github.jikoo.regionerator.util.DistributedTask</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.github.jikoo.planarwrappers.tuple.CachingSupplier</pattern>
+              <shadedPattern>com.github.jikoo.regionerator.util.SupplierCache</shadedPattern>
             </relocation>
             <relocation>
               <pattern>com.github.jikoo.planarwrappers</pattern>
@@ -294,10 +312,12 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
-        <configuration>
-          <source>17</source>
-          <target>17</target>
-        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0</version>
       </plugin>
     </plugins>
   </build>

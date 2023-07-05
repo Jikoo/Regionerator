@@ -11,9 +11,9 @@
 package com.github.jikoo.regionerator.listeners;
 
 import com.github.jikoo.planarwrappers.scheduler.AsyncBatch;
+import com.github.jikoo.planarwrappers.scheduler.DistributedTask;
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
-import com.github.jikoo.regionerator.util.DistributedTask;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;

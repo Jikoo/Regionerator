@@ -10,26 +10,28 @@
 
 package com.github.jikoo.regionerator.world.impl;
 
-import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
+import com.github.jikoo.regionerator.world.impl.anvil.RegionFile;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class AnvilWorld extends WorldInfo {
 
-	// r.0.0.mca, r.-1.0.mca, etc.
-	public static final Pattern ANVIL_REGION = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)\\.mca");
+	// Moving to a better home
+	@Deprecated(forRemoval = true, since = "2.5.0")
+	public static final Pattern ANVIL_REGION = RegionFile.FILE_NAME_PATTERN;
 
 	public AnvilWorld(@NotNull Regionerator plugin, @NotNull World world) {
 		super(plugin, world);
@@ -37,23 +39,37 @@ public class AnvilWorld extends WorldInfo {
 
 	@Override
 	public @NotNull RegionInfo getRegion(int regionX, int regionZ) {
-		File regionFolder = findRegionFolder();
-		File regionFile = new File(regionFolder, "r." + regionX + "." + regionZ + ".mca");
-		return new AnvilRegion(this, regionFile, Coords.regionToChunk(regionX), Coords.regionToChunk(regionZ));
+		Path dataFolder = findWorldDataFolder().toPath();
+		return new AnvilRegion(this, dataFolder, regionX, regionZ, "r.%s.%s.mca");
 	}
 
 	@Override
 	public @NotNull Stream<RegionInfo> getRegions() {
-		File regionFolder = findRegionFolder();
-		File[] regionFiles = regionFolder.listFiles((dir, name) -> ANVIL_REGION.matcher(name).matches());
-		if (regionFiles == null) {
+		Path dataFolder = findWorldDataFolder().toPath();
+
+		Stream<File> fileStream = null;
+		for (String folder : AnvilRegion.DATA_SUBDIRS) {
+			File file = dataFolder.resolve(folder).toFile();
+			File[] files = file.listFiles();
+			if (files == null) {
+				continue;
+			}
+			Stream<File> localFileStream = Arrays.stream(files);
+			fileStream = fileStream == null ? localFileStream : Stream.concat(fileStream, localFileStream);
+		}
+
+		if (fileStream == null) {
 			return Stream.empty();
 		}
-		AtomicInteger index = new AtomicInteger();
-		return Stream.generate(() -> parseRegion(regionFiles[index.getAndIncrement()])).limit(regionFiles.length).filter(Objects::nonNull);
+
+		return fileStream
+						.map(File::getName)
+						.distinct()
+						.map(fileName -> parseRegion(dataFolder, fileName))
+						.filter(Objects::nonNull);
 	}
 
-	private @NotNull File findRegionFolder() {
+	private @NotNull File findWorldDataFolder() {
 		World world = getWorld();
 		World defaultWorld = Bukkit.getWorlds().get(0);
 
@@ -84,20 +100,19 @@ public class AnvilWorld extends WorldInfo {
 
 		if (bukkitDimFolder.isDirectory()) {
 			// Default Bukkit behavior.
-			return new File(bukkitDimFolder, "region");
+			return bukkitDimFolder;
 		}
 
 		// Unknown but presumably good platform. We should already be inside the correct dimension folder.
-		return new File(worldFolder, "region");
+		return worldFolder;
 	}
 
-	private @Nullable RegionInfo parseRegion(@NotNull File regionFile) {
-		Matcher matcher = ANVIL_REGION.matcher(regionFile.getName());
+	private @Nullable RegionInfo parseRegion(Path dataFolder, String fileName) {
+		Matcher matcher = RegionFile.FILE_NAME_PATTERN.matcher(fileName);
 		if (!matcher.matches() || !getPlugin().isEnabled()) {
 			return null;
 		}
-		return new AnvilRegion(this, regionFile, Coords.regionToChunk(Integer.parseInt(matcher.group(1))),
-				Coords.regionToChunk(Integer.parseInt(matcher.group(2))));
+		return new AnvilRegion(this, dataFolder, Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)), "r.%s.%s" + matcher.group(3));
 	}
 
 }
