@@ -115,6 +115,18 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>world.bentobox</groupId>
+      <artifactId>bentobox</artifactId>
+      <version>1.23.2</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- JitPack -->
     <dependency>
       <groupId>com.github.cjburkey01</groupId>
@@ -188,18 +200,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>world.bentobox</groupId>
-      <artifactId>bentobox</artifactId>
-      <version>1.23.2</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
 
   <repositories>
@@ -216,16 +216,16 @@
       <url>https://maven.enginehub.org/repo/</url>
     </repository>
     <repository>
+      <id>codemc-repo</id>
+      <url>https://repo.codemc.org/repository/maven-public/</url>
+    </repository>
+    <repository>
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
     </repository>
     <repository>
       <id>redprotect-repo</id>
       <url>https://raw.githubusercontent.com/FabioZumbi12/RedProtect/mvn-repo/</url>
-    </repository>
-    <repository>
-      <id>codemc-repo</id>
-      <url>https://repo.codemc.org/repository/maven-public/</url>
     </repository>
   </repositories>
 
