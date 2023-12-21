@@ -44,6 +44,7 @@ public abstract class RegionInfo {
 	/**
 	 * Reads the RegionInfo into memory.
 	 *
+	 * @return true if the RegionInfo was read successfully
 	 * @throws IOException if there is an error reading the RegionInfo
 	 */
 	public abstract boolean read() throws IOException;
