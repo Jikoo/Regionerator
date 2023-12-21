@@ -10,7 +10,7 @@
 
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.world.impl.AnvilWorld;
+import com.github.jikoo.regionerator.world.impl.anvil.AnvilWorld;
 import com.github.jikoo.regionerator.world.WorldInfo;
 import java.util.HashMap;
 import java.util.Map;

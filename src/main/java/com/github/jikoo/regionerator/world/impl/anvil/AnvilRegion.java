@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 by Jikoo.
+ * Copyright (c) 2015-2023 by Jikoo.
  *
  * Regionerator is licensed under a Creative Commons
  * Attribution-ShareAlike 4.0 International License.
@@ -8,19 +8,16 @@
  * work. If not, see <http://creativecommons.org/licenses/by-sa/4.0/>.
  */
 
-package com.github.jikoo.regionerator.world.impl;
+package com.github.jikoo.regionerator.world.impl.anvil;
 
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.world.ChunkInfo;
 import com.github.jikoo.regionerator.world.RegionInfo;
-import com.github.jikoo.regionerator.world.impl.anvil.AccessMode;
-import com.github.jikoo.regionerator.world.impl.anvil.RegionFile;
 import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -37,11 +34,11 @@ public class AnvilRegion extends RegionInfo {
 	private static final int CHUNKS_PER_AXIS = 32;
 	// Regions are a square of chunks.
 	private static final int CHUNK_COUNT = CHUNKS_PER_AXIS * CHUNKS_PER_AXIS;
-	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
 	private static final String SUBDIR_BLOCK_DATA = "region";
 	private static final String SUBDIR_ENTITY_DATA = "entities";
 	static final String[] DATA_SUBDIRS = { SUBDIR_BLOCK_DATA, SUBDIR_ENTITY_DATA, "poi" };
 
+	private final boolean[] pointerWipes = new boolean[CHUNK_COUNT];
 	private final ByteBuffer volatileRegionHeader;
 	private final IntBuffer volatileChunkTimes;
 	private final ByteBuffer storedRegionHeader;
@@ -82,17 +79,8 @@ public class AnvilRegion extends RegionInfo {
 						"I am John RegionFile; I understand that providing my own buffer may be unsafe.");
 	}
 
-	/**
-	 * @deprecated Region data may be saved in multiple files.
-	 * @return the chunk data Minecraft Region file
-	 */
-	@Deprecated(forRemoval = true, since = "2.5.0")
-	public @NotNull File getRegionFile() {
-		return getRegionPath(SUBDIR_BLOCK_DATA).toFile();
-	}
-
 	@Override
-	public void read() throws IOException {
+	public boolean read() throws IOException {
 		// We don't read POI data because it generally only updates with a world or entity change.
 		// It's effectively a redundant disk operation.
 		Path blockDataFile = getRegionPath(SUBDIR_BLOCK_DATA);
@@ -106,7 +94,9 @@ public class AnvilRegion extends RegionInfo {
 
 				// Clobber all our existing data with the new data.
 				storeCurrentHeader();
-				} catch (DataFormatException e) {
+			} catch (IOException e) {
+				return acceptOrRethrow(e);
+			} catch (DataFormatException e) {
 				throw new IOException(e);
 			}
 		} else {
@@ -115,13 +105,13 @@ public class AnvilRegion extends RegionInfo {
 			for (int index = 0; index < RegionFile.REGION_HEADER_LENGTH; ++index) {
 				storedRegionHeader.put(index, (byte) 0);
 			}
-			return;
+			return true;
 		}
 
 		Path entityDataFile = getRegionPath(SUBDIR_ENTITY_DATA);
 		if (!Files.isRegularFile(entityDataFile)) {
 			// If entity data doesn't exist, our data is fully updated.
-			return;
+			return true;
 		}
 		try (RegionFile regionFileEntityData = createRegionFile(entityDataFile)) {
 			// Read entity data.
@@ -134,6 +124,7 @@ public class AnvilRegion extends RegionInfo {
 		} catch (DataFormatException e) {
 			throw new IOException(e);
 		}
+		return true;
 	}
 
 	private void storeCurrentHeader() {
@@ -186,13 +177,13 @@ public class AnvilRegion extends RegionInfo {
 						int chunkX = getLowestChunkX() + RegionFile.unpackLocalX(i);
 						int chunkZ = getLowestChunkZ() + RegionFile.unpackLocalZ(i);
 						getPlugin().getLogger().info(() ->
-										String.format(
-														"Rewriting header of region %s/%s due to non-zero index of chunk %s_%s_%s",
-														subdirectory,
-														getIdentifier(),
-														getWorld().getName(),
-														chunkX,
-														chunkZ));
+								String.format(
+										"Rewriting header of region %s/%s due to non-zero index of chunk %s_%s_%s",
+										subdirectory,
+										getIdentifier(),
+										getWorld().getName(),
+										chunkX,
+										chunkZ));
 					}
 				}
 			}
@@ -209,19 +200,25 @@ public class AnvilRegion extends RegionInfo {
 
 				return true;
 			}
+		} catch (IOException e) {
+			return acceptOrRethrow(e);
 		} catch (DataFormatException e) {
 			throw new IOException(e);
 		}
 
-		// Header contains no content, delete data.
-		Files.deleteIfExists(mcaFilePath);
+		try {
+			// Header contains no content, delete data.
+			Files.deleteIfExists(mcaFilePath);
 
-		// Also delete oversized chunks belonging to this region.
-		for (int dX = 0; dX < CHUNKS_PER_AXIS; ++dX) {
-			for (int dZ = 0; dZ < CHUNKS_PER_AXIS; ++dZ) {
-				String xlChunkData = String.format("c.%s.%s.mcc", getLowestChunkX() + dX, getLowestChunkZ() + dZ);
-				Files.deleteIfExists(worldDataFolder.resolve(Path.of(subdirectory, xlChunkData)));
+			// Also delete oversized chunks belonging to this region.
+			for (int dX = 0; dX < CHUNKS_PER_AXIS; ++dX) {
+				for (int dZ = 0; dZ < CHUNKS_PER_AXIS; ++dZ) {
+					String xlChunkData = String.format("c.%s.%s.mcc", getLowestChunkX() + dX, getLowestChunkZ() + dZ);
+					Files.deleteIfExists(worldDataFolder.resolve(Path.of(subdirectory, xlChunkData)));
+				}
 			}
+		} catch (IOException e) {
+			acceptOrRethrow(e);
 		}
 
 		getPlugin().debug(DebugLevel.HIGH, () -> String.format("Deleted region %s/%s with empty header", subdirectory, getIdentifier()));
@@ -248,12 +245,6 @@ public class AnvilRegion extends RegionInfo {
 		Preconditions.checkArgument(localChunkX >= 0 && localChunkX < 32 && localChunkZ >= 0 && localChunkZ < 32,
 				"Local chunk coords must be within range 0-31! Received values X: %s, Z: %s", localChunkX, localChunkZ);
 		return new AnvilChunk(localChunkX, localChunkZ);
-	}
-
-	@Deprecated
-	@Override
-	protected @NotNull ChunkInfo getChunkInternal(int localChunkX, int localChunkZ) {
-		return getLocalChunk(localChunkX, localChunkZ);
 	}
 
 	@Override

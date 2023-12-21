@@ -144,7 +144,9 @@ public class RegioneratorExecutor implements TabExecutor {
 			SimpleDateFormat format = new SimpleDateFormat("HH:mm 'on' d MMM yyyy");
 			RegionInfo regionInfo = plugin.getWorldManager().getWorld(player.getWorld()).getRegion(Coords.chunkToRegion(chunk.getX()), Coords.chunkToRegion(chunk.getZ()));
 			try {
-				regionInfo.read();
+				if (!regionInfo.read()) {
+					player.sendMessage("Region is actively being read/written by server, cannot read chunk data.");
+				}
 			} catch (IOException e) {
 				player.sendMessage("Caught IOException reading region data. Please check console!");
 				plugin.getLogger().log(Level.WARNING, "Unable to read region!", e);

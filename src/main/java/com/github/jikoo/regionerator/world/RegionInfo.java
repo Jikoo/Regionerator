@@ -12,15 +12,18 @@ package com.github.jikoo.regionerator.world;
 
 import com.github.jikoo.planarwrappers.util.Coords;
 import com.github.jikoo.regionerator.Regionerator;
-import java.io.IOException;
-import java.util.stream.Stream;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.util.stream.Stream;
 
 /**
  * A representation of a Minecraft region.
  */
 public abstract class RegionInfo {
+
+	private static final String[] ACCEPTABLE_IO_EXCEPTIONS = { "Text file busy" };
 
 	private final @NotNull WorldInfo world;
 	private final int lowestChunkX, lowestChunkZ;
@@ -43,7 +46,7 @@ public abstract class RegionInfo {
 	 *
 	 * @throws IOException if there is an error reading the RegionInfo
 	 */
-	public abstract void read() throws IOException;
+	public abstract boolean read() throws IOException;
 
 	/**
 	 * Saves changes to the RegionInfo.
@@ -72,7 +75,7 @@ public abstract class RegionInfo {
 	}
 
 	/**
-	 * Checks whether or not the Region has been saved before.
+	 * Checks whether the Region has been saved before.
 	 *
 	 * @return true if the Region has been written in the past
 	 */
@@ -123,21 +126,7 @@ public abstract class RegionInfo {
 	 * @param localChunkZ the chunk Z coordinate within the region
 	 * @return the {@link ChunkInfo}
 	 */
-	public @NotNull ChunkInfo getLocalChunk(int localChunkX, int localChunkZ) {
-		return getChunkInternal(localChunkX, localChunkZ);
-	}
-
-	/**
-	 * @deprecated implement {@link #getLocalChunk(int, int)}
-	 *
-	 * <p>This method existed as a helper method. However, the helper was required due to implementation-specific details.
-	 *
-	 * @param localChunkX the chunk X coordinate within the region
-	 * @param localChunkZ the chunk Z coordinate within the region
-	 * @return the {@link ChunkInfo} implementation
-	 */
-	@Deprecated
-	protected @NotNull abstract ChunkInfo getChunkInternal(int localChunkX, int localChunkZ);
+	public abstract @NotNull ChunkInfo getLocalChunk(int localChunkX, int localChunkZ);
 
 	/**
 	 * Gets a {@link Stream<ChunkInfo>} requesting every {@link ChunkInfo} within the region.
@@ -155,6 +144,23 @@ public abstract class RegionInfo {
 	 */
 	protected @NotNull Regionerator getPlugin() {
 		return getWorldInfo().getPlugin();
+	}
+
+	/**
+	 * Helper method for returning false or re-throwing an exception. If the exception does not impede achieving long-term
+	 * correctness, it can be ignored.
+	 *
+	 * @param e the IOException thrown
+	 * @return false if the exception is known to cause no long-term issues
+	 * @throws IOException if the exception is not known to cause no issues
+	 */
+	protected static boolean acceptOrRethrow(IOException e) throws IOException {
+		for (String acceptable : ACCEPTABLE_IO_EXCEPTIONS) {
+			if (acceptable.equals(e.getMessage())) {
+				return false;
+			}
+		}
+		throw e;
 	}
 
 }

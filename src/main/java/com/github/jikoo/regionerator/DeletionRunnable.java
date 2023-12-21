@@ -83,7 +83,9 @@ public class DeletionRunnable extends BukkitRunnable {
 				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
 		try {
-			region.read();
+			if (!region.read()) {
+				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
+			}
 		} catch (IOException e) {
 			plugin.getLogger().log(Level.WARNING, "Unable to read region!", e);
 			return;
@@ -121,7 +123,9 @@ public class DeletionRunnable extends BukkitRunnable {
 		chunks.forEach(ChunkInfo::setOrphaned);
 
 		try {
-			region.write();
+			if (!region.write()) {
+				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
+			}
 			chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
 			if (chunks.size() == region.getChunksPerRegion()) {
 				regionsDeleted.incrementAndGet();

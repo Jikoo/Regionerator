@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 by Jikoo.
+ * Copyright (c) 2015-2023 by Jikoo.
  *
  * Regionerator is licensed under a Creative Commons
  * Attribution-ShareAlike 4.0 International License.
@@ -8,12 +8,11 @@
  * work. If not, see <http://creativecommons.org/licenses/by-sa/4.0/>.
  */
 
-package com.github.jikoo.regionerator.world.impl;
+package com.github.jikoo.regionerator.world.impl.anvil;
 
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.world.RegionInfo;
 import com.github.jikoo.regionerator.world.WorldInfo;
-import com.github.jikoo.regionerator.world.impl.anvil.RegionFile;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
