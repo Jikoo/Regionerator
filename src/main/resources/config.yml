@@ -47,7 +47,7 @@ deletion:
   expensive-checks-between-recovery: 128
   # Hours between deletion cycles
   hours-between-cycles: 12
-  # Whether or not to remember time for next cycle on plugin load
+  # Whether to remember time for next cycle on plugin load
   remember-next-cycle-time: false
 
 # Worlds the plugin is able to delete regions in

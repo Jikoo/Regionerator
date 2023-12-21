@@ -96,9 +96,9 @@ public abstract class ChunkInfo {
 	}
 
 	/**
-	 * Gets whether or not the chunk is orphaned, or deleted.
+	 * Gets whether the chunk is either orphaned or deleted.
 	 *
-	 * @return true if the chunk is orphaned
+	 * @return true if the chunk is orphaned or deleted
 	 */
 	public abstract boolean isOrphaned();
 

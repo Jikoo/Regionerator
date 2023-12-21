@@ -51,7 +51,7 @@ public class RedProtectHook extends PluginHook {
 		 */
 
 		if (needAPI) {
-			return RedProtect.get().getAPI().getChunkRegions(new DummyChunk(chunkWorld, chunkX, chunkZ)).size() > 0;
+			return !RedProtect.get().getAPI().getChunkRegions(new DummyChunk(chunkWorld, chunkX, chunkZ)).isEmpty();
 		}
 
 		for (Region region : RedProtect.get().getRegionManager().getRegionsByWorld(chunkWorld.getName())) {

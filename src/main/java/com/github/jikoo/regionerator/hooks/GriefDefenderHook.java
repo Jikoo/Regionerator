@@ -33,8 +33,11 @@ public class GriefDefenderHook extends PluginHook {
 			return false;
 		}
 		ClaimManager claimManager = GriefDefender.getCore().getClaimManager(chunkWorld.getUID());
+		if (claimManager == null) {
+			return false;
+		}
 		Set<Claim> claims = claimManager.getChunksToClaimsMap().get(getChunkKey(chunkX, chunkZ));
-		return claims != null && claims.size() > 0;
+		return claims != null && !claims.isEmpty();
 	}
 
 	/**

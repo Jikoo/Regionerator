@@ -37,7 +37,7 @@ public class PlotSquaredHook extends PluginHook {
     PlotArea[] plotAreas = PlotSquared.platform().plotAreaManager().getPlotAreas(chunkWorld.getName(), region);
 
     for (PlotArea plotArea : plotAreas) {
-      if (plotArea.getPlots().size() > 0) {
+      if (!plotArea.getPlots().isEmpty()) {
         return true;
       }
     }

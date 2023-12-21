@@ -13,6 +13,14 @@ package com.github.jikoo.regionerator;
 import com.github.jikoo.regionerator.database.DatabaseAdapter;
 import com.github.jikoo.regionerator.util.BatchExpirationLoadingCache;
 import com.github.jikoo.regionerator.util.yaml.Config;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
@@ -22,13 +30,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility for storing and loading chunk visit timestamps.
@@ -406,7 +407,7 @@ public class ChunkFlagger {
 		}
 
 		/**
-		 * Gets whether or not the chunk data needs to be saved to the database.
+		 * Gets whether the chunk data needs to be saved to the database.
 		 *
 		 * @return true if the chunk data has not been saved
 		 */
@@ -431,7 +432,7 @@ public class ChunkFlagger {
 			if (this == obj) return true;
 			if (obj == null || getClass() != obj.getClass()) return false;
 			FlagData other = (FlagData) obj;
-			return lastVisit.equals(other.lastVisit) && dirty.equals(other.dirty) && chunkId.equals(other.chunkId);
+			return lastVisit.get() == other.lastVisit.get() && dirty.get() == other.dirty.get() && chunkId.equals(other.chunkId);
 		}
 	}
 

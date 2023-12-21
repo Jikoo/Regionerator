@@ -415,7 +415,7 @@ public class RegionFile implements AutoCloseable {
     boolean isLargeChunk = false;
     if ((encoding & FLAG_CHUNK_TOO_LARGE) != 0) {
       isLargeChunk = true;
-      encoding &= ~FLAG_CHUNK_TOO_LARGE;
+      encoding = (byte) (encoding & ~FLAG_CHUNK_TOO_LARGE);
     }
 
     RegionCompression compression;

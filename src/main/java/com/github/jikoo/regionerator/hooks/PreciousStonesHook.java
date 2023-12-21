@@ -27,7 +27,7 @@ public class PreciousStonesHook extends PluginHook {
 
 	@Override
 	public boolean isChunkProtected(@NotNull World chunkWorld, int chunkX, int chunkZ) {
-		return PreciousStones.API().getChunkFields(new DummyChunk(chunkWorld, chunkX, chunkZ), FieldFlag.ALL).size() > 0;
+		return !PreciousStones.API().getChunkFields(new DummyChunk(chunkWorld, chunkX, chunkZ), FieldFlag.ALL).isEmpty();
 	}
 
 }
