@@ -252,23 +252,6 @@ public class ChunkFlagger {
 	}
 
 	/**
-	 * @deprecated Just un-flag each chunk, odds are on that you already have a collection of chunk data to iterate over
-	 * Unflags an entire region.
-	 *
-	 * @param world the world name
-	 * @param regionLowestChunkX the lowest chunk X coordinate in the region
-	 * @param regionLowestChunkZ the lowest chunk Z coordinate in the region
-	 */
-	@Deprecated
-	public void unflagRegionByLowestChunk(@NotNull String world, int regionLowestChunkX, int regionLowestChunkZ) {
-		for (int chunkX = regionLowestChunkX; chunkX < regionLowestChunkX + 32; chunkX++) {
-			for (int chunkZ = regionLowestChunkZ; chunkZ < regionLowestChunkZ + 32; chunkZ++) {
-				unflagChunk(world, chunkX, chunkZ);
-			}
-		}
-	}
-
-	/**
 	 * Removes flags from a chunk.
 	 *
 	 * @param world the world name

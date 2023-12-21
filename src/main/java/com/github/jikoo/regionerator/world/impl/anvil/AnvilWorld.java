@@ -23,14 +23,9 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class AnvilWorld extends WorldInfo {
-
-	// Moving to a better home
-	@Deprecated(forRemoval = true, since = "2.5.0")
-	public static final Pattern ANVIL_REGION = RegionFile.FILE_NAME_PATTERN;
 
 	public AnvilWorld(@NotNull Regionerator plugin, @NotNull World world) {
 		super(plugin, world);

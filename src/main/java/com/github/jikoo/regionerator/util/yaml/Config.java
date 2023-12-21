@@ -11,13 +11,13 @@
 package com.github.jikoo.regionerator.util.yaml;
 
 import com.github.jikoo.regionerator.DebugLevel;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -138,11 +138,6 @@ public class Config extends ConfigYamlData {
 		return deletionRecovery.get();
 	}
 
-	@Deprecated
-	public long getMillisBetweenCycles() {
-		return millisBetweenCycles.get();
-	}
-
 	public long getCycleDelayMillis() {
 		return millisBetweenCycles.get();
 	}
@@ -151,24 +146,12 @@ public class Config extends ConfigYamlData {
 		return rememberCycleDelay.get();
 	}
 
-	@Deprecated
-	public boolean isDeleteFreshChunks() {
-		return deleteFreshChunks.get() && getFlagDuration() > 0;
-	}
-
 	public boolean isDeleteFreshChunks(@NotNull World world) {
 		return isDeleteFreshChunks(world.getName());
 	}
 
 	public boolean isDeleteFreshChunks(@NotNull String worldName) {
 		return deleteFreshChunks.get() && getFlagDuration(worldName) > 0;
-	}
-
-	@Deprecated
-	public long getFlagDuration() {
-		synchronized (lock) {
-			return worlds.getOrDefault("default", -1L);
-		}
 	}
 
 	public long getFlagDuration(@NotNull World world) {
@@ -181,11 +164,6 @@ public class Config extends ConfigYamlData {
 		}
 	}
 
-	@Deprecated
-	public long getFlagGenerated() {
-		return isDeleteFreshChunks() ? getFlagVisit() : Long.MAX_VALUE;
-	}
-
 	public long getFlagGenerated(@NotNull World world) {
 		return getFlagGenerated(world.getName());
 	}
@@ -194,27 +172,12 @@ public class Config extends ConfigYamlData {
 		return isDeleteFreshChunks(worldName) ? getFlagVisit(worldName) : Long.MAX_VALUE;
 	}
 
-	@Deprecated
-	public long getFlagVisit() {
-		return System.currentTimeMillis() + getFlagDuration();
-	}
-
 	public long getFlagVisit(@NotNull World world) {
 		return getFlagVisit(world.getName());
 	}
 
 	public long getFlagVisit(String worldName) {
 		return System.currentTimeMillis() + getFlagDuration(worldName);
-	}
-
-	@Deprecated
-	public static long getFlagEternal() {
-		return FLAG_ETERNAL;
-	}
-
-	@Deprecated
-	public static long getFlagDefault() {
-		return FLAG_DEFAULT;
 	}
 
 	public long getFlaggingInterval() {
@@ -229,13 +192,8 @@ public class Config extends ConfigYamlData {
 		return getFlagDuration(worldName) >= 0;
 	}
 
-	public @NotNull Collection<String> enabledWorlds() {
+	public @NotNull @Unmodifiable Collection<String> enabledWorlds() {
 		return plugin.getServer().getWorlds().stream().map(World::getName).filter(this::isEnabled).collect(Collectors.toUnmodifiableSet());
-	}
-
-	@Deprecated
-	public Collection<String> getWorlds() {
-		return ImmutableList.copyOf(enabledWorlds());
 	}
 
 	public long getCacheExpirationFrequency() {
