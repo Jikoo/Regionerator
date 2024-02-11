@@ -39,6 +39,8 @@ cache:
   max-cache-size: 640000
 
 deletion:
+  # Set deletion to be paused on startup.
+  start-paused: false
   # Recovery time in milliseconds between expensive operations.
   # Recovery time is always waited between region checks.
   deletion-recovery-time: 250
@@ -86,4 +88,4 @@ hooks:
 debug-level: LOW
 
 # Please don't mess with this, you may lose settings. Controls automatic updates to config layout.
-config-version: 1
+config-version: 2
