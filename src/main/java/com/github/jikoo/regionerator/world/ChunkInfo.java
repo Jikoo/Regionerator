@@ -135,7 +135,7 @@ public abstract class ChunkInfo {
 	 * @return the VisitStatus
 	 */
 	public @NotNull VisitStatus getVisitStatus() {
-		return  visitStatusSupplier.get();
+		return visitStatusSupplier.get();
 	}
 
 	/**
