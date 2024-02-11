@@ -216,4 +216,8 @@ public class Config extends ConfigYamlData {
 		return cacheMaxSize;
 	}
 
+	public boolean startPaused() {
+		return getBoolean("deletion.start-paused");
+	}
+
 }

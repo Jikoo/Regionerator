@@ -10,18 +10,21 @@
 
 package com.github.jikoo.regionerator.util.yaml;
 
-import java.util.List;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 final class ConfigUpdater {
 
-	private static final int CURRENT_CONFIG_VERSION = 1;
+	private static final int CURRENT_CONFIG_VERSION = 2;
 
 	static void doUpdates(@NotNull Config config) {
 		switch (config.raw().getInt("config-version", 0)) {
 			case 0:
 				updateConfig0To1(config);
+			case 1:
+				updateConfig1To2(config);
 			case CURRENT_CONFIG_VERSION:
 				return;
 			default:
@@ -32,7 +35,12 @@ final class ConfigUpdater {
 		}
 	}
 
-	static void updateConfig0To1(@NotNull Config config) {
+	private static void updateConfig1To2(Config config) {
+		config.set("deletion.start-paused", false);
+		config.set("config-version", 2);
+	}
+
+	private static void updateConfig0To1(@NotNull Config config) {
 		// Flagging section
 		config.set("flagging.seconds-per-flag", config.getInt("seconds-per-flag"));
 		config.set("seconds-per-flag", null);

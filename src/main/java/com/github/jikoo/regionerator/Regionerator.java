@@ -94,6 +94,10 @@ public class Regionerator extends JavaPlugin {
 
 		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
 
+		if (config.startPaused()) {
+			this.setPaused(true);
+		}
+
 		// Don't load features if there are no worlds configured
 		if (config.enabledWorlds().isEmpty()) {
 			getLogger().severe("No worlds are enabled. There's nothing to do!");
