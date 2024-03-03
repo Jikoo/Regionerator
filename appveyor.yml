@@ -1,5 +1,9 @@
 version: '{build}'
-clone_depth: 10
+shallow_clone: true
+branches:
+  only:
+    - master
+skip_branch_with_pr: true
 environment:
   matrix:
     - appveyor_build_worker_image: Visual Studio 2022
@@ -12,9 +16,9 @@ install:
   - cmd: mvn --version
   - cmd: java -version
 build_script:
-  - mvn clean package -B -DskipTest
+  - mvn clean package -DskipTests
 test_script:
-  - mvn clean package -B
+  - mvn surefire:test
 cache:
   - C:\Users\appveyor\.m2
 artifacts:
