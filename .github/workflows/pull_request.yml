@@ -1,0 +1,13 @@
+name: Pull Request
+
+on:
+  pull_request:
+
+jobs:
+  run-ci:
+    uses: Jikoo/PlanarActions/.github/workflows/ci_maven.yml@master
+  store-dependabot-pr-data:
+    if: "github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'"
+    uses: Jikoo/PlanarActions/.github/workflows/pr_automerge_prep.yml@master
+    with:
+      pr-number: ${{ github.event.number }}
