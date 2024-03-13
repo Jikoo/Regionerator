@@ -81,8 +81,6 @@ public class Regionerator extends JavaPlugin {
 			saveConfig();
 		}
 
-		miscData.checkWorldValidity();
-
 		chunkFlagger = new ChunkFlagger(this);
 		debugListener = new DebugListener(this);
 
@@ -98,12 +96,6 @@ public class Regionerator extends JavaPlugin {
 			this.setPaused(true);
 		}
 
-		// Don't load features if there are no worlds configured
-		if (config.enabledWorlds().isEmpty()) {
-			getLogger().severe("No worlds are enabled. There's nothing to do!");
-			return;
-		}
-
 		/*
 		 * Load features after server has finished boot.
 		 * While softdepend should take care of this for us, as soon as another plugin causes
@@ -111,6 +103,16 @@ public class Regionerator extends JavaPlugin {
 		 * To combat this, we load features after the server boots.
 		 */
 		getServer().getScheduler().runTask(this, () -> {
+			// Reconsider world validity after plugins have enabled in case world provider also loads late.
+			config.reconsiderWorldValidity();
+			miscData.checkWorldValidity();
+
+			// Don't load features if there are no worlds configured
+			if (config.enabledWorlds().isEmpty()) {
+				getLogger().severe("No worlds are enabled. There's nothing to do!");
+				return;
+			}
+
 			reloadFeatures();
 
 			debug(DebugLevel.LOW, () -> executor.onCommand(Bukkit.getConsoleSender(), Objects.requireNonNull(command), "regionerator", new String[0]));

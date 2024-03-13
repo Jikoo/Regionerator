@@ -66,6 +66,36 @@ public class Config extends ConfigYamlData {
 
 		ConfigUpdater.doUpdates(this);
 
+		reconsiderWorldValidity();
+
+		synchronized (lock) {
+			debugLevel = DebugLevel.of(getString("debug-level"));
+		}
+
+		deleteFreshChunks.set(!getBoolean("flagging.flag-generated-chunks-until-visited"));
+		flaggingRadius.set(Math.max(0, getInt("flagging.chunk-flag-radius")));
+
+		int secondsPerFlag = getInt("flagging.seconds-per-flag");
+		if (secondsPerFlag < 1) {
+			ticksPerFlag.set(10);
+		} else {
+			ticksPerFlag.set(20L * secondsPerFlag);
+		}
+
+		deletionRecovery.set(Math.max(0, getLong("deletion.recovery-time")));
+		deletionChunkCount.set(Math.max(1, getInt("deletion.expensive-checks-between-recovery")));
+		millisBetweenCycles.set(TimeUnit.HOURS.toMillis(Math.max(0, getInt("deletion.hours-between-cycles"))));
+		rememberCycleDelay.set(getBoolean("deletion.remember-next-cycle-time"));
+
+		cacheExpirationFrequency = TimeUnit.MILLISECONDS.convert(Math.max(0, getInt("cache.minimum-expiration-frequency")), TimeUnit.SECONDS);
+		cacheRetention = TimeUnit.MILLISECONDS.convert(Math.max(1, getInt("cache.retention")), TimeUnit.MINUTES);
+		cacheBatchMax = Math.max(1, getInt("cache.maximum-batch-size"));
+		cacheBatchDelay = Math.max(0L, getLong("cache.batch-delay"));
+		cacheMaxSize = Math.max(50_000, getInt("cache.max-cache-size"));
+
+	}
+
+	public void reconsiderWorldValidity() {
 		ConfigurationSection worldsSection = raw().getConfigurationSection("worlds");
 		Map<String, Long> worldFlagDurations = new HashMap<>();
 		if (worldsSection != null) {
@@ -97,31 +127,7 @@ public class Config extends ConfigYamlData {
 		synchronized (lock) {
 			// Immutable, this should not be changed during run.
 			this.worlds = ImmutableMap.copyOf(worldFlagDurations);
-
-			debugLevel = DebugLevel.of(getString("debug-level"));
 		}
-
-		deleteFreshChunks.set(!getBoolean("flagging.flag-generated-chunks-until-visited"));
-		flaggingRadius.set(Math.max(0, getInt("flagging.chunk-flag-radius")));
-
-		int secondsPerFlag = getInt("flagging.seconds-per-flag");
-		if (secondsPerFlag < 1) {
-			ticksPerFlag.set(10);
-		} else {
-			ticksPerFlag.set(20L * secondsPerFlag);
-		}
-
-		deletionRecovery.set(Math.max(0, getLong("deletion.recovery-time")));
-		deletionChunkCount.set(Math.max(1, getInt("deletion.expensive-checks-between-recovery")));
-		millisBetweenCycles.set(TimeUnit.HOURS.toMillis(Math.max(0, getInt("deletion.hours-between-cycles"))));
-		rememberCycleDelay.set(getBoolean("deletion.remember-next-cycle-time"));
-
-		cacheExpirationFrequency = TimeUnit.MILLISECONDS.convert(Math.max(0, getInt("cache.minimum-expiration-frequency")), TimeUnit.SECONDS);
-		cacheRetention = TimeUnit.MILLISECONDS.convert(Math.max(1, getInt("cache.retention")), TimeUnit.MINUTES);
-		cacheBatchMax = Math.max(1, getInt("cache.maximum-batch-size"));
-		cacheBatchDelay = Math.max(0L, getLong("cache.batch-delay"));
-		cacheMaxSize = Math.max(50_000, getInt("cache.max-cache-size"));
-
 	}
 
 	public DebugLevel getDebugLevel() {
