@@ -18,6 +18,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -74,16 +75,19 @@ public class RescueListener implements Listener {
     }
 
     // Only rescue safe players if configured to do so.
-    if (!plugin.config().rescueIfSafe() && !isUnsafe(player)) {
+    if (!plugin.config().rescueIfSafe() && !isUnsafe(event.getSpawnLocation())) {
       return;
     }
 
     // If rescuing up, check if top block can be stood on safely.
     if (plugin.config().rescueToTopBlock()) {
-      Block topBlock = player.getWorld().getHighestBlockAt(player.getLocation());
-      if (!isUnsafe(topBlock.getType()) && !isNotStandable(topBlock)) {
-        event.setSpawnLocation(topBlock.getLocation().add(0.5, 1, 0.5));
-        return;
+      World world = event.getSpawnLocation().getWorld();
+      if (world != null) {
+        Block topBlock = world.getHighestBlockAt(event.getSpawnLocation());
+        if (!isUnsafe(topBlock.getType()) && !isNotStandable(topBlock)) {
+          event.setSpawnLocation(topBlock.getLocation().add(0.5, 1, 0.5));
+          return;
+        }
       }
     }
 
@@ -97,17 +101,35 @@ public class RescueListener implements Listener {
     }
 
     // Otherwise, use respawn location of rescue world.
-    World spawnWorld = plugin.config().getRescueWorld(player.getWorld());
+    World defaultWorld = event.getSpawnLocation().getWorld();
+    if (defaultWorld == null) {
+      // Prefer event world, but fall through to player world.
+      // Theoretically player world may be default here, so we should avoid it.
+      defaultWorld = player.getWorld();
+    }
+
+    World spawnWorld = plugin.config().getRescueWorld(defaultWorld);
     event.setSpawnLocation(spawnWorld.getSpawnLocation());
   }
 
-  private boolean isUnsafe(Player player) {
-    // Underground is probably unsafe, skip more expensive checks.
-    if (player.getLocation().getBlockY() < player.getWorld().getSeaLevel()) {
+  private boolean isUnsafe(@NotNull Location location) {
+    World world = location.getWorld();
+    if (world == null) {
       return true;
     }
 
-    Block headBlock = player.getEyeLocation().getBlock();
+    // Underground is probably unsafe, skip more expensive checks.
+    if (location.getBlockY() < world.getSeaLevel()) {
+      return true;
+    }
+
+    Block footBlock = location.getBlock();
+
+    if (isUnsafe(footBlock.getType())) {
+      return true;
+    }
+
+    Block headBlock = footBlock.getRelative(BlockFace.UP);
     if (isUnsafe(headBlock.getType())) {
       return true;
     }
@@ -118,22 +140,18 @@ public class RescueListener implements Listener {
       return true;
     }
 
-    Block footBlock = player.getLocation().getBlock();
-    if (isUnsafe(footBlock.getType())) {
-      return true;
-    }
-
     // If the player is not standing on anything, they'll fall.
     // Could get a more accurate representation by checking if any block underneath the player intersects with their
     // hitbox when expanding it, but that seems like overkill.
-    return isNotStandable(player.getLocation().subtract(0, 1, 0).getBlock());
+    Block underBlock = footBlock.getRelative(BlockFace.DOWN);
+    return isUnsafe(underBlock.getType()) || isNotStandable(underBlock);
   }
 
-  private boolean isNotStandable(Block block) {
+  private boolean isNotStandable(@NotNull Block block) {
     return block.getCollisionShape().getBoundingBoxes().isEmpty();
   }
 
-  private boolean isUnsafe(Material material) {
+  private boolean isUnsafe(@NotNull Material material) {
     if (Tag.FIRE.isTagged(material)) {
       return true;
     }
