@@ -37,6 +37,13 @@ final class ConfigUpdater {
 
 	private static void updateConfig1To2(Config config) {
 		config.set("deletion.start-paused", false);
+
+		config.set("safe-login.enabled", true);
+		config.set("safe-login.rescue-if-safe", false);
+		config.set("safe-login.try-top-block", true);
+		config.set("safe-login.try-respawn", true);
+		config.set("safe-login.world-override", "");
+
 		config.set("config-version", 2);
 	}
 

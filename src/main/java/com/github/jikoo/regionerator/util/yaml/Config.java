@@ -226,4 +226,32 @@ public class Config extends ConfigYamlData {
 		return getBoolean("deletion.start-paused");
 	}
 
+	public boolean rescueEnabled() {
+		return getBoolean("safe-login.enabled");
+	}
+
+	public boolean rescueIfSafe() {
+		return getBoolean("safe-login.rescue-if-safe");
+	}
+
+	public boolean rescueToTopBlock() {
+		return getBoolean("safe-login.try-top-block");
+	}
+
+	public boolean rescueToRespawn() {
+		return getBoolean("safe-login.try-respawn");
+	}
+
+	public @NotNull World getRescueWorld(@NotNull World current) {
+		String worldName = getString("safe-login.world-override");
+		if (worldName == null) {
+			return current;
+		}
+		World world = Bukkit.getWorld(worldName);
+		if (world == null) {
+			return current;
+		}
+		return world;
+	}
+
 }
