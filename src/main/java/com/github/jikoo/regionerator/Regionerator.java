@@ -16,6 +16,7 @@ import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.DebugListener;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
+import com.github.jikoo.regionerator.listeners.RescueListener;
 import com.github.jikoo.regionerator.listeners.WorldListener;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
@@ -90,8 +91,6 @@ public class Regionerator extends JavaPlugin {
 			command.setExecutor(executor);
 		}
 
-		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
-
 		if (config.startPaused()) {
 			this.setPaused(true);
 		}
@@ -159,6 +158,11 @@ public class Regionerator extends JavaPlugin {
 		protectionHooks.removeIf(hook -> hook.getClass().getPackage().getName().equals("com.github.jikoo.regionerator.hooks"));
 
 		debug(DebugLevel.LOW, () -> "Loading features...");
+
+		// Enable world case correction listener.
+		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
+		// Enable rescue tagging listener.
+		getServer().getPluginManager().registerEvents(new RescueListener(this), this);
 		// Always enable hook listener in case someone else adds hooks.
 		getServer().getPluginManager().registerEvents(new HookListener(this), this);
 

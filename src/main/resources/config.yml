@@ -62,6 +62,18 @@ worlds:
     # days-till-flag-expires must be greater than 0 to be used with delete-new-unvisited-chunks
     days-till-flag-expires: -1
 
+safe-login:
+  # Whether to modify login location if in a deleted chunk.
+  enabled: true
+  # Whether to always rescue players, even if considered safe.
+  rescue-if-safe: false
+  # Prefer the top block at the player's current location?
+  try-top-block: true
+  # After top block, prefer the player's bed/respawn anchor location?
+  try-respawn: true
+  # After respawn location, override player's current world spawn with another.
+  world-override: ""
+
 # Hooks to attempt to check for protections from.
 # If your protection plugin of choice isn't here, ask!
 hooks:
