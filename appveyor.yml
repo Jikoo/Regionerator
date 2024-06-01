@@ -6,7 +6,7 @@ branches:
 skip_branch_with_pr: true
 environment:
   matrix:
-    - appveyor_build_worker_image: Ubuntu
+    - appveyor_build_worker_image: Visual Studio 2022
       JAVA_HOME: C:\Program Files\Java\jdk21
 init:
   - cmd: SET PATH=%JAVA_HOME%\bin;%PATH%
