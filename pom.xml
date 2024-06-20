@@ -203,6 +203,18 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.github.chrisrnj.Terrainer</groupId>
+      <artifactId>terrainer-core</artifactId>
+      <version>9ab2f53d41</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Tests -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
