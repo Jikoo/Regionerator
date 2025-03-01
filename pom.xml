@@ -61,7 +61,7 @@
     <dependency>
       <groupId>com.sk89q.worldguard</groupId>
       <artifactId>worldguard-core</artifactId>
-      <version>7.0.12</version>
+      <version>7.0.13</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
