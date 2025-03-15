@@ -164,7 +164,7 @@ public class FlagHandler {
 
 		String worldName = session.getSelectionWorld().getName();
 		return selection.getChunks().stream()
-				.map(vector -> new ChunkPosition(worldName, vector.getX(), vector.getZ()))
+				.map(vector -> new ChunkPosition(worldName, vector.x(), vector.z()))
 				.collect(Collectors.toUnmodifiableSet());
 	}
 
