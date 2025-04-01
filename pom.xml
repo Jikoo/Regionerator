@@ -29,7 +29,7 @@
       <groupId>com.github.jikoo</groupId>
       <artifactId>planarwrappers</artifactId>
       <scope>compile</scope>
-      <version>3.3.0</version>
+      <version>3.3.1</version>
     </dependency>
     <!-- Plugin hook dependencies -->
     <dependency>
