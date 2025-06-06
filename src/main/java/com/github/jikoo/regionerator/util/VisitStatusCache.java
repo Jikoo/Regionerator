@@ -10,7 +10,7 @@
 
 package com.github.jikoo.regionerator.util;
 
-import com.github.jikoo.planarwrappers.tuple.CachingSupplier;
+import com.github.jikoo.planarwrappers.function.CachingSupplier;
 import com.github.jikoo.regionerator.ChunkFlagger;
 import com.github.jikoo.regionerator.DebugLevel;
 import com.github.jikoo.regionerator.Regionerator;
