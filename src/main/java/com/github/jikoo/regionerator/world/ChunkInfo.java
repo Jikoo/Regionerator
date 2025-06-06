@@ -10,7 +10,7 @@
 
 package com.github.jikoo.regionerator.world;
 
-import com.github.jikoo.planarwrappers.tuple.CachingSupplier;
+import com.github.jikoo.planarwrappers.function.CachingSupplier;
 import com.github.jikoo.regionerator.Regionerator;
 import com.github.jikoo.regionerator.VisitStatus;
 import com.github.jikoo.regionerator.hooks.Hook;
