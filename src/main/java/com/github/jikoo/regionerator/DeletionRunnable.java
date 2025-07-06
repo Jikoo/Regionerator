@@ -102,7 +102,14 @@ public class DeletionRunnable extends BukkitRunnable {
 				if (isCancelled()) {
 					return true;
 				}
-				VisitStatus visitStatus = chunk.getVisitStatus();
+				VisitStatus visitStatus;
+				try {
+					// The status should be cached here, but if enough time has elapsed
+					visitStatus = chunk.getVisitStatus();
+				} catch (RuntimeException e) {
+					return true;
+				}
+
 				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
 			});
 		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())

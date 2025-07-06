@@ -132,7 +132,8 @@ public class VisitStatusCache extends CachingSupplier<VisitStatus> {
 	 */
 	private static int calcCacheDuration(@NotNull Regionerator plugin) {
 		Config config = plugin.config();
-		return (int) Math.ceil(1024D / config.getDeletionChunkCount() * config.getDeletionRecoveryMillis() / 60000);
+		// 1 minute plus maximum delay added for checking an entire region rounded up.
+		return 1 + (int) Math.ceil(1024D / config.getDeletionChunkCount() * config.getDeletionRecoveryMillis() / 60000);
 	}
 
 }
