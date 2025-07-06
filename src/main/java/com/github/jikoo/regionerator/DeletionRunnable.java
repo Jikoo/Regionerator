@@ -160,11 +160,16 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (isCancelled()) {
 			return;
 		}
-		try {
-			// Allow server to recover for configured time.
-			Thread.sleep(plugin.config().getDeletionRecoveryMillis());
-		} catch (InterruptedException ignored) {
+
+		long recoveryTime = plugin.config().getDeletionRecoveryMillis();
+		if (recoveryTime > 0) {
+			try {
+				// Allow server to recover for configured time.
+				Thread.sleep(recoveryTime);
+			} catch (InterruptedException ignored) {
+			}
 		}
+
 		// Reset chunk count after sleep.
 		heavyChecks.set(0);
 	}
