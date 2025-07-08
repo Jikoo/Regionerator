@@ -20,8 +20,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
@@ -41,26 +44,26 @@ public class AnvilWorld extends WorldInfo {
 	public @NotNull Stream<RegionInfo> getRegions() {
 		Path dataFolder = findWorldDataFolder().toPath();
 
-		Stream<File> fileStream = null;
-		for (String folder : AnvilRegion.DATA_SUBDIRS) {
-			File file = dataFolder.resolve(folder).toFile();
-			File[] files = file.listFiles();
+		List<String> fileNames = new ArrayList<>();
+		for (String folderName : AnvilRegion.DATA_SUBDIRS) {
+			File folder = dataFolder.resolve(folderName).toFile();
+			File[] files = folder.listFiles();
 			if (files == null) {
 				continue;
 			}
-			Stream<File> localFileStream = Arrays.stream(files);
-			fileStream = fileStream == null ? localFileStream : Stream.concat(fileStream, localFileStream);
+			for (File file : files) {
+				fileNames.add(file.getName());
+			}
 		}
 
-		if (fileStream == null) {
-			return Stream.empty();
-		}
+		// Some servers may use settings that cause runs to never complete prior to server restarts.
+		// Randomize order to improve eventual-correctness.
+		Collections.shuffle(fileNames, ThreadLocalRandom.current());
 
-		return fileStream
-						.map(File::getName)
-						.distinct()
-						.map(fileName -> parseRegion(dataFolder, fileName))
-						.filter(Objects::nonNull);
+		return fileNames.stream()
+				.distinct()
+				.map(fileName -> parseRegion(dataFolder, fileName))
+				.filter(Objects::nonNull);
 	}
 
 	private @NotNull File findWorldDataFolder() {
