@@ -18,6 +18,7 @@ import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
 import com.github.jikoo.regionerator.listeners.RescueListener;
 import com.github.jikoo.regionerator.listeners.WorldListener;
+import com.github.jikoo.regionerator.util.DeletionStartComparator;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
 import org.bukkit.Bukkit;
@@ -258,7 +259,8 @@ public class Regionerator extends JavaPlugin {
 			return;
 		}
 
-		for (String worldName : config.enabledWorlds()) {
+		// Check worlds, preferring worlds for which deletion was last initiated longest ago.
+		for (String worldName : config.enabledWorlds().stream().sorted(new DeletionStartComparator(miscData)).toList()) {
 			if (miscData.getNextCycle(worldName) > System.currentTimeMillis()) {
 				// Not time yet.
 				continue;
@@ -285,6 +287,7 @@ public class Regionerator extends JavaPlugin {
 			}
 			runnable.runTaskAsynchronously(this);
 			deletionRunnables.put(worldName, runnable);
+			miscData.setLastCycleStart(worldName, System.currentTimeMillis());
 			debug(DebugLevel.LOW, () -> "Deletion run scheduled for " + world.getName());
 			return;
 		}

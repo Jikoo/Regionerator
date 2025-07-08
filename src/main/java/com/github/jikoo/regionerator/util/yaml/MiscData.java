@@ -11,10 +11,11 @@
 package com.github.jikoo.regionerator.util.yaml;
 
 import com.github.jikoo.regionerator.Regionerator;
-import java.io.File;
-import java.util.Collection;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+import java.util.Collection;
 
 public class MiscData extends FileYamlData {
 
@@ -58,6 +59,14 @@ public class MiscData extends FileYamlData {
 			setNextCycle(worldName, nextCycle);
 		}
 		return nextCycle;
+	}
+
+	public void setLastCycleStart(@NotNull String worldName, long timestamp) {
+		set("last-cycle-start." + worldName, timestamp);
+	}
+
+	public long getLastCycleStart(@NotNull String worldName) {
+    return getLong("last-cycle-start." + worldName);
 	}
 
 }
