@@ -17,9 +17,11 @@ import org.bukkit.World;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,52 +78,23 @@ public class DeletionRunnable extends BukkitRunnable {
 			return;
 		}
 
+		// Check phaser for paused state.
 		phaser.arriveAndAwaitAdvance();
 
 		regionCount.incrementAndGet();
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s: %s (%s)",
 				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
 
-		try {
-			if (!region.read()) {
-				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
-			}
-		} catch (IOException e) {
-			plugin.getLogger().log(Level.WARNING, "Unable to read region!", e);
+		// Read the region's data from disk.
+		if (!readRegion(region)) {
 			return;
 		}
 
-		// Collect potentially eligible chunks
-		List<ChunkInfo> chunks = region.getChunks().filter(this::isDeleteEligible).collect(Collectors.toList());
+		// Get a list of eligible chunks.
+		List<ChunkInfo> chunks = getEligibleChunks(region);
 
-		if (chunks.size() != region.getChunksPerRegion()) {
-			plugin.debug(DebugLevel.HIGH, () ->
-					String.format("Not all chunks are delete-eligible (%s) - removing unnecessary chunks", chunks.size()));
-			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
-			chunks.removeIf(chunk -> {
-				if (isCancelled()) {
-					return true;
-				}
-				VisitStatus visitStatus;
-				try {
-					// The status should be cached here, but if enough time has elapsed
-					visitStatus = chunk.getVisitStatus();
-				} catch (RuntimeException e) {
-					return true;
-				}
-
-				return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
-			});
-		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
-				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus() == VisitStatus.UNVISITED)) {
-			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
-			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - chunks are freshly generated.");
-			return;
-		}
-
-		if (chunks.isEmpty()) {
-			// If no chunks are modified, do nothing.
-			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - no chunks are delete-eligible.");
+		// If there are no eligible chunks, do post-region recovery and move on.
+		if (chunks == null) {
 			recover();
 			return;
 		}
@@ -129,20 +102,8 @@ public class DeletionRunnable extends BukkitRunnable {
 		// Orphan chunks. N.B. Changes do not take effect until RegionInfo#write is called.
 		chunks.forEach(ChunkInfo::setOrphaned);
 
-		try {
-			if (!region.write()) {
-				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
-			}
-			chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
-			if (chunks.size() == region.getChunksPerRegion()) {
-				regionsDeleted.incrementAndGet();
-			} else {
-				chunksDeleted.addAndGet(chunks.size());
-			}
-		} catch (IOException e) {
-			plugin.debug(() -> String.format(
-					"Caught an IOException attempting to populate chunk data: %s", e.getMessage()), e);
-		}
+		// Write modified region to disk.
+		writeRegion(region, chunks);
 
 		// If 5 seconds have elapsed since last log and 20 or more regions have been checked, log run stats.
 		long now = Instant.now().getEpochSecond();
@@ -153,7 +114,66 @@ public class DeletionRunnable extends BukkitRunnable {
 			plugin.debug(DebugLevel.LOW, this::getRunStats);
 		}
 
+		// Do post-region recovery.
 		recover();
+	}
+
+	private boolean readRegion(@NotNull RegionInfo region) {
+		try {
+			if (!region.read()) {
+				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
+				return false;
+			}
+		} catch (IOException e) {
+			plugin.getLogger().log(Level.WARNING, "Unable to read region!", e);
+			return false;
+		}
+		return true;
+	}
+
+	private @Nullable List<ChunkInfo> getEligibleChunks(@NotNull RegionInfo region) {
+		// Collect potentially eligible chunks
+		List<ChunkInfo> chunks = region.getChunks()
+				.filter(this::isDeleteEligible)
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		if (chunks.size() != region.getChunksPerRegion()) {
+			plugin.debug(DebugLevel.HIGH, () ->
+					String.format("Not all chunks are delete-eligible (%s) - removing unnecessary chunks", chunks.size()));
+			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
+			chunks.removeIf(this::isPartialDeletionIgnored);
+		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
+				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus() == VisitStatus.UNVISITED)) {
+			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
+			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - chunks are freshly generated.");
+			return null;
+		}
+
+		if (chunks.isEmpty()) {
+			// If no chunks are modified, do nothing.
+			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - no chunks are delete-eligible.");
+			return null;
+		}
+
+		return chunks;
+	}
+
+	private boolean isPartialDeletionIgnored(ChunkInfo chunkInfo) {
+		// Always ignore chunks if plugin is disabling.
+		if (isCancelled()) {
+			return true;
+		}
+
+		VisitStatus visitStatus;
+		try {
+			// The status should be cached here, but if enough time has elapsed it theoretically might not be.
+			visitStatus = chunkInfo.getVisitStatus();
+		} catch (RuntimeException e) {
+			return true;
+		}
+
+		// Ignore existing orphans and, if configured to, freshly-generated area.
+		return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
 	}
 
 	private void recover() {
@@ -234,6 +254,24 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		return visitStatus.ordinal() < VisitStatus.VISITED.ordinal();
 
+	}
+
+	private void writeRegion(@NotNull RegionInfo region, List<ChunkInfo> chunks) {
+		try {
+			if (!region.write()) {
+				plugin.debug(DebugLevel.HIGH, () -> "Skipping region - in use by server.");
+				return;
+			}
+			chunks.forEach(chunk -> plugin.getFlagger().unflagChunk(chunk.getWorld().getName(), chunk.getChunkX(), chunk.getChunkZ()));
+			if (chunks.size() == region.getChunksPerRegion()) {
+				regionsDeleted.incrementAndGet();
+			} else {
+				chunksDeleted.addAndGet(chunks.size());
+			}
+		} catch (IOException e) {
+			plugin.debug(() -> String.format(
+					"Caught an IOException attempting to populate chunk data: %s", e.getMessage()), e);
+		}
 	}
 
 	public String getRunStats() {
