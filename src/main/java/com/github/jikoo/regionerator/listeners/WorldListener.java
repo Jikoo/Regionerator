@@ -14,6 +14,7 @@ import com.github.jikoo.regionerator.Regionerator;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class WorldListener implements Listener {
@@ -41,6 +42,17 @@ public class WorldListener implements Listener {
 			plugin.reloadConfig();
 			return;
 		}
+	}
+
+	@EventHandler
+	public void onWorldUnload(@NotNull WorldUnloadEvent event) {
+		plugin.getWorldManager().releaseWorld(event.getWorld());
+
+		if (plugin.config().enabledWorlds().contains(event.getWorld().getName())) {
+			// TODO Is world still in server world list? Does recalc need to be delayed?
+			plugin.reloadConfig();
+		}
+		// TODO possibly cancel deletion here
 	}
 
 }

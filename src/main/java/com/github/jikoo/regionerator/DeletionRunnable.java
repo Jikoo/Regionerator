@@ -38,12 +38,13 @@ public class DeletionRunnable extends BukkitRunnable {
 
 	private final @NotNull Regionerator plugin;
 	private final @NotNull Phaser phaser;
-	private final WorldInfo world;
 	private final AtomicLong nextRun = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicInteger regionCount = new AtomicInteger();
 	private final AtomicInteger heavyChecks = new AtomicInteger();
 	private final AtomicInteger regionsDeleted = new AtomicInteger();
 	private final AtomicInteger chunksDeleted = new AtomicInteger();
+	private final String worldName;
+	private @Nullable WorldInfo world;
 	private long nextLogSecond = Instant.now().getEpochSecond() + 5;
 	private int nextLogCount = 20;
 
@@ -51,11 +52,17 @@ public class DeletionRunnable extends BukkitRunnable {
 		this.plugin = plugin;
 		this.phaser = new Phaser(1);
 		this.world = plugin.getWorldManager().getWorld(world);
+		this.worldName = world.getName();
 	}
 
 	@Override
 	public void run() {
+		if (world == null) {
+			throw new IllegalStateException("Cannot reuse deletion runnable!");
+		}
 		world.getRegions().forEach(this::handleRegion);
+		// Release world reference.
+		world = null;
 		plugin.getLogger().info("Deletion cycle complete for " + getRunStats());
 		nextRun.set(System.currentTimeMillis() + plugin.config().getCycleDelayMillis());
 		if (plugin.config().isRememberCycleDelay()) {
@@ -66,6 +73,12 @@ public class DeletionRunnable extends BukkitRunnable {
 			}
 		}
 		phaser.arriveAndDeregister();
+	}
+
+	@Override
+	public synchronized void cancel() throws IllegalStateException {
+		super.cancel();
+		this.world = null;
 	}
 
 	@Override
@@ -83,7 +96,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		regionCount.incrementAndGet();
 		plugin.debug(DebugLevel.HIGH, () -> String.format("Checking %s: %s (%s)",
-				world.getWorld().getName(), region.getIdentifier(), regionCount.get()));
+				worldName, region.getIdentifier(), regionCount.get()));
 
 		// Read the region's data from disk.
 		if (!readRegion(region)) {
@@ -142,7 +155,7 @@ public class DeletionRunnable extends BukkitRunnable {
 					String.format("Not all chunks are delete-eligible (%s) - removing unnecessary chunks", chunks.size()));
 			// If entire region is not being deleted, filter out chunks that are already orphaned or freshly generated
 			chunks.removeIf(this::isPartialDeletionIgnored);
-		} else if (!plugin.config().isDeleteFreshChunks(world.getWorld())
+		} else if (!plugin.config().isDeleteFreshChunks(region.getWorld())
 				&& chunks.stream().noneMatch(chunk -> chunk.getVisitStatus() == VisitStatus.UNVISITED)) {
 			// If we're configured to not delete fresh chunks and the whole region is likely fresh, do nothing.
 			plugin.debug(DebugLevel.HIGH, () -> "Skipping region - chunks are freshly generated.");
@@ -173,7 +186,7 @@ public class DeletionRunnable extends BukkitRunnable {
 		}
 
 		// Ignore existing orphans and, if configured to, freshly-generated area.
-		return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(world.getWorld()) && visitStatus == VisitStatus.GENERATED;
+		return visitStatus == VisitStatus.ORPHANED || !plugin.config().isDeleteFreshChunks(chunkInfo.getWorld()) && visitStatus == VisitStatus.GENERATED;
 	}
 
 	private void recover() {
@@ -210,7 +223,7 @@ public class DeletionRunnable extends BukkitRunnable {
 
 		long now = System.currentTimeMillis();
 		long lastVisit = chunkInfo.getLastVisit();
-		boolean isFresh = !plugin.config().isDeleteFreshChunks(world.getWorld()) && lastVisit == plugin.config().getFlagGenerated(world.getWorld());
+		boolean isFresh = !plugin.config().isDeleteFreshChunks(chunkInfo.getWorld()) && lastVisit == plugin.config().getFlagGenerated(chunkInfo.getWorld());
 
 		if (!isFresh && now <= lastVisit) {
 			// Chunk is visited
@@ -275,11 +288,11 @@ public class DeletionRunnable extends BukkitRunnable {
 	}
 
 	public String getRunStats() {
-		return String.format(STATS_FORMAT, world.getWorld().getName(), regionCount, regionsDeleted, chunksDeleted);
+		return String.format(STATS_FORMAT, worldName, regionCount, regionsDeleted, chunksDeleted);
 	}
 
 	public @NotNull String getWorld() {
-		return world.getWorld().getName();
+		return worldName;
 	}
 
 	public long getNextRun() {

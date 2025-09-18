@@ -253,7 +253,23 @@ public class Regionerator extends JavaPlugin {
 	 * Attempts to activate {@link DeletionRunnable}s for any configured worlds.
 	 */
 	public void attemptDeletionActivation() {
-		deletionRunnables.values().removeIf(value -> value.getNextRun() < System.currentTimeMillis());
+		deletionRunnables.entrySet().removeIf(entry -> {
+			if (entry.getValue().getNextRun() < System.currentTimeMillis()) {
+				return true;
+			}
+
+			if (config.enabledWorlds().contains(entry.getKey())) {
+				World active = getServer().getWorld(entry.getValue().getWorld());
+				// TODO expose backing world instance compare
+				if (active != null) {
+					return false;
+				}
+			}
+
+			// Cancel task if still running - world is no longer valid.
+			entry.getValue().cancel();
+			return true;
+		});
 
 		if (isPaused()) {
 			return;

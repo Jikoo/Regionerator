@@ -10,12 +10,13 @@
 
 package com.github.jikoo.regionerator;
 
-import com.github.jikoo.regionerator.world.impl.anvil.AnvilWorld;
 import com.github.jikoo.regionerator.world.WorldInfo;
-import java.util.HashMap;
-import java.util.Map;
+import com.github.jikoo.regionerator.world.impl.anvil.AnvilWorld;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class WorldManager {
 
@@ -29,6 +30,10 @@ public class WorldManager {
 
 	public @NotNull WorldInfo getWorld(@NotNull World world) {
 		return worlds.computeIfAbsent(world.getName(), (name) -> getWorldImpl(world));
+	}
+
+	public void releaseWorld(@NotNull World world) {
+		worlds.remove(world.getName());
 	}
 
 	private @NotNull WorldInfo getWorldImpl(@NotNull World world) {
