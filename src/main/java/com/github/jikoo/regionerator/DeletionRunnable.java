@@ -23,11 +23,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Runnable for checking and deleting chunks and regions.
@@ -60,11 +63,28 @@ public class DeletionRunnable extends BukkitRunnable {
 		if (world == null) {
 			throw new IllegalStateException("Cannot reuse deletion runnable!");
 		}
-		world.getRegions().forEach(this::handleRegion);
+
+		Future<Stream<RegionInfo>> regionsFuture = plugin.getServer().getScheduler().callSyncMethod(plugin, world::getRegions);
+
+		Stream<RegionInfo> regions = null;
+		try {
+			// Fetch region info on the main thread. Getting data folder may throw a CME otherwise.
+			regions = regionsFuture.get();
+		} catch (InterruptedException | ExecutionException e) {
+			plugin.getLogger().severe("Unable to access world data!");
+			plugin.getLogger().log(Level.SEVERE, "Error accessing world data on main thread", e);
+		}
+
+		if (regions != null) {
+			regions.forEach(this::handleRegion);
+		}
+
 		// Release world reference.
 		world = null;
 		plugin.getLogger().info("Deletion cycle complete for " + getRunStats());
 		nextRun.set(System.currentTimeMillis() + plugin.config().getCycleDelayMillis());
+
+		// If configured to remember cycle delays across restarts, do post-run callback on the main thread.
 		if (plugin.config().isRememberCycleDelay()) {
 			try {
 				plugin.getServer().getScheduler().runTask(plugin, () -> plugin.finishCycle(this));
@@ -72,6 +92,7 @@ public class DeletionRunnable extends BukkitRunnable {
 				// Plugin disabling, odds are on that we were mid-cycle. Don't update finish time.
 			}
 		}
+
 		phaser.arriveAndDeregister();
 	}
 
