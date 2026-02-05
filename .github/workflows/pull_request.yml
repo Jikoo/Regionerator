@@ -6,8 +6,33 @@ on:
 jobs:
   run-ci:
     uses: Jikoo/PlanarActions/.github/workflows/ci_maven.yml@master
-  store-dependabot-pr-data:
-    if: "github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'"
-    uses: Jikoo/PlanarActions/.github/workflows/pr_automerge_prep.yml@master
-    with:
-      pr-number: ${{ github.event.number }}
+  approve-and-merge-dependabot:
+    if: "github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'"
+    needs: [ "run-ci" ]
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Always approve PRs from Dependabot.
+      - name: Approve
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      # Fetch Dependabot metadata for finer decisionmaking later.
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      # Enable auto-merge for the PR.
+      # Auto-merge is used rather than a direct merge so that any other required checks can pass.
+      - name: Enable auto-merge for minor/patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
