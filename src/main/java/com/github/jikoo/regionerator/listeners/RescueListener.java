@@ -11,10 +11,17 @@
 package com.github.jikoo.regionerator.listeners;
 
 import com.github.jikoo.regionerator.Regionerator;
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
+import io.papermc.paper.persistence.PersistentDataContainerView;
+import java.util.Collection;
+import java.util.UUID;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -28,10 +35,6 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
-
-import java.util.Collection;
-import java.util.UUID;
 
 public class RescueListener implements Listener {
 
@@ -50,40 +53,67 @@ public class RescueListener implements Listener {
     chunk.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
   }
 
+  /**
+   * Runs on an async thread; world and chunk access are delegated to the main thread.
+   */
   @EventHandler(priority = EventPriority.LOWEST) // Run early so everyone overrides us
-  private void onPlayerSpawn(@NotNull PlayerSpawnLocationEvent event) {
-    Player player = event.getPlayer();
-    // Check if the player has logged in since this feature was added.
-    PersistentDataContainer playerPdc = player.getPersistentDataContainer();
-    if (!playerPdc.has(loggedInSinceFeature, PersistentDataType.BYTE)) {
-      playerPdc.set(loggedInSinceFeature, PersistentDataType.BYTE, (byte) 1);
+  private void onAsyncPlayerSpawn(@NotNull AsyncPlayerSpawnLocationEvent event) {
+    Runnable sync = () -> applySpawnRescue(event);
+    if (Bukkit.isPrimaryThread()) {
+      sync.run();
+      return;
+    }
+    try {
+      Bukkit.getScheduler().callSyncMethod(plugin, () -> {
+        sync.run();
+        return null;
+      });
+    } catch (IllegalStateException ex) {
+      plugin.getLogger().warning("Rescue spawn skipped (scheduler unavailable): " + ex.getMessage());
+    } catch (RuntimeException ex) {
+      plugin.getLogger().log(Level.WARNING, "Rescue spawn failed on main thread", ex);
+    }
+  }
+
+  private void applySpawnRescue(@NotNull AsyncPlayerSpawnLocationEvent event) {
+    UUID uuid = event.getConnection().getProfile().getId();
+    if (uuid == null) {
       return;
     }
 
-    Chunk chunk = event.getSpawnLocation().getChunk();
+    OfflinePlayer offline = Bukkit.getOfflinePlayer(uuid);
+    PersistentDataContainerView playerPdcView = offline.getPersistentDataContainer();
+    if (!playerPdcView.has(loggedInSinceFeature, PersistentDataType.BYTE)) {
+      plugin.getServer().getScheduler().runTask(plugin, () -> {
+        Player p = Bukkit.getPlayer(uuid);
+        if (p != null && p.isOnline()) {
+          p.getPersistentDataContainer().set(loggedInSinceFeature, PersistentDataType.BYTE, (byte) 1);
+        }
+      });
+      return;
+    }
+
+    Location spawnLoc = event.getSpawnLocation();
+    Chunk chunk = spawnLoc.getChunk();
     PersistentDataContainer chunkPdc = chunk.getPersistentDataContainer();
-    NamespacedKey logoutKey = getLogoutKey(player.getUniqueId());
-    // If the key is set, the chunk has not been deleted since the player last logged out.
+    NamespacedKey logoutKey = getLogoutKey(uuid);
     if (chunkPdc.has(logoutKey, PersistentDataType.BYTE)) {
       chunkPdc.remove(logoutKey);
       return;
     }
 
-    // If rescue is not enabled, exit early. Note that we do still want to do the tagging in case enabled later.
     if (!plugin.config().rescueEnabled()) {
       return;
     }
 
-    // Only rescue safe players if configured to do so.
-    if (!plugin.config().rescueIfSafe() && !isUnsafe(event.getSpawnLocation())) {
+    if (!plugin.config().rescueIfSafe() && !isUnsafe(spawnLoc)) {
       return;
     }
 
-    // If rescuing up, check if top block can be stood on safely.
     if (plugin.config().rescueToTopBlock()) {
-      World world = event.getSpawnLocation().getWorld();
+      World world = spawnLoc.getWorld();
       if (world != null) {
-        Block topBlock = world.getHighestBlockAt(event.getSpawnLocation());
+        Block topBlock = world.getHighestBlockAt(spawnLoc);
         if (!isUnsafe(topBlock.getType()) && !isNotStandable(topBlock)) {
           event.setSpawnLocation(topBlock.getLocation().add(0.5, 1, 0.5));
           return;
@@ -91,21 +121,20 @@ public class RescueListener implements Listener {
       }
     }
 
-    // If rescuing to personal respawn location, do so if available.
     if (plugin.config().rescueToRespawn()) {
-      Location spawnLoc = player.getBedSpawnLocation();
-      if (spawnLoc != null) {
-        event.setSpawnLocation(spawnLoc);
+      Location respawn = offline.getRespawnLocation(true);
+      if (respawn != null) {
+        event.setSpawnLocation(respawn);
         return;
       }
     }
 
-    // Otherwise, use respawn location of rescue world.
-    World defaultWorld = event.getSpawnLocation().getWorld();
+    World defaultWorld = spawnLoc.getWorld();
     if (defaultWorld == null) {
-      // Prefer event world, but fall through to player world.
-      // Theoretically player world may be default here, so we should avoid it.
-      defaultWorld = player.getWorld();
+      defaultWorld = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0);
+    }
+    if (defaultWorld == null) {
+      return;
     }
 
     World spawnWorld = plugin.config().getRescueWorld(defaultWorld);

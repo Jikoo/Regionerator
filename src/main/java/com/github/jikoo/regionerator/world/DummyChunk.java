@@ -18,11 +18,15 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.generator.structure.GeneratedStructure;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 /**
  * Dummy chunk used to prevent chunk loading when checking protection plugins.
@@ -44,13 +48,8 @@ public class DummyChunk implements Chunk {
 	}
 
 	@Override
-	public @NotNull ChunkSnapshot getChunkSnapshot() {
-		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
-	}
-
-	@Override
 	public @NotNull ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome,
-			boolean includeBiomeTempRain) {
+			boolean includeBiomeTempRain, boolean includeLightData) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
@@ -65,7 +64,13 @@ public class DummyChunk implements Chunk {
 	}
 
 	@Override
-	public @NotNull BlockState @NotNull [] getTileEntities() {
+	public @NotNull BlockState @NotNull [] getTileEntities(boolean useSnapshot) {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public @NotNull Collection<BlockState> getTileEntities(
+			@NotNull Predicate<? super Block> blockPredicate, boolean useSnapshot) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
@@ -86,7 +91,17 @@ public class DummyChunk implements Chunk {
 
 	@Override
 	public boolean isLoaded() {
-		return this.world.isChunkLoaded(chunkZ, chunkZ);
+		return this.world.isChunkLoaded(this.chunkX, this.chunkZ);
+	}
+
+	@Override
+	public @NotNull Chunk.LoadLevel getLoadLevel() {
+		return this.isLoaded() ? Chunk.LoadLevel.ENTITY_TICKING : Chunk.LoadLevel.UNLOADED;
+	}
+
+	@Override
+	public boolean isGenerated() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
 	@Override
@@ -161,6 +176,21 @@ public class DummyChunk implements Chunk {
 
 	@Override
 	public @NotNull PersistentDataContainer getPersistentDataContainer() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public @NotNull Collection<Player> getPlayersSeeingChunk() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public @NotNull Collection<GeneratedStructure> getStructures() {
+		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
+	}
+
+	@Override
+	public @NotNull Collection<GeneratedStructure> getStructures(@NotNull Structure structure) {
 		throw new UnsupportedOperationException("DummyChunk does not support world operations.");
 	}
 
