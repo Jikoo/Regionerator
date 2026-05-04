@@ -18,6 +18,7 @@ softdepend:
 - Residence
 - Terrainer
 - Towny
+- WorldEdit
 - WorldGuard
 
 commands:
