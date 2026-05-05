@@ -86,7 +86,7 @@ public class DummyChunk implements Chunk {
 
 	@Override
 	public boolean isLoaded() {
-		return this.world.isChunkLoaded(chunkZ, chunkZ);
+		return this.world.isChunkLoaded(this.chunkX, this.chunkZ);
 	}
 
 	@Override

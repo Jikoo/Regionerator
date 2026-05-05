@@ -46,7 +46,7 @@ public class RegioneratorExecutor implements TabExecutor {
 			@NotNull Map<String, DeletionRunnable> deletionRunnables) {
 		this.plugin = plugin;
 		this.deletionRunnables = deletionRunnables;
-		flagHandler = new FlagHandler(plugin);
+		this.flagHandler = new FlagHandler(plugin);
 	}
 
 	@Override
