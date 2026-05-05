@@ -163,7 +163,9 @@ public class Regionerator extends JavaPlugin {
 		// Enable world case correction listener.
 		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
 		// Enable rescue tagging listener.
-		getServer().getPluginManager().registerEvents(new RescueListener(this), this);
+		RescueListener rescueListener = new RescueListener(this);
+		getServer().getPluginManager().registerEvents(rescueListener, this);
+		rescueListener.registerPaperAsyncSpawnIfPresent();
 		// Always enable hook listener in case someone else adds hooks.
 		getServer().getPluginManager().registerEvents(new HookListener(this), this);
 

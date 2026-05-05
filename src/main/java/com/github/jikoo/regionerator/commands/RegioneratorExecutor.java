@@ -40,31 +40,13 @@ public class RegioneratorExecutor implements TabExecutor {
 
 	private final @NotNull Regionerator plugin;
 	private final @NotNull Map<String, DeletionRunnable> deletionRunnables;
-	/**
-	 * Lazily created: {@link FlagHandler} touches WorldEdit types. If we construct it from
-	 * {@link Regionerator#onEnable()} before WorldEdit has enabled, {@code SessionOwner} etc. are not
-	 * visible yet and the plugin fails with {@link NoClassDefFoundError}.
-	 */
-	private volatile @Nullable FlagHandler flagHandler;
+	private final @NotNull FlagHandler flagHandler;
 
 	public RegioneratorExecutor(@NotNull Regionerator plugin,
 			@NotNull Map<String, DeletionRunnable> deletionRunnables) {
 		this.plugin = plugin;
 		this.deletionRunnables = deletionRunnables;
-	}
-
-	private @NotNull FlagHandler flagHandler() {
-		FlagHandler local = this.flagHandler;
-		if (local == null) {
-			synchronized (this) {
-				local = this.flagHandler;
-				if (local == null) {
-					local = new FlagHandler(this.plugin);
-					this.flagHandler = local;
-				}
-			}
-		}
-		return local;
+		this.flagHandler = new FlagHandler(plugin);
 	}
 
 	@Override
@@ -132,11 +114,11 @@ public class RegioneratorExecutor implements TabExecutor {
 		}
 
 		if (args[0].equals("flag")) {
-			flagHandler().handleFlags(sender, args, true);
+			flagHandler.handleFlags(sender, args, true);
 			return true;
 		}
 		if (args[0].equals("unflag")) {
-			flagHandler().handleFlags(sender, args, false);
+			flagHandler.handleFlags(sender, args, false);
 			return true;
 		}
 
