@@ -41,6 +41,34 @@
       <scope>compile</scope>
       <version>4.0.0</version>
     </dependency>
+    <!-- Platform modules -->
+    <dependency>
+      <groupId>com.github.jikoo</groupId>
+      <artifactId>regionerator-platform-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jikoo</groupId>
+      <artifactId>regionerator-platform-paper</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.papermc.paper</groupId>
+          <artifactId>paper-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jikoo</groupId>
+      <artifactId>regionerator-platform-spigot</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.spigotmc</groupId>
+          <artifactId>spigot-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Plugin hook dependencies -->
     <dependency>
       <groupId>com.sk89q.worldedit</groupId>
@@ -286,15 +314,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.2</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <phase>package</phase>
-          </execution>
-        </executions>
         <configuration>
           <relocations>
             <!-- Relocate various utilities that have been migrated to PlanarWrappers. -->
@@ -330,13 +349,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.15.0</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.5</version>
       </plugin>
     </plugins>
   </build>
