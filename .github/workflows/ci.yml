@@ -8,3 +8,5 @@ on:
 jobs:
   run-ci:
     uses: Jikoo/PlanarActions/.github/workflows/ci_maven.yml@master
+    with:
+      include-artifacts: "plugin/target/Regionerator.jar"
