@@ -22,6 +22,10 @@
       <id>papermc</id>
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -30,6 +34,24 @@
       <artifactId>paper-api</artifactId>
       <version>26.1.2.build.60-stable</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jikoo</groupId>
+      <artifactId>planarwrappers</artifactId>
+      <scope>compile</scope>
+      <version>4.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jikoo</groupId>
+      <artifactId>regionerator-platform-core</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.spigotmc</groupId>
+          <artifactId>spigot-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 

@@ -10,7 +10,7 @@
     <version>3.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>regionerator-platform-spigot</artifactId>
+  <artifactId>regionerator-platform-core</artifactId>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,36 +22,25 @@
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
   </repositories>
 
   <dependencies>
     <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>26.1.2-R0.1-SNAPSHOT</version>
+      <version>1.21.3-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.github.jikoo</groupId>
-      <artifactId>planarwrappers</artifactId>
-      <scope>compile</scope>
-      <version>4.0.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jikoo</groupId>
-      <artifactId>regionerator-platform-core</artifactId>
+      <artifactId>regionerator-plugin-core</artifactId>
       <version>3.0.0-SNAPSHOT</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.spigotmc</groupId>
-          <artifactId>spigot-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

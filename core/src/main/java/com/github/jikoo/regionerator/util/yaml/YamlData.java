@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 by Jikoo.
+ * Copyright (c) 2015-2026 by Jikoo.
  *
  * Regionerator is licensed under a Creative Commons
  * Attribution-ShareAlike 4.0 International License.

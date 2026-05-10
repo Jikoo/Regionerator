@@ -14,11 +14,14 @@
   </properties>
 
   <modules>
-    <module>platform/core</module>
+    <module>core</module>
+    <module>platform/platform</module>
     <module>platform/paper</module>
     <module>platform/spigot</module>
     <module>plugin</module>
   </modules>
+
+  <!-- TODO dependencyManagement -->
 
   <build>
     <pluginManagement>

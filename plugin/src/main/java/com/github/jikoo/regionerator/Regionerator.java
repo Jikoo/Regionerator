@@ -16,8 +16,10 @@ import com.github.jikoo.regionerator.hooks.PluginHook;
 import com.github.jikoo.regionerator.listeners.DebugListener;
 import com.github.jikoo.regionerator.listeners.FlaggingListener;
 import com.github.jikoo.regionerator.listeners.HookListener;
-import com.github.jikoo.regionerator.listeners.RescueListener;
 import com.github.jikoo.regionerator.listeners.WorldListener;
+import com.github.jikoo.regionerator.platform.RescueListener;
+import com.github.jikoo.regionerator.platform.paper.AsyncRescueListener;
+import com.github.jikoo.regionerator.spigot.SyncRescueListener;
 import com.github.jikoo.regionerator.util.DeletionStartComparator;
 import com.github.jikoo.regionerator.util.yaml.Config;
 import com.github.jikoo.regionerator.util.yaml.MiscData;
@@ -163,7 +165,11 @@ public class Regionerator extends JavaPlugin {
 		// Enable world case correction listener.
 		getServer().getPluginManager().registerEvents(new WorldListener(this), this);
 		// Enable rescue tagging listener.
-		getServer().getPluginManager().registerEvents(new RescueListener(this), this);
+		RescueListener rescueListener = new AsyncRescueListener(this, config());
+		if (!rescueListener.isUsable()) {
+			rescueListener = new SyncRescueListener(this, config());
+		}
+		rescueListener.register();
 		// Always enable hook listener in case someone else adds hooks.
 		getServer().getPluginManager().registerEvents(new HookListener(this), this);
 

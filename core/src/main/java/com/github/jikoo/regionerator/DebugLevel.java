@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 by Jikoo.
+ * Copyright (c) 2015-2026 by Jikoo.
  *
  * Regionerator is licensed under a Creative Commons
  * Attribution-ShareAlike 4.0 International License.
@@ -10,7 +10,7 @@
 
 package com.github.jikoo.regionerator;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tiny enum for debugging.
