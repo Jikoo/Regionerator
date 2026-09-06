@@ -9,30 +9,9 @@ jobs:
   approve-and-merge-dependabot:
     if: "github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'"
     needs: [ "run-ci" ]
-    runs-on: "ubuntu-latest"
+    uses: Jikoo/PlanarActions/.github/workflows/dependabot_automerge.yml@master
+    with:
+      pr-url: ${{github.event.pull_request.html_url}}
     permissions:
       contents: write
       pull-requests: write
-    steps:
-      # Always approve PRs from Dependabot.
-      - name: Approve
-        run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
-      # Fetch Dependabot metadata for finer decisionmaking later.
-      - name: Fetch Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      # Enable auto-merge for the PR.
-      # Auto-merge is used rather than a direct merge so that any other required checks can pass.
-      - name: Enable auto-merge for minor/patch updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
